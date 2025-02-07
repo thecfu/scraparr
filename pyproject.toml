@@ -1,0 +1,7 @@
+[project]
+name = "scraparr"
+version = "1.0.0"
+description = "Prometheus Exporter for *Arr Suite"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["prometheus_client", "requests", "werkzeug"]

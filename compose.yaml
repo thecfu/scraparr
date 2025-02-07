@@ -1,0 +1,7 @@
+services:
+  scraparr:
+    build: .
+    ports:
+      - "7100:7100"
+    volumes:
+      - ./config.cnf:/scraparr/config.cnf

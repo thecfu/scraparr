@@ -1,0 +1,18 @@
+[GENERAL]
+; Exporter Listening Address and Port
+;address = 0.0.0.0
+;port = 7100
+; Exporter Metrics Path
+;path = /metrics
+
+[SONARR]
+url = http://sonarr:8989
+api_key = key
+; Get Data per Series
+detailed = true
+
+[RADARR]
+url = http://radarr:7878
+api_key = key
+; Get Data per Movie
+detailed = true
