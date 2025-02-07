@@ -1,16 +1,16 @@
 # <img src="https://scraparr.thecfu.de/scraparr_logo.svg" alt="scraparr-logo" width="20%"> <img src="https://scraparr.thecfu.de/scraparr_only-text.png" alt="Scraparr" width="30%"> 
+### A Exporter for the *arr Suite
 
-A Exporter for the *arr Suite
-
-[![Project Status: W.I.P – The project is not yet stable.](https://www.repostatus.org/badges/latest/wip.svg)]()<br>
-**W.I.P** – The project is not yet stable.
+[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)]()<br>
 
 ---
 
 ## Overview
 
 Scraparr is a Prometheus exporter for the *arr Suite. It can call the API's of multiple Services and translate it into Prometheus readable metrics.
-
+Currently supported Services are:
+- Radarr
+- Sonarr
 
 ## Installation
 
@@ -25,7 +25,11 @@ Scraparr is a Prometheus exporter for the *arr Suite. It can call the API's of m
     docker build -t scraparr .
     ```
 
-3. Run the Docker container:
+3. Configure:
+    Edit the config.cnf file to your needs. <br />
+    Especially the API keys and URL of the Services you want to monitor.
+
+4. Run the Docker container:
     ```sh
     docker run -d -p 7100:7100 -v ./config.cnf:/scraparr/config.cnf scraparr
     ```
