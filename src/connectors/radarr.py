@@ -1,5 +1,6 @@
 import logging
 import time
+from datetime import datetime
 import requests
 import scraparr.metrics.radarr as radarr_metrics
 
@@ -86,6 +87,11 @@ def update_system_data(data):
     radarr_metrics.QUEUE_COUNT.set(data["queue"]["totalCount"])
     radarr_metrics.QUEUE_ERROR.set(data["queue"]["errors"])
     radarr_metrics.QUEUE_WARNING.set(data["queue"]["warnings"])
+
+    start_time = datetime.strptime(data["status"]["startTime"], "%Y-%m-%dT%H:%M:%SZ").timestamp()
+    build_time = datetime.strptime(data["status"]["buildTime"], "%Y-%m-%dT%H:%M:%SZ").timestamp()
+    radarr_metrics.START_TIME.set(start_time)
+    radarr_metrics.BUILD_TIME.set(build_time)
 
 def scrape(config):
 

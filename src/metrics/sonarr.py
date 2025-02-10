@@ -4,6 +4,10 @@ from prometheus_client import Gauge, Enum
 LAST_SCRAPE = Gauge('sonarr_last_scrape', 'Last time Sonarr was scraped')
 SCRAPE_DURATION = Gauge('sonarr_scrape_duration', 'Duration of Sonarr scrape')
 
+# Status Stats
+START_TIME = Gauge('sonarr_start_time', 'Sonarr start time')
+BUILD_TIME = Gauge('sonarr_build_time', 'Sonarr build time')
+
 # Queue Stats
 QUEUE_COUNT = Gauge('sonarr_queue_count', 'Number of items in Sonarr queue')
 QUEUE_ERROR = Gauge('sonarr_queue_error', 'Item in Sonarr queue with error')

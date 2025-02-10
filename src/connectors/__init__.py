@@ -74,10 +74,12 @@ class Connectors:
         def queue():
             return get(f"{url}/api/v3/queue/status")
 
+        def status():
+            return get(f"{url}/api/v3/system/status")
 
         url = self.connectors[service]["config"].get('url')
         api_key = self.connectors[service]["config"].get('api_key')
-        return {'root_folder': root_folder(), 'queue': queue()}
+        return {'root_folder': root_folder(), 'queue': queue(), 'status': status()}
 
     def scrape(self):
         with concurrent.futures.ThreadPoolExecutor() as executor:

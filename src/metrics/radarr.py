@@ -4,6 +4,10 @@ from prometheus_client import Gauge
 LAST_SCRAPE = Gauge('radarr_last_scrape', 'Last time Radarr was scraped')
 SCRAPE_DURATION = Gauge('radarr_scrape_duration', 'Duration of Radarr scrape')
 
+# Status Stats
+START_TIME = Gauge('radarr_start_time', 'Radarr start time')
+BUILD_TIME = Gauge('radarr_build_time', 'Radarr build time')
+
 # Queue Stats
 QUEUE_COUNT = Gauge('radarr_queue_count', 'Number of items in Radarr queue')
 QUEUE_ERROR = Gauge('radarr_queue_error', 'Item in Radarr queue with error')

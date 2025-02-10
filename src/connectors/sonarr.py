@@ -1,5 +1,6 @@
 import time
 import logging
+from datetime import datetime
 import requests
 import scraparr.metrics.sonarr as sonarr_metrics
 
@@ -89,6 +90,11 @@ def update_system_data(data):
     sonarr_metrics.QUEUE_COUNT.set(data["queue"]["totalCount"])
     sonarr_metrics.QUEUE_ERROR.set(data["queue"]["errors"])
     sonarr_metrics.QUEUE_WARNING.set(data["queue"]["warnings"])
+
+    start_time = datetime.strptime(data["status"]["startTime"], "%Y-%m-%dT%H:%M:%SZ").timestamp()
+    build_time = datetime.strptime(data["status"]["buildTime"], "%Y-%m-%dT%H:%M:%SZ").timestamp()
+    sonarr_metrics.START_TIME.set(start_time)
+    sonarr_metrics.BUILD_TIME.set(build_time)
 
 def scrape(config):
 
