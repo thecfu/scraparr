@@ -1,7 +1,7 @@
 # <img src="https://scraparr.thecfu.de/scraparr_logo.svg" alt="scraparr-logo" width="20%"> <img src="https://scraparr.thecfu.de/scraparr_only-text.png" alt="Scraparr" width="30%"> 
 ### A Exporter for the *arr Suite
 
-[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)]()<br>
+[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)]() [![Pylint](https://github.com/TheCfU/scraparr/actions/workflows/pylint.yml/badge.svg)](https://github.com/TheCfU/scraparr/actions/workflows/pylint.yml)<br>
 
 ---
 

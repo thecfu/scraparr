@@ -1,33 +1,30 @@
+"""
+Module to handle the Metrics of the Sonarr Service
+"""
+
 import time
-import logging
 from datetime import datetime
-import requests
+from scraparr.util import get
 import scraparr.metrics.sonarr as sonarr_metrics
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
 def get_series(url, api_key):
-    try:
-        initial_time = time.time()
+    """Grab the Series from the Sonarr Endpoint"""
 
-        r = requests.get(f"{url}/api/v3/series", headers={"X-Api-Key": api_key}, timeout=20)
+    initial_time = time.time()
+    res = get(f"{url}/api/v3/series", api_key)
+    end_time = time.time()
 
-        end_time = time.time()
-
-        if r.status_code == 200:
-            sonarr_metrics.LAST_SCRAPE.set(end_time)
-            sonarr_metrics.SCRAPE_DURATION.set(end_time - initial_time)
-            return r.json()
-
-        logging.error("Error: %s", r.status_code)
-    except requests.exceptions.RequestException as e:
-        logging.error("Error: %s", e)
-        return None
+    if not res == {}:
+        sonarr_metrics.LAST_SCRAPE.set(end_time)
+        sonarr_metrics.SCRAPE_DURATION.set(end_time - initial_time)
+    return res
 
 def analyse_series(series, detailed):
+    """Analyse the Series and set the Correct Metrics"""
     sonarr_metrics.SERIES_COUNT.labels("total").set(len(series))
 
     for serie in series:
+        title = serie["titleSlug"]
 
         episode_count = serie["statistics"]["episodeCount"]
         episode_file_count = serie["statistics"]["episodeFileCount"]
@@ -46,17 +43,17 @@ def analyse_series(series, detailed):
                 sonarr_metrics.MISSING_EPISODE_COUNT.labels("total").inc(missing)
                 sonarr_metrics.MISSING_EPISODE_COUNT.labels(serie["rootFolderPath"]).inc(missing)
                 if detailed:
-                    sonarr_metrics.SERIES_MISSING_EPISODE_COUNT.labels(serie["titleSlug"]).set(missing)
+                    sonarr_metrics.SERIES_MISSING_EPISODE_COUNT.labels(title).set(missing)
 
 
         sonarr_metrics.TOTAL_DISK_SIZE.labels("total").inc(size_on_disk)
         sonarr_metrics.TOTAL_DISK_SIZE.labels(serie["rootFolderPath"]).inc(size_on_disk)
         if detailed:
-            sonarr_metrics.SERIES_EPISODE_COUNT.labels(serie["titleSlug"]).set(episode_count)
-            sonarr_metrics.SERIES_SEASON_COUNT.labels(serie["titleSlug"]).set(season_count)
-            sonarr_metrics.SERIES_DISK_SIZE.labels(serie["titleSlug"]).set(size_on_disk)
-            sonarr_metrics.SERIES_DOWNLOAD_PERCENTAGE.labels(serie["titleSlug"]).set(percent_of_episodes)
-            sonarr_metrics.SERIES_MONITORED.labels(serie["titleSlug"]).set(1 if serie["monitored"] else 0)
+            sonarr_metrics.SERIES_EPISODE_COUNT.labels(title).set(episode_count)
+            sonarr_metrics.SERIES_SEASON_COUNT.labels(title).set(season_count)
+            sonarr_metrics.SERIES_DISK_SIZE.labels(title).set(size_on_disk)
+            sonarr_metrics.SERIES_DOWNLOAD_PERCENTAGE.labels(title).set(percent_of_episodes)
+            sonarr_metrics.SERIES_MONITORED.labels(title).set(1 if serie["monitored"] else 0)
 
         if serie["status"] == "continuing":
             sonarr_metrics.CONTINUING_SERIES.labels("total").inc()
@@ -83,6 +80,7 @@ def analyse_series(series, detailed):
             sonarr_metrics.UNMONITORED_SERIES.labels(serie["rootFolderPath"]).inc()
 
 def update_system_data(data):
+    """Update the System Data Metrics"""
     for disk in data['root_folder']:
         sonarr_metrics.FREE_DISK_SIZE.labels(disk["path"]).set(disk["freeSpace"])
         sonarr_metrics.AVAILABLE_DISK_SIZE.labels(disk["path"]).set(disk["totalSpace"])
@@ -97,6 +95,7 @@ def update_system_data(data):
     sonarr_metrics.BUILD_TIME.set(build_time)
 
 def scrape(config):
+    """Scrape the Sonarr Service"""
 
     url = config.get('url')
     api_key = config.get('api_key')
@@ -104,5 +103,7 @@ def scrape(config):
     return get_series(url, api_key)
 
 def update_metrics(series, detailed):
+    """Update the Metrics for the Sonarr Service"""
+
     analyse_series(series["data"], detailed)
     update_system_data(series["system"])

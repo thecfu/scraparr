@@ -1,3 +1,14 @@
+"""
+Scraparr Prometheus Exporter
+
+This module collects metrics from various services of the *arr suite
+and exposes them in a Prometheus compatible format.
+
+Author: TheGameProfi (maintained and published by TheCfU)
+Contributors: TheGameProfi
+License: GPL-3.0
+"""
+
 import time
 import sys
 import threading
@@ -35,6 +46,7 @@ if __name__ == '__main__':
 
     try:
         def run_server():
+            """Starts the WSGI server"""
             httpd = make_server(address, port, app)
             httpd.serve_forever()
 
