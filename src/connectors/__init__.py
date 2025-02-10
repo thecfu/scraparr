@@ -72,7 +72,7 @@ class Connectors:
             return None
 
         def queue():
-            return get(f"{url}/api/v3/queue")
+            return get(f"{url}/api/v3/queue/status")
 
 
         url = self.connectors[service]["config"].get('url')
