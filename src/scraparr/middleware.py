@@ -1,6 +1,11 @@
+"""
+This is the Middleware module for the WSGI application.
+"""
+
 from werkzeug.wrappers import Request
 
 class Middleware:
+    """WSGI Middleware to only allow /metrics path"""
     def __init__(self, app):
         self.app = app
 

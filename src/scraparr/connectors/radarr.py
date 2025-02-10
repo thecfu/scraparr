@@ -1,34 +1,30 @@
-import logging
+"""
+Module to handle the Metrics of the Radarr Service
+"""
+
 import time
 from datetime import datetime
-import requests
 import scraparr.metrics.radarr as radarr_metrics
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+from scraparr.util import get
 
 def get_movies(url, api_key):
-    try:
-        initial_time = time.time()
+    """Grab the Movies from the Radarr Endpoint"""
 
-        r = requests.get(f"{url}/api/v3/movie", headers={"X-Api-Key": api_key}, timeout=20)
+    initial_time = time.time()
+    res = get(f"{url}/api/v3/movie", api_key)
+    end_time = time.time()
 
-        end_time = time.time()
-
-        if r.status_code == 200:
-            radarr_metrics.LAST_SCRAPE.set(end_time)
-            radarr_metrics.SCRAPE_DURATION.set(end_time - initial_time)
-            return r.json()
-
-        logging.error("Error: %s", r.status_code)
-    except requests.exceptions.RequestException as e:
-        logging.error("Error: %s", e)
-        return None
+    if not res == {}:
+        radarr_metrics.LAST_SCRAPE.set(end_time)
+        radarr_metrics.SCRAPE_DURATION.set(end_time - initial_time)
+    return res
 
 def analyse_movies(movies, detailed):
+    """Analyse the Movies and set the Correct Metrics"""
+
     radarr_metrics.MOVIE_COUNT.labels("total").set(len(movies))
 
     for movie in movies:
-
         title = movie["title"].lower().replace(" ", "-")
         # Remove special characters from title
         title = ''.join(e for e in title if e.isalnum() or e == "-")
@@ -67,11 +63,13 @@ def analyse_movies(movies, detailed):
             radarr_metrics.MOVIE_GENRES_COUNT.labels(genre, movie["rootFolderPath"]).inc()
 
         if movie["monitored"]:
-            radarr_metrics.MISSING_MOVIES_COUNT.labels("total").set(0 if movie["hasFile"] else 1)
-            radarr_metrics.MISSING_MOVIES_COUNT.labels(movie["rootFolderPath"]).set(0 if movie["hasFile"] else 1)
+            movie_count = movie["hasFile"]
+            if not movie_count:
+                radarr_metrics.MISSING_MOVIES_COUNT.labels("total").inc()
+                radarr_metrics.MISSING_MOVIES_COUNT.labels(movie["rootFolderPath"]).inc()
 
-            if detailed:
-                radarr_metrics.MOVIE_MISSING.labels(title).set(0 if movie["hasFile"] else 1)
+                if detailed:
+                    radarr_metrics.MOVIE_MISSING.labels(title).set(movie_count)
 
             radarr_metrics.MONITORED_MOVIES.labels("total").inc()
             radarr_metrics.MONITORED_MOVIES.labels(movie["rootFolderPath"]).inc()
@@ -80,6 +78,8 @@ def analyse_movies(movies, detailed):
             radarr_metrics.UNMONITORED_MOVIES.labels(movie["rootFolderPath"]).inc()
 
 def update_system_data(data):
+    """Update the System Metrics"""
+
     for disk in data['root_folder']:
         radarr_metrics.FREE_DISK_SIZE.labels(disk["path"]).set(disk["freeSpace"])
         radarr_metrics.AVAILABLE_DISK_SIZE.labels(disk["path"]).set(disk["totalSpace"])
@@ -94,6 +94,7 @@ def update_system_data(data):
     radarr_metrics.BUILD_TIME.set(build_time)
 
 def scrape(config):
+    """Scrape the Radarr Service"""
 
     url = config.get('url')
     api_key = config.get('api_key')
@@ -101,5 +102,7 @@ def scrape(config):
     return get_movies(url, api_key)
 
 def update_metrics(data, detailed):
+    """Update the Radarr Metrics"""
+
     analyse_movies(data['data'], detailed)
     update_system_data(data['system'])
