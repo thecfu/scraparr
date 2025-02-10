@@ -48,37 +48,32 @@ class Connectors:
             logging.warning("% scrape failed", service)
 
     def get_system_data(self, service):
-        def root_folder():
+        def get(api_url):
             try:
-                r = requests.get(f"{url}/api/v3/rootfolder", headers={"X-Api-Key": api_key}, timeout=20)
-                if r.status_code == 200:
-                    data = r.json()
-                    r = requests.get(f"{url}/api/v3/diskspace", headers={"X-Api-Key": api_key}, timeout=20)
-                    if r.status_code == 200:
-                        diskspace_data = r.json()
-                        report = []
-                        for disk in diskspace_data:
-                            if any(disk["path"] == d["path"] for d in data):
-                                report.append(disk)
-                        return report
-
-                    logging.error("Error: %s", r.status_code)
-                else:
-                    logging.error("Error: %s", r.status_code)
-            except requests.exceptions.RequestException as e:
-                logging.error("Error: %s", e)
-                return None
-
-        def queue():
-            try:
-                r = requests.get(f"{url}/api/v3/queue/status", headers={"X-Api-Key": api_key}, timeout=20)
+                r = requests.get(api_url, headers={"X-Api-Key": api_key}, timeout=20)
                 if r.status_code == 200:
                     return r.json()
 
                 logging.error("Error: %s", r.status_code)
             except requests.exceptions.RequestException as e:
                 logging.error("Error: %s", e)
-                return None
+            return None
+
+        def root_folder():
+            data = get(f"{url}/api/v3/rootfolder")
+            if data:
+                diskspace_data = get(f"{url}/api/v3/diskspace")
+                if diskspace_data:
+                    report = []
+                    for disk in diskspace_data:
+                        if any(disk["path"] == d["path"] for d in data):
+                            report.append(disk)
+                    return report
+            return None
+
+        def queue():
+            return get(f"{url}/api/v3/queue")
+
 
         url = self.connectors[service]["config"].get('url')
         api_key = self.connectors[service]["config"].get('api_key')
