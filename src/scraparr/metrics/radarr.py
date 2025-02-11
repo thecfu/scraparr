@@ -19,6 +19,7 @@ TOTAL_DISK_SIZE = Gauge('radarr_total_disk_size', 'Total disk size of movies in 
 FREE_DISK_SIZE = Gauge('radarr_free_disk_size', 'Free disk size in Radarr', ['path'])
 AVAILABLE_DISK_SIZE = Gauge('radarr_available_disk_size', 'Available disk size in Radarr', ['path'])
 MISSING_MOVIES_COUNT = Gauge('radarr_missing_movies', 'Number of missing movies in Radarr', ['path'])
+QUALITY_MOVIE_COUNT = Gauge('radarr_quality_movies', 'Number of movies per quality in Radarr', ['quality', 'path'])
 
 MOVIE_GENRES_COUNT = Gauge('radarr_genres_count', 'Number of Movies per Genres in Radarr', ['genre', 'path'])
 

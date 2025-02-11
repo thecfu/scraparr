@@ -18,6 +18,10 @@ def get_series(url, api_key):
     if res == {}:
         UP.labels("sonarr").set(0)
     else:
+        for series in res:
+            episodes = get(f"{url}/api/v3/episodefile?seriesId={series['id']}", api_key)
+            series["episodes"] = episodes
+
         UP.labels("sonarr").set(1)
         sonarr_metrics.LAST_SCRAPE.set(end_time)
         sonarr_metrics.SCRAPE_DURATION.set(end_time - initial_time)
@@ -37,6 +41,10 @@ def analyse_series(series, detailed):
     for serie in series:
         title = serie["titleSlug"]
 
+        for episode in serie["episodes"]:
+            quality = episode['quality']['quality']['name']
+            sonarr_metrics.QUALITY_EPISODE_COUNT.labels(quality, "total").inc()
+            sonarr_metrics.QUALITY_EPISODE_COUNT.labels(quality, serie["rootFolderPath"]).inc()
 
         stats = serie["statistics"]
         episode_count = stats["episodeCount"]

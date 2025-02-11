@@ -18,6 +18,10 @@ def get_movies(url, api_key):
     if res == {}:
         UP.labels("radarr").set(0)
     else:
+        for movie in res:
+            movie_file = get(f"{url}/api/v3/moviefile?movieId={movie['id']}", api_key)
+            movie["movieFile"] = movie_file
+
         UP.labels("radarr").set(1)
         radarr_metrics.LAST_SCRAPE.set(end_time)
         radarr_metrics.SCRAPE_DURATION.set(end_time - initial_time)
@@ -39,6 +43,11 @@ def analyse_movies(movies, detailed):
     for movie in movies:
         title = movie["title"].lower().replace(" ", "-")
         title = ''.join(e for e in title if e.isalnum() or e == "-")
+
+        for movie_file in movie["movieFile"]:
+            quality = movie_file['quality']['quality']['name']
+            radarr_metrics.QUALITY_MOVIE_COUNT.labels(quality, "total").inc()
+            radarr_metrics.QUALITY_MOVIE_COUNT.labels(quality, movie["rootFolderPath"]).inc()
 
         radarr_metrics.MOVIE_COUNT.labels(movie["rootFolderPath"]).inc()
 
