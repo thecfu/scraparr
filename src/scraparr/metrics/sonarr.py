@@ -20,6 +20,7 @@ TOTAL_DISK_SIZE = Gauge('sonarr_total_disk_size', 'Total disk size of Series in 
 FREE_DISK_SIZE = Gauge('sonarr_free_disk_size', 'Free disk size in Sonarr', ['path'])
 AVAILABLE_DISK_SIZE = Gauge('sonarr_available_disk_size', 'Available disk size in Sonarr', ['path'])
 MISSING_EPISODE_COUNT = Gauge('sonarr_missing_episodes', 'Number of missing episodes in Sonarr', ['path'])
+QUALITY_EPISODE_COUNT = Gauge('sonarr_quality_episodes', 'Number of episodes per quality in Sonarr', ['quality', 'path'])
 
 SERIES_GENRES_COUNT = Gauge('sonarr_genres_count', 'Number of Series per Genres in Sonarr', ['genre', 'path'])
 

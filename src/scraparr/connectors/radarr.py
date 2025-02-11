@@ -5,6 +5,7 @@ Module to handle the Metrics of the Radarr Service
 import time
 from datetime import datetime
 import scraparr.metrics.radarr as radarr_metrics
+from scraparr.metrics.general import UP
 from scraparr.util import get
 
 def get_movies(url, api_key):
@@ -14,7 +15,14 @@ def get_movies(url, api_key):
     res = get(f"{url}/api/v3/movie", api_key)
     end_time = time.time()
 
-    if not res == {}:
+    if res == {}:
+        UP.labels("radarr").set(0)
+    else:
+        for movie in res:
+            movie_file = get(f"{url}/api/v3/moviefile?movieId={movie['id']}", api_key)
+            movie["movieFile"] = movie_file
+
+        UP.labels("radarr").set(1)
         radarr_metrics.LAST_SCRAPE.set(end_time)
         radarr_metrics.SCRAPE_DURATION.set(end_time - initial_time)
     return res
@@ -24,16 +32,26 @@ def analyse_movies(movies, detailed):
 
     radarr_metrics.MOVIE_COUNT.labels("total").set(len(movies))
 
+    status_labels = {
+        "tba": radarr_metrics.TBA_MOVIES,
+        "in cinemas": radarr_metrics.IN_CINEMAS_MOVIES,
+        "announced": radarr_metrics.ANNOUNCED_MOVIES,
+        "released": radarr_metrics.RELEASED_MOVIES,
+        "deleted": radarr_metrics.DELETED_MOVIES
+    }
+
     for movie in movies:
         title = movie["title"].lower().replace(" ", "-")
-        # Remove special characters from title
         title = ''.join(e for e in title if e.isalnum() or e == "-")
+
+        for movie_file in movie["movieFile"]:
+            quality = movie_file['quality']['quality']['name']
+            radarr_metrics.QUALITY_MOVIE_COUNT.labels(quality, "total").inc()
+            radarr_metrics.QUALITY_MOVIE_COUNT.labels(quality, movie["rootFolderPath"]).inc()
 
         radarr_metrics.MOVIE_COUNT.labels(movie["rootFolderPath"]).inc()
 
         size_on_disk = movie["statistics"]["sizeOnDisk"]
-
-
         radarr_metrics.TOTAL_DISK_SIZE.labels("total").inc(size_on_disk)
         radarr_metrics.TOTAL_DISK_SIZE.labels(movie["rootFolderPath"]).inc(size_on_disk)
 
@@ -42,34 +60,21 @@ def analyse_movies(movies, detailed):
             radarr_metrics.MOVIE_DISK_SIZE.labels(title).set(size_on_disk)
             radarr_metrics.MOVIE_MONITORED.labels(title).set(1 if movie["monitored"] else 0)
 
-        if movie["status"] == "tba":
-            radarr_metrics.TBA_MOVIES.labels("total").inc()
-            radarr_metrics.TBA_MOVIES.labels(movie["rootFolderPath"]).inc()
-        elif movie["status"] == "in cinemas":
-            radarr_metrics.IN_CINEMAS_MOVIES.labels("total").inc()
-            radarr_metrics.IN_CINEMAS_MOVIES.labels(movie["rootFolderPath"]).inc()
-        elif movie["status"] == "announced":
-            radarr_metrics.ANNOUNCED_MOVIES.labels("total").inc()
-            radarr_metrics.ANNOUNCED_MOVIES.labels(movie["rootFolderPath"]).inc()
-        elif movie["status"] == "released":
-            radarr_metrics.RELEASED_MOVIES.labels("total").inc()
-            radarr_metrics.RELEASED_MOVIES.labels(movie["rootFolderPath"]).inc()
-        elif movie["status"] == "deleted":
-            radarr_metrics.DELETED_MOVIES.labels("total").inc()
-            radarr_metrics.DELETED_MOVIES.labels(movie["rootFolderPath"]).inc()
+        # Status-Verarbeitung mit Dictionary
+        if movie["status"] in status_labels:
+            status_labels[movie["status"]].labels("total").inc()
+            status_labels[movie["status"]].labels(movie["rootFolderPath"]).inc()
 
         for genre in movie["genres"]:
             radarr_metrics.MOVIE_GENRES_COUNT.labels(genre, "total").inc()
             radarr_metrics.MOVIE_GENRES_COUNT.labels(genre, movie["rootFolderPath"]).inc()
 
         if movie["monitored"]:
-            movie_count = movie["hasFile"]
-            if not movie_count:
+            if not movie["hasFile"]:
                 radarr_metrics.MISSING_MOVIES_COUNT.labels("total").inc()
                 radarr_metrics.MISSING_MOVIES_COUNT.labels(movie["rootFolderPath"]).inc()
-
                 if detailed:
-                    radarr_metrics.MOVIE_MISSING.labels(title).set(movie_count)
+                    radarr_metrics.MOVIE_MISSING.labels(title).set(1)
 
             radarr_metrics.MONITORED_MOVIES.labels("total").inc()
             radarr_metrics.MONITORED_MOVIES.labels(movie["rootFolderPath"]).inc()
