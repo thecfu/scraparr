@@ -5,6 +5,7 @@ Module to handle the Metrics of the Sonarr Service
 import time
 from datetime import datetime
 from scraparr.util import get
+from scraparr.metrics.general import UP
 import scraparr.metrics.sonarr as sonarr_metrics
 
 def get_series(url, api_key):
@@ -14,7 +15,10 @@ def get_series(url, api_key):
     res = get(f"{url}/api/v3/series", api_key)
     end_time = time.time()
 
-    if not res == {}:
+    if res == {}:
+        UP.labels("sonarr").set(0)
+    else:
+        UP.labels("sonarr").set(1)
         sonarr_metrics.LAST_SCRAPE.set(end_time)
         sonarr_metrics.SCRAPE_DURATION.set(end_time - initial_time)
     return res

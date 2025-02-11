@@ -5,6 +5,7 @@ Module to handle the Metrics of the Radarr Service
 import time
 from datetime import datetime
 import scraparr.metrics.radarr as radarr_metrics
+from scraparr.metrics.general import UP
 from scraparr.util import get
 
 def get_movies(url, api_key):
@@ -14,7 +15,10 @@ def get_movies(url, api_key):
     res = get(f"{url}/api/v3/movie", api_key)
     end_time = time.time()
 
-    if not res == {}:
+    if res == {}:
+        UP.labels("radarr").set(0)
+    else:
+        UP.labels("radarr").set(1)
         radarr_metrics.LAST_SCRAPE.set(end_time)
         radarr_metrics.SCRAPE_DURATION.set(end_time - initial_time)
     return res
