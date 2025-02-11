@@ -2,7 +2,7 @@
 name: Integration Template
 about: 'Template to add a new Integration '
 title: 'Add new Integration: **Service**'
-labels: ''
+labels: new Integration
 assignees: ''
 
 ---
