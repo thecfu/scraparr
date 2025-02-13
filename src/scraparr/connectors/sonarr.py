@@ -4,7 +4,7 @@ Module to handle the Metrics of the Sonarr Service
 
 import time
 from datetime import datetime
-from scraparr.util import get
+from scraparr import util
 from scraparr.metrics.general import UP
 import scraparr.metrics.sonarr as sonarr_metrics
 
@@ -12,14 +12,14 @@ def get_series(url, api_key):
     """Grab the Series from the Sonarr Endpoint"""
 
     initial_time = time.time()
-    res = get(f"{url}/api/v3/series", api_key)
+    res = util.get(f"{url}/api/v3/series", api_key)
     end_time = time.time()
 
     if res == {}:
         UP.labels("sonarr").set(0)
     else:
         for series in res:
-            episodes = get(f"{url}/api/v3/episodefile?seriesId={series['id']}", api_key)
+            episodes = util.get(f"{url}/api/v3/episodefile?seriesId={series['id']}", api_key)
             series["episodes"] = episodes
 
         UP.labels("sonarr").set(1)
@@ -32,62 +32,79 @@ def analyse_series(series, detailed):
     sonarr_metrics.SERIES_COUNT.labels("total").set(len(series))
 
     status_labels = {
-        "continuing": sonarr_metrics.CONTINUING_SERIES,
-        "upcoming": sonarr_metrics.UPCOMING_SERIES,
-        "ended": sonarr_metrics.ENDED_SERIES,
-        "deleted": sonarr_metrics.DELETED_SERIES
+        "continuing": {"func": sonarr_metrics.CONTINUING_SERIES, "paths": {"total": 0 }},
+        "upcoming": {"func": sonarr_metrics.UPCOMING_SERIES, "paths": {"total": 0 }},
+        "ended": {"func": sonarr_metrics.ENDED_SERIES, "paths": {"total": 0 }},
+        "deleted": {"func": sonarr_metrics.DELETED_SERIES, "paths": {"total": 0 }}
     }
+
+    quality_count = {}
+    genre_count = {}
+
+    used_size = {"total": 0}
+    series_count = {
+        "total": {"paths": {"total": len(series) }, "func": sonarr_metrics.SERIES_COUNT},
+        "missing": {"paths": {"total": 0 }, "func": sonarr_metrics.MISSING_EPISODE_COUNT},
+        "monitored": {"paths": {"total": 0 }, "func": sonarr_metrics.MONITORED_SERIES},
+        "unmonitored": {"paths": {"total": 0 }, "func": sonarr_metrics.UNMONITORED_SERIES},
+        "episode": {"paths": {"total": 0 }, "func": sonarr_metrics.EPISODE_COUNT}
+    }
+
+    # Reset Titled Metrics to insure deletion of old Series
+    sonarr_metrics.SERIES_EPISODE_COUNT.clear()
+    sonarr_metrics.SERIES_MISSING_EPISODE_COUNT.clear()
+    sonarr_metrics.SERIES_COUNT.clear()
+    sonarr_metrics.SERIES_DISK_SIZE.clear()
+    sonarr_metrics.SERIES_DOWNLOAD_PERCENTAGE.clear()
+    sonarr_metrics.SERIES_MONITORED.clear()
 
     for serie in series:
         title = serie["titleSlug"]
 
-        for episode in serie["episodes"]:
-            quality = episode['quality']['quality']['name']
-            sonarr_metrics.QUALITY_EPISODE_COUNT.labels(quality, "total").inc()
-            sonarr_metrics.QUALITY_EPISODE_COUNT.labels(quality, serie["rootFolderPath"]).inc()
+        util.increase_quality_count(quality_count, serie["episodes"], serie["rootFolderPath"])
 
         stats = serie["statistics"]
-        episode_count = stats["episodeCount"]
-        episode_file_count = stats["episodeFileCount"]
-        size_on_disk = stats["sizeOnDisk"]
+        root_folder = serie["rootFolderPath"]
 
-        sonarr_metrics.SERIES_COUNT.labels(serie["rootFolderPath"]).inc()
-        sonarr_metrics.EPISODE_COUNT.labels("total").inc(episode_count)
-        sonarr_metrics.EPISODE_COUNT.labels(serie["rootFolderPath"]).inc()
+        util.update_count(
+            [stats["sizeOnDisk"], used_size],
+            root_folder, series_count,
+            status_labels, stats["episodeFileCount"]
+        )
 
-        monitored_seasons = any(season['monitored'] for season in serie["seasons"])
-        if monitored_seasons:
-            missing = episode_count - episode_file_count
-            sonarr_metrics.MISSING_EPISODE_COUNT.labels("total").inc(missing)
-            sonarr_metrics.MISSING_EPISODE_COUNT.labels(serie["rootFolderPath"]).inc(missing)
-            if detailed:
-                sonarr_metrics.SERIES_MISSING_EPISODE_COUNT.labels(title).set(missing)
+        util.update_status(serie["status"], root_folder, status_labels)
 
-        sonarr_metrics.TOTAL_DISK_SIZE.labels("total").inc(size_on_disk)
-        sonarr_metrics.TOTAL_DISK_SIZE.labels(serie["rootFolderPath"]).inc(size_on_disk)
+        util.update_genre_count(serie["genres"], genre_count, root_folder)
+
+        for season in serie["seasons"]:
+            if season["monitored"]:
+                s_episode_count = season["statistics"]["episodeCount"]
+                missing = s_episode_count - season["statistics"]["episodeFileCount"]
+                series_count["missing"]["paths"]["total"] += missing
+                series_count["missing"]["paths"][root_folder] += missing
+                if detailed:
+                    sonarr_metrics.SERIES_MISSING_EPISODE_COUNT.labels(title).inc(missing)
 
         if detailed:
-            sonarr_metrics.SERIES_EPISODE_COUNT.labels(title).set(episode_count)
+            sonarr_metrics.SERIES_EPISODE_COUNT.labels(title).set(stats["episodeCount"])
             sonarr_metrics.SERIES_SEASON_COUNT.labels(title).set(stats["seasonCount"])
-            sonarr_metrics.SERIES_DISK_SIZE.labels(title).set(size_on_disk)
+            sonarr_metrics.SERIES_DISK_SIZE.labels(title).set(stats["sizeOnDisk"])
             sonarr_metrics.SERIES_DOWNLOAD_PERCENTAGE.labels(title).set(stats["percentOfEpisodes"])
             sonarr_metrics.SERIES_MONITORED.labels(title).set(1 if serie["monitored"] else 0)
 
-        # Status mit Dictionary verarbeiten
-        if serie["status"] in status_labels:
-            status_labels[serie["status"]].labels("total").inc()
-            status_labels[serie["status"]].labels(serie["rootFolderPath"]).inc()
-
-        for genre in serie["genres"]:
-            sonarr_metrics.SERIES_GENRES_COUNT.labels(genre, "total").inc()
-            sonarr_metrics.SERIES_GENRES_COUNT.labels(genre, serie["rootFolderPath"]).inc()
-
         if serie["monitored"]:
-            monitored_label = sonarr_metrics.MONITORED_SERIES
+            series_count["monitored"]["paths"]["total"] += 1
+            series_count["monitored"]["paths"][root_folder] += 1
         else:
-            monitored_label = sonarr_metrics.UNMONITORED_SERIES
-        monitored_label.labels("total").inc()
-        monitored_label.labels(serie["rootFolderPath"]).inc()
+            series_count["unmonitored"]["paths"]["total"] += 1
+            series_count["unmonitored"]["paths"][root_folder] += 1
+
+    util.update_media_metrics(
+        [quality_count, sonarr_metrics.QUALITY_EPISODE_COUNT],
+        [used_size, sonarr_metrics.TOTAL_DISK_SIZE],
+        [genre_count, sonarr_metrics.SERIES_GENRES_COUNT],
+        status_labels, series_count,
+    )
 
 def update_system_data(data):
     """Update the System Data Metrics"""
