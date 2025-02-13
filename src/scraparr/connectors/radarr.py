@@ -6,20 +6,20 @@ import time
 from datetime import datetime
 import scraparr.metrics.radarr as radarr_metrics
 from scraparr.metrics.general import UP
-from scraparr.util import get
+from scraparr import util
 
 def get_movies(url, api_key):
     """Grab the Movies from the Radarr Endpoint"""
 
     initial_time = time.time()
-    res = get(f"{url}/api/v3/movie", api_key)
+    res = util.get(f"{url}/api/v3/movie", api_key)
     end_time = time.time()
 
     if res == {}:
         UP.labels("radarr").set(0)
     else:
         for movie in res:
-            movie_file = get(f"{url}/api/v3/moviefile?movieId={movie['id']}", api_key)
+            movie_file = util.get(f"{url}/api/v3/moviefile?movieId={movie['id']}", api_key)
             movie["movieFile"] = movie_file
 
         UP.labels("radarr").set(1)
@@ -30,30 +30,43 @@ def get_movies(url, api_key):
 def analyse_movies(movies, detailed):
     """Analyse the Movies and set the Correct Metrics"""
 
-    radarr_metrics.MOVIE_COUNT.labels("total").set(len(movies))
+    # Reset Titled Metrics to insure deletion of old Movies
+    radarr_metrics.MOVIE_FILE_COUNT.clear()
+    radarr_metrics.MOVIE_DISK_SIZE.clear()
+    radarr_metrics.MOVIE_MONITORED.clear()
+    radarr_metrics.MOVIE_MISSING.clear()
 
     status_labels = {
-        "tba": radarr_metrics.TBA_MOVIES,
-        "in cinemas": radarr_metrics.IN_CINEMAS_MOVIES,
-        "announced": radarr_metrics.ANNOUNCED_MOVIES,
-        "released": radarr_metrics.RELEASED_MOVIES,
-        "deleted": radarr_metrics.DELETED_MOVIES
+        "tba": {"func": radarr_metrics.TBA_MOVIES, "paths": {"total": 0}},
+        "in cinemas": {"func": radarr_metrics.IN_CINEMAS_MOVIES, "paths": {"total": 0}},
+        "announced": {"func": radarr_metrics.ANNOUNCED_MOVIES, "paths": {"total": 0}},
+        "released": {"func": radarr_metrics.RELEASED_MOVIES, "paths": {"total": 0}},
+        "deleted": {"func": radarr_metrics.DELETED_MOVIES, "paths": {"total": 0}}
+    }
+
+    quality_count = {}
+    genre_count = {}
+
+    used_size = {"total": 0}
+    movie_count = {
+        "total": {"paths": {"total": len(movies) }, "func": radarr_metrics.MOVIE_COUNT},
+        "missing": {"paths": {"total": 0 }, "func": radarr_metrics.MISSING_MOVIES_COUNT},
+        "monitored": {"paths": {"total": 0 }, "func": radarr_metrics.MONITORED_MOVIES},
+        "unmonitored": {"paths": {"total": 0 }, "func": radarr_metrics.UNMONITORED_MOVIES}
     }
 
     for movie in movies:
         title = movie["title"].lower().replace(" ", "-")
         title = ''.join(e for e in title if e.isalnum() or e == "-")
 
-        for movie_file in movie["movieFile"]:
-            quality = movie_file['quality']['quality']['name']
-            radarr_metrics.QUALITY_MOVIE_COUNT.labels(quality, "total").inc()
-            radarr_metrics.QUALITY_MOVIE_COUNT.labels(quality, movie["rootFolderPath"]).inc()
+        root_folder = movie["rootFolderPath"]
 
-        radarr_metrics.MOVIE_COUNT.labels(movie["rootFolderPath"]).inc()
+        util.increase_quality_count(quality_count, movie["movieFile"], root_folder)
 
         size_on_disk = movie["statistics"]["sizeOnDisk"]
-        radarr_metrics.TOTAL_DISK_SIZE.labels("total").inc(size_on_disk)
-        radarr_metrics.TOTAL_DISK_SIZE.labels(movie["rootFolderPath"]).inc(size_on_disk)
+        util.update_count(
+            [size_on_disk, used_size],
+            root_folder, movie_count, status_labels)
 
         if detailed:
             radarr_metrics.MOVIE_FILE_COUNT.labels(title).set(movie["statistics"]["movieFileCount"])
@@ -61,26 +74,23 @@ def analyse_movies(movies, detailed):
             radarr_metrics.MOVIE_MONITORED.labels(title).set(1 if movie["monitored"] else 0)
 
         # Status-Verarbeitung mit Dictionary
-        if movie["status"] in status_labels:
-            status_labels[movie["status"]].labels("total").inc()
-            status_labels[movie["status"]].labels(movie["rootFolderPath"]).inc()
+        status = movie["status"].lower()
+        util.update_status(status, root_folder, status_labels)
 
-        for genre in movie["genres"]:
-            radarr_metrics.MOVIE_GENRES_COUNT.labels(genre, "total").inc()
-            radarr_metrics.MOVIE_GENRES_COUNT.labels(genre, movie["rootFolderPath"]).inc()
+        util.update_genre_count(movie["genres"], genre_count, root_folder)
 
-        if movie["monitored"]:
-            if not movie["hasFile"]:
-                radarr_metrics.MISSING_MOVIES_COUNT.labels("total").inc()
-                radarr_metrics.MISSING_MOVIES_COUNT.labels(movie["rootFolderPath"]).inc()
-                if detailed:
-                    radarr_metrics.MOVIE_MISSING.labels(title).set(1)
+        util.update_monitoring(
+            [movie, movie_count],
+            title, root_folder,
+            detailed, radarr_metrics.MOVIE_MISSING
+        )
 
-            radarr_metrics.MONITORED_MOVIES.labels("total").inc()
-            radarr_metrics.MONITORED_MOVIES.labels(movie["rootFolderPath"]).inc()
-        else:
-            radarr_metrics.UNMONITORED_MOVIES.labels("total").inc()
-            radarr_metrics.UNMONITORED_MOVIES.labels(movie["rootFolderPath"]).inc()
+    util.update_media_metrics(
+        [quality_count, radarr_metrics.QUALITY_MOVIE_COUNT],
+        [used_size, radarr_metrics.TOTAL_DISK_SIZE],
+        [genre_count, radarr_metrics.MOVIE_GENRES_COUNT],
+        status_labels, movie_count,
+    )
 
 def update_system_data(data):
     """Update the System Metrics"""
