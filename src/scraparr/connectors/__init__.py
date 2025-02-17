@@ -62,9 +62,9 @@ class Connectors:
     def get_system_data(self, service):
         """Function to get the System Data"""
         def root_folder():
-            data = get(f"{url}/api/v3/rootfolder", api_key)
+            data = get(f"{url}/api/{api_version}/rootfolder", api_key)
             if data:
-                diskspace_data = get(f"{url}/api/v3/diskspace", api_key)
+                diskspace_data = get(f"{url}/api/{api_version}/diskspace", api_key)
                 if diskspace_data:
                     report = []
                     for disk in diskspace_data:
@@ -74,13 +74,15 @@ class Connectors:
             return None
 
         def queue():
-            return get(f"{url}/api/v3/queue/status", api_key)
+            return get(f"{url}/api/{api_version}/queue/status", api_key)
 
         def status():
-            return get(f"{url}/api/v3/system/status", api_key)
+            return get(f"{url}/api/{api_version}/system/status", api_key)
 
         url = self.connectors[service]["config"].get('url')
         api_key = self.connectors[service]["config"].get('api_key')
+        api_version = self.connectors[service]["config"].get('api_version', 'v1')
+
         return {'root_folder': root_folder(), 'queue': queue(), 'status': status()}
 
     def scrape(self):
