@@ -1,21 +1,43 @@
----
-name: Integration Template
-about: 'Template to add a new Integration '
-title: 'Add new Integration: **Service**'
-labels: new Integration
-assignees: ''
-
----
-
-# Feature Request: Add Support for **Service**
-
-## Description
-
-## Proposed Solution 
-
-## API References
-
-## Additional Context
-
-- Should follow the same structure as existing *arr integrations.
-- Metrics should be prefixed with the Integration Name.
+name: New Integration
+description: Create a new integration to Integrate a new Service into Scraparr
+title: "[Integration] <Integration Name>"
+projects: ["thecfu/4"]
+type: "Add Integration"
+body:
+    - type: markdown
+      attributes:
+        value: |
+          ## Integration Form
+          Please fill out the form below to create a new integration for Scraparr.
+    - type: input
+      id: integration-name
+      attributes:
+        label: Integration Name
+        description: The name of the integration.
+      validations:
+        required: true
+    - type: textarea
+      id: integration-description
+      attributes:
+        label: Integration Description
+        description: A brief description of the integration.
+      validations:
+        required: true
+    - type: textarea
+      id: integration-api-reference
+      attributes:
+        label: API Reference
+        description: A link to the API reference for the integration.
+    - type: textarea
+      id: integration-additional-information
+      attributes:
+        label: Additional Information
+        description: Any additional information about the integration.
+    - type: checkboxes
+      id: terms
+      attributes:
+        label: Code of Conduct
+        description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/thecfu/scraparr?tab=coc-ov-file#readme).
+        options:
+          - label: I agree to follow this project's Code of Conduct
+            required: true
