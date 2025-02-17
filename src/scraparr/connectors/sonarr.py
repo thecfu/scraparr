@@ -8,18 +8,18 @@ from scraparr import util
 from scraparr.metrics.general import UP
 import scraparr.metrics.sonarr as sonarr_metrics
 
-def get_series(url, api_key):
+def get_series(url, api_key, version):
     """Grab the Series from the Sonarr Endpoint"""
 
     initial_time = time.time()
-    res = util.get(f"{url}/api/v3/series", api_key)
+    res = util.get(f"{url}/api/{version}/series", api_key)
     end_time = time.time()
 
     if res == {}:
         UP.labels("sonarr").set(0)
     else:
         for series in res:
-            episodes = util.get(f"{url}/api/v3/episodefile?seriesId={series['id']}", api_key)
+            episodes = util.get(f"{url}/api/{version}/episodefile?seriesId={series['id']}", api_key)
             series["episodes"] = episodes
 
         UP.labels("sonarr").set(1)
@@ -126,8 +126,9 @@ def scrape(config):
 
     url = config.get('url')
     api_key = config.get('api_key')
+    api_version = config.get('api_version', 'v1')
 
-    return get_series(url, api_key)
+    return get_series(url, api_key, api_version)
 
 def update_metrics(series, detailed):
     """Update the Metrics for the Sonarr Service"""

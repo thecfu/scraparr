@@ -8,11 +8,20 @@
 [SONARR]
 url = http://sonarr:8989
 api_key = key
+api_version = v3
 ; Get Data per Series
 detailed = true
 
 [RADARR]
 url = http://radarr:7878
 api_key = key
+api_version = v3
 ; Get Data per Movie
+detailed = true
+
+[PROWLARR]
+url = http://prowlarr:9696
+api_key = key
+api_version = v1
+; Get Data per Application/Indexer
 detailed = true

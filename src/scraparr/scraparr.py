@@ -33,15 +33,18 @@ port = config.get('GENERAL', 'port', fallback=7100)
 metrics_app = make_wsgi_app()
 app = Middleware(metrics_app)
 
+ACTIVE_CONNECTORS = ['SONARR', 'RADARR', 'PROWLARR']
+BEAUTIFUL_CONNECTORS = ", ".join(ACTIVE_CONNECTORS[:-1]) + " or " + ACTIVE_CONNECTORS[-1]
+
 if __name__ == '__main__':
-    if not any(section in config.sections() for section in ['SONARR', 'RADARR']):
-        logging.info("No configuration found for Sonarr or Radarr.")
+    if not any(section in config.sections() for section in ACTIVE_CONNECTORS):
+        logging.info("No configuration found for %s", BEAUTIFUL_CONNECTORS)
         sys.exit(1)
 
     connectors = scraparr.connectors.Connectors()
 
     for section in config.sections():
-        if section in ['SONARR', 'RADARR']:
+        if section in ACTIVE_CONNECTORS:
             connectors.add_connector(section.lower(), dict(config.items(section)))
 
     try:

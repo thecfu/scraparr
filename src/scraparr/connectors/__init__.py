@@ -9,6 +9,8 @@ import logging
 import concurrent.futures
 from scraparr.util import get
 
+indexers = ["sonarr", "radarr"]
+
 class Connectors:
     """Class to initialize Variable that are used to Identify the Connectors
      and log the last Scrape"""
@@ -62,9 +64,9 @@ class Connectors:
     def get_system_data(self, service):
         """Function to get the System Data"""
         def root_folder():
-            data = get(f"{url}/api/v3/rootfolder", api_key)
+            data = get(f"{url}/api/{api_version}/rootfolder", api_key)
             if data:
-                diskspace_data = get(f"{url}/api/v3/diskspace", api_key)
+                diskspace_data = get(f"{url}/api/{api_version}/diskspace", api_key)
                 if diskspace_data:
                     report = []
                     for disk in diskspace_data:
@@ -74,14 +76,18 @@ class Connectors:
             return None
 
         def queue():
-            return get(f"{url}/api/v3/queue/status", api_key)
+            return get(f"{url}/api/{api_version}/queue/status", api_key)
 
         def status():
-            return get(f"{url}/api/v3/system/status", api_key)
+            return get(f"{url}/api/{api_version}/system/status", api_key)
 
         url = self.connectors[service]["config"].get('url')
         api_key = self.connectors[service]["config"].get('api_key')
-        return {'root_folder': root_folder(), 'queue': queue(), 'status': status()}
+        api_version = self.connectors[service]["config"].get('api_version', 'v1')
+
+        if service in indexers:
+            return {'root_folder': root_folder(), 'queue': queue(), 'status': status()}
+        return {'status': status()}
 
     def scrape(self):
         """Function to Scrape all the Services"""

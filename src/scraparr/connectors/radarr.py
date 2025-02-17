@@ -8,18 +8,18 @@ import scraparr.metrics.radarr as radarr_metrics
 from scraparr.metrics.general import UP
 from scraparr import util
 
-def get_movies(url, api_key):
+def get_movies(url, api_key, version):
     """Grab the Movies from the Radarr Endpoint"""
 
     initial_time = time.time()
-    res = util.get(f"{url}/api/v3/movie", api_key)
+    res = util.get(f"{url}/api/{version}/movie", api_key)
     end_time = time.time()
 
     if res == {}:
         UP.labels("radarr").set(0)
     else:
         for movie in res:
-            movie_file = util.get(f"{url}/api/v3/moviefile?movieId={movie['id']}", api_key)
+            movie_file = util.get(f"{url}/api/{version}/moviefile?movieId={movie['id']}", api_key)
             movie["movieFile"] = movie_file
 
         UP.labels("radarr").set(1)
@@ -113,8 +113,9 @@ def scrape(config):
 
     url = config.get('url')
     api_key = config.get('api_key')
+    api_version = config.get('api_version', 'v1')
 
-    return get_movies(url, api_key)
+    return get_movies(url, api_key, api_version)
 
 def update_metrics(data, detailed):
     """Update the Radarr Metrics"""
