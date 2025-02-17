@@ -9,6 +9,8 @@ import logging
 import concurrent.futures
 from scraparr.util import get
 
+indexers = ["sonarr", "radarr"]
+
 class Connectors:
     """Class to initialize Variable that are used to Identify the Connectors
      and log the last Scrape"""
@@ -83,7 +85,9 @@ class Connectors:
         api_key = self.connectors[service]["config"].get('api_key')
         api_version = self.connectors[service]["config"].get('api_version', 'v1')
 
-        return {'root_folder': root_folder(), 'queue': queue(), 'status': status()}
+        if service in indexers:
+            return {'root_folder': root_folder(), 'queue': queue(), 'status': status()}
+        return {'status': status()}
 
     def scrape(self):
         """Function to Scrape all the Services"""
