@@ -16,13 +16,13 @@ def get_series(url, api_key, version, alias):
     end_time = time.time()
 
     if res == {}:
-        UP.labels(alias).set(0)
+        UP.labels(alias, 'sonarr').set(0)
     else:
         for series in res:
             episodes = util.get(f"{url}/api/{version}/episodefile?seriesId={series['id']}", api_key)
             series["episodes"] = episodes
 
-        UP.labels(alias).set(1)
+        UP.labels(alias, 'sonarr').set(1)
         sonarr_metrics.LAST_SCRAPE.labels(alias).set(end_time)
         sonarr_metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
     return res

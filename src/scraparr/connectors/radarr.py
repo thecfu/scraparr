@@ -16,13 +16,13 @@ def get_movies(url, api_key, version, alias):
     end_time = time.time()
 
     if res == {}:
-        UP.labels(alias).set(0)
+        UP.labels(alias, 'radarr').set(0)
     else:
         for movie in res:
             movie_file = util.get(f"{url}/api/{version}/moviefile?movieId={movie['id']}", api_key)
             movie["movieFile"] = movie_file
 
-        UP.labels(alias).set(1)
+        UP.labels(alias, 'radarr').set(1)
         radarr_metrics.LAST_SCRAPE.labels(alias).set(end_time)
         radarr_metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
     return res
