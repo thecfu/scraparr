@@ -1,6 +1,7 @@
 services:
   scraparr:
-    build: .
+    image: ghcr.io/thecfu/scraparr
+    container_name: scraparr
     ports:
       - "7100:7100"
     volumes:

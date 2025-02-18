@@ -5,34 +5,72 @@
 
 ---
 
-## Overview
+Scraparr is a Prometheus exporter for the *arr suite (Sonarr, Radarr, Lidarr, etc.). It provides metrics that can be scraped by Prometheus to monitor and visualize the health and performance of your *arr applications.
 
-Scraparr is a Prometheus exporter for the *arr Suite. It can call the API's of multiple Services and translate it into Prometheus readable metrics.
-Currently supported Services are:
-- Radarr
-- Sonarr
+## Features
+
+- Exposes detailed *arr metrics
+- Easy integration with Prometheus
+- Lightweight and efficient
+- Built for extensibility
 
 ## Installation
 
-1. Clone the repository:
-    ```sh
-    git clone https://github.com/TheCfU/scraparr.git
-    cd scraparr
-    ```
+### Local Setup
+1. Clone this repository:
+```sh
+git clone https://github.com/thecfu/scraparr.git
+cd scraparr/src
+```
+2. Install dependencies:
+```sh
+pip install -r scraparr/requirements.txt
+```
 
-2. Build the Docker image:
-    ```sh
-    docker build -t scraparr .
-    ```
+3. Run the exporter:
+```sh
+python -m scraparr.scraparr
+```
 
-3. Configure:
-    Edit the config.cnf file to your needs. <br />
-    Especially the API keys and URL of the Services you want to monitor.
+### Docker Setup
 
-4. Run the Docker container:
-    ```sh
-    docker run -d -p 7100:7100 -v ./config.cnf:/scraparr/config.cnf scraparr
-    ```
+You can either Clone the Repo and build the Docker Image locally or you can use the Image published in the Github Registry
+You can also check the [Docker-Compose](compose.yaml).
+
+Github Registry:
+`docker run -v config.cnf:/app/config.cnf -p 7100:7100 ghcr.io/thecfu/scraparr`
+
+## Configuration
+
+Scraparr needs's to be configured using a [config.cnf](config.cnf) file. Ensure the configuration specifies the URLs, API Version and API keys for the *arr services you want to monitor.
+
+Template for Service inside the config.cnf:
+
+```cnf
+[SONARR]
+url = http://localhost:8989
+api_key = YOUR_KEY
+api_version = v3
+detailed = true
+```
+
+> [!NOTE]  
+> If using the Docker Variant you need to use the IP or configure & use the extra_host `host.docker.internal:host-gateway`
+
+## Usage
+
+Once the service is running, it will expose metrics at http://localhost:7100/metrics (default port). You can configure Prometheus to scrape these metrics by adding the following job to your Prometheus configuration:
+
+```yaml
+scrape_configs:
+  - job_name: 'scraparr'
+    static_configs:
+      - targets: ['localhost:7100']
+```
+
+## Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request. Make sure to follow the contribution guidelines.
 
 ## License
 
