@@ -5,4 +5,4 @@ services:
     ports:
       - "7100:7100"
     volumes:
-      - ./config.cnf:/scraparr/config/config.cnf # For v1 Release use /scraparr/config.cnf
+      - ./config.yaml:/scraparr/config/config.yaml # For v1 Release use /scraparr/config.cnf and an ini File

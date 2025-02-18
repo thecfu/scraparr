@@ -52,15 +52,17 @@ def increase_quality_count(quality_count, files, path):
         quality_count[quality][path] += 1
 
 
-def update_monitoring(media, title, root_folder, detailed, missing_metrics):
+def update_monitoring(media, data, alias):
     """Update the Media Monitoring"""
+
+    title, root_folder, detailed, missing_metrics = data
 
     if media[0]["monitored"]:
         if not media[0]["hasFile"]:
             media[2]["missing"][0] += 1
             media[1]["missing"]["paths"][root_folder] += 1
             if detailed:
-                missing_metrics.labels(title).set(1)
+                missing_metrics.labels(alias, title).set(1)
 
         media[2]["monitored"][0] += 1
         media[1]["monitored"]["paths"][root_folder] += 1
@@ -91,40 +93,42 @@ def update_count(size, root_folder, media_count, status_labels, sonarr=None):
     size[1][root_folder] += size[0]
 
 
-def status_update(status_list):
+def status_update(status_list, alias):
     """Update the Status"""
     for status in status_list:
         for path, value in status_list[status]["paths"].items():
             if path == "total":
-                status_list[status]["func"][1].set(value)
+                status_list[status]["func"][1].labels(alias).set(value)
             else:
-                status_list[status]["func"][0].labels(path).set(value)
+                status_list[status]["func"][0].labels(alias, path).set(value)
 
-def total_with_label(data):
+def total_with_label(data, alias):
     """Get the total count with label"""
     for label, paths in data[0].items():
         for path, count in paths.items():
             if path == "total":
-                data[2].labels(label).set(count)
+                data[2].labels(alias, label).set(count)
             else:
-                data[1].labels(label, path).set(count)
+                data[1].labels(alias, label, path).set(count)
 
-def update_media_metrics(quality_data, used_size, genre_count, status_labels, media_count):
+def update_media_metrics(media, alias):
     """Update the Media Metrics"""
 
-    total_with_label(quality_data)
-    total_with_label(genre_count)
+    quality_data, used_size, genre_count, status_labels, media_count = media
 
-    for status in media_count[0]:
-        for path, count in media_count[0][status]["paths"].items():
-            media_count[0][status]["func"].labels(path).set(count)
-    for status in media_count[1]:
-        media_count[1][status][1].set(media_count[1][status][0])
+    total_with_label(quality_data, alias)
+    total_with_label(genre_count, alias)
+
+    for status in media_count["path"]:
+        for path, count in media_count["path"][status]["paths"].items():
+            media_count["path"][status]["func"].labels(alias, path).set(count)
+    for status in media_count["total"]:
+        media_count["total"][status][1].labels(alias).set(media_count["total"][status][0])
 
     for path, size in used_size[0].items():
         if path == "total":
-            used_size[2].set(size)
+            used_size[2].labels(alias).set(size)
         else:
-            used_size[1].labels(path).set(size)
+            used_size[1].labels(alias, path).set(size)
 
-    status_update(status_labels)
+    status_update(status_labels, alias)
