@@ -24,7 +24,7 @@ import scraparr.connectors
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 CONFIG = configparser.ConfigParser()
-CONFIG.read('scraparr/config.cnf')
+CONFIG.read('/scraparr/config/config.cnf')
 
 PATH = CONFIG.get('GENERAL', 'path', fallback="/metrics")
 ADDRESS = CONFIG.get('GENERAL', 'address', fallback="0.0.0.0")
