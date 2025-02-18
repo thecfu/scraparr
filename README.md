@@ -38,7 +38,7 @@ You can either Clone the Repo and build the Docker Image locally or you can use 
 You can also check the [Docker-Compose](compose.yaml).
 
 Github Registry:
-`docker run -v config.cnf:/app/config.cnf -p 7100:7100 ghcr.io/thecfu/scraparr`
+`docker run -v ./config.cnf:/scraparr/config.cnf -p 7100:7100 ghcr.io/thecfu/scraparr`
 
 ## Configuration
 
