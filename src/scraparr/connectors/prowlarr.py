@@ -129,10 +129,11 @@ def analyse_indexers(indexers, detailed):
             prowlarr_metrics.INDEXER_ENABLED_T.set(enabled)
             prowlarr_metrics.INDEXER_PRIVACY_T.labels("private").set(private)
             prowlarr_metrics.INDEXER_PRIVACY_T.labels("public").set(public)
-        prowlarr_metrics.INDEXER_COUNT.labels(types).set(total)
-        prowlarr_metrics.INDEXER_ENABLED.labels(types, "total").set(enabled)
-        prowlarr_metrics.INDEXER_PRIVACY.labels(types, "private").set(private)
-        prowlarr_metrics.INDEXER_PRIVACY.labels(types, "public").set(public)
+        else:
+            prowlarr_metrics.INDEXER_COUNT.labels(types).set(total)
+            prowlarr_metrics.INDEXER_ENABLED.labels(types, "total").set(enabled)
+            prowlarr_metrics.INDEXER_PRIVACY.labels(types, "private").set(private)
+            prowlarr_metrics.INDEXER_PRIVACY.labels(types, "public").set(public)
 
 
 def scrape(config):
