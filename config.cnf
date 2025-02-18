@@ -5,6 +5,13 @@
 ; Exporter Metrics Path
 ;path = /metrics
 
+[AUTH]
+; Basic Auth
+;username = user
+;password = pass
+; Bearer Token
+;token = token
+
 [SONARR]
 url = http://sonarr:8989
 api_key = key
