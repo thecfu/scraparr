@@ -38,26 +38,42 @@ You can either Clone the Repo and build the Docker Image locally or you can use 
 You can also check the [Docker-Compose](compose.yaml).
 
 Github Registry:
-`docker run -v ./config.cnf:/scraparr/config/config.cnf -p 7100:7100 ghcr.io/thecfu/scraparr`
+`docker run -v ./config.yaml:/scraparr/config/config.yaml -p 7100:7100 ghcr.io/thecfu/scraparr`
 
 > [!NOTE]  
-> If your using any v1 Version the config is located at `/scraparr/config.cnf`
+> If your using any v1 Version check the Readme of the [v1 Branch](https://github.com/thecfu/scraparr/tree/v1#readme)
 
 ## Configuration
 
-Scraparr needs's to be configured using a [config.cnf](config.cnf) file. Ensure the configuration specifies the URLs, API Version and API keys for the *arr services you want to monitor.
+> [!NOTE]  
+> If your using any v1 Version check the Readme of the [v1 Branch](https://github.com/thecfu/scraparr/tree/v1#readme)
 
-Template for Service inside the config.cnf:
+Scraparr need's to be configured using a [config.yaml](config.yaml) file. Ensure the configuration specifies the URLs and API keys for the *arr services you want to monitor.
 
-```cnf
-[SONARR]
-url = http://localhost:8989
-api_key = YOUR_KEY
-api_version = v3
-detailed = true
+Template for Service inside the config.yaml:
+
+```yaml
+sonarr:
+  url: http://sonarr:8989
+  api_key: key
+  # alias: sonarr # Optional to Differentiate between multiple Services
+  # api_version: v3 # Optional to use a different API Version
+  # detailed: true  # Get Data per Series
 ```
 
-> [!NOTE]  
+To Configure multiple Instances of the same Service you can configure them like this:
+
+```yaml
+sonarr:
+  - url: http://sonarr:8989
+    api_key: key
+    alias: sonarr1
+  - url: http://sonarr2:8989
+    api_key: key
+    alias: sonarr2
+```
+
+> [!WARNING]  
 > If using the Docker Variant you need to use the IP or configure & use the extra_host `host.docker.internal:host-gateway`
 
 ## Usage

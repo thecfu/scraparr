@@ -8,7 +8,7 @@ import scraparr.metrics.radarr as radarr_metrics
 from scraparr.metrics.general import UP
 from scraparr import util
 
-def get_movies(url, api_key, version):
+def get_movies(url, api_key, version, alias):
     """Grab the Movies from the Radarr Endpoint"""
 
     initial_time = time.time()
@@ -16,18 +16,18 @@ def get_movies(url, api_key, version):
     end_time = time.time()
 
     if res == {}:
-        UP.labels("radarr").set(0)
+        UP.labels(alias).set(0)
     else:
         for movie in res:
             movie_file = util.get(f"{url}/api/{version}/moviefile?movieId={movie['id']}", api_key)
             movie["movieFile"] = movie_file
 
-        UP.labels("radarr").set(1)
-        radarr_metrics.LAST_SCRAPE.set(end_time)
-        radarr_metrics.SCRAPE_DURATION.set(end_time - initial_time)
+        UP.labels(alias).set(1)
+        radarr_metrics.LAST_SCRAPE.labels(alias).set(end_time)
+        radarr_metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
     return res
 
-def analyse_movies(movies, detailed):
+def analyse_movies(movies, detailed, alias):
     """Analyse the Movies and set the Correct Metrics"""
 
     # Reset Titled Metrics to insure deletion of old Movies
@@ -62,20 +62,22 @@ def analyse_movies(movies, detailed):
     quality_count = {}
     genre_count = {}
 
-    radarr_metrics.MOVIE_COUNT_T.set(len(movies))
+    radarr_metrics.MOVIE_COUNT_T.labels(alias).set(len(movies))
 
     used_size = {"total": 0}
-    movie_count = {
-        "total": {"paths": {}, "func": radarr_metrics.MOVIE_COUNT},
-        "missing": {"paths": {"total": 0 }, "func": radarr_metrics.MISSING_MOVIES_COUNT},
-        "monitored": {"paths": {"total": 0 }, "func": radarr_metrics.MONITORED_MOVIES},
-        "unmonitored": {"paths": {"total": 0 }, "func": radarr_metrics.UNMONITORED_MOVIES}
-    }
 
-    total_count = {
-        "missing": [0, radarr_metrics.MISSING_MOVIES_COUNT_T],
-        "monitored": [0, radarr_metrics.MONITORED_MOVIES_T],
-        "unmonitored": [0, radarr_metrics.UNMONITORED_MOVIES_T]
+    counter = {
+        "path": {
+            "total": {"paths": {}, "func": radarr_metrics.MOVIE_COUNT},
+            "missing": {"paths": {}, "func": radarr_metrics.MISSING_MOVIES_COUNT},
+            "monitored": {"paths": {}, "func": radarr_metrics.MONITORED_MOVIES},
+            "unmonitored": {"paths": {}, "func": radarr_metrics.UNMONITORED_MOVIES}
+        },
+        "total": {
+            "missing": [0, radarr_metrics.MISSING_MOVIES_COUNT_T],
+            "monitored": [0, radarr_metrics.MONITORED_MOVIES_T],
+            "unmonitored": [0, radarr_metrics.UNMONITORED_MOVIES_T]
+        }
     }
 
     for movie in movies:
@@ -89,12 +91,15 @@ def analyse_movies(movies, detailed):
         size_on_disk = movie["statistics"]["sizeOnDisk"]
         util.update_count(
             [size_on_disk, used_size],
-            root_folder, movie_count, status_labels)
+            root_folder, counter["path"], status_labels)
 
         if detailed:
-            radarr_metrics.MOVIE_FILE_COUNT.labels(title).set(movie["statistics"]["movieFileCount"])
-            radarr_metrics.MOVIE_DISK_SIZE.labels(title).set(size_on_disk)
-            radarr_metrics.MOVIE_MONITORED.labels(title).set(1 if movie["monitored"] else 0)
+            (radarr_metrics.MOVIE_FILE_COUNT
+                .labels(alias, title)
+                .set(movie["statistics"]["movieFileCount"])
+            )
+            radarr_metrics.MOVIE_DISK_SIZE.labels(alias, title).set(size_on_disk)
+            radarr_metrics.MOVIE_MONITORED.labels(alias, title).set(1 if movie["monitored"] else 0)
 
         # Status-Verarbeitung mit Dictionary
         status = movie["status"].lower()
@@ -103,45 +108,47 @@ def analyse_movies(movies, detailed):
         util.update_genre_count(movie["genres"], genre_count, root_folder)
 
         util.update_monitoring(
-            [movie, movie_count, total_count],
-            title, root_folder,
-            detailed, radarr_metrics.MOVIE_MISSING
+            [movie, counter["path"], counter["total"]],
+            [title, root_folder,
+            detailed, radarr_metrics.MOVIE_MISSING],
+            alias
         )
 
     util.update_media_metrics(
-        [quality_count, radarr_metrics.QUALITY_MOVIE_COUNT, radarr_metrics.QUALITY_MOVIE_COUNT_T],
+        [[quality_count, radarr_metrics.QUALITY_MOVIE_COUNT, radarr_metrics.QUALITY_MOVIE_COUNT_T],
         [used_size, radarr_metrics.TOTAL_DISK_SIZE, radarr_metrics.TOTAL_DISK_SIZE_T],
         [genre_count, radarr_metrics.MOVIE_GENRES_COUNT, radarr_metrics.MOVIE_GENRES_COUNT_T],
-        status_labels, [movie_count, total_count]
+        status_labels, counter], alias
     )
 
-def update_system_data(data):
+def update_system_data(data, alias):
     """Update the System Metrics"""
 
     for disk in data['root_folder']:
-        radarr_metrics.FREE_DISK_SIZE.labels(disk["path"]).set(disk["freeSpace"])
-        radarr_metrics.AVAILABLE_DISK_SIZE.labels(disk["path"]).set(disk["totalSpace"])
+        radarr_metrics.FREE_DISK_SIZE.labels(alias, disk["path"]).set(disk["freeSpace"])
+        radarr_metrics.AVAILABLE_DISK_SIZE.labels(alias, disk["path"]).set(disk["totalSpace"])
 
-    radarr_metrics.QUEUE_COUNT.set(data["queue"]["totalCount"])
-    radarr_metrics.QUEUE_ERROR.set(data["queue"]["errors"])
-    radarr_metrics.QUEUE_WARNING.set(data["queue"]["warnings"])
+    radarr_metrics.QUEUE_COUNT.labels(alias).set(data["queue"]["totalCount"])
+    radarr_metrics.QUEUE_ERROR.labels(alias).set(data["queue"]["errors"])
+    radarr_metrics.QUEUE_WARNING.labels(alias).set(data["queue"]["warnings"])
 
     start_time = datetime.strptime(data["status"]["startTime"], "%Y-%m-%dT%H:%M:%SZ").timestamp()
     build_time = datetime.strptime(data["status"]["buildTime"], "%Y-%m-%dT%H:%M:%SZ").timestamp()
-    radarr_metrics.START_TIME.set(start_time)
-    radarr_metrics.BUILD_TIME.set(build_time)
+    radarr_metrics.START_TIME.labels(alias).set(start_time)
+    radarr_metrics.BUILD_TIME.labels(alias).set(build_time)
 
 def scrape(config):
     """Scrape the Radarr Service"""
 
     url = config.get('url')
     api_key = config.get('api_key')
-    api_version = config.get('api_version', 'v1')
+    api_version = config.get('api_version', 'v3')
+    alias = config.get('alias', 'radarr')
 
-    return get_movies(url, api_key, api_version)
+    return get_movies(url, api_key, api_version, alias)
 
-def update_metrics(data, detailed):
+def update_metrics(data, detailed, alias):
     """Update the Radarr Metrics"""
 
-    analyse_movies(data['data'], detailed)
-    update_system_data(data['system'])
+    analyse_movies(data['data'], detailed, alias)
+    update_system_data(data['system'], alias)

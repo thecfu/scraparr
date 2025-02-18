@@ -1,3 +1,4 @@
 prometheus_client
 requests
 werkzeug
+pyyaml
