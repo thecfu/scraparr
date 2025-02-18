@@ -40,9 +40,9 @@ def get_applications(url, api_key, version, alias):
     res = get(f"{url}/api/{version}/applications", api_key)
 
     if res == {}:
-        UP.labels(alias).set(0)
+        UP.labels(alias, 'prowlarr').set(0)
     else:
-        UP.labels(alias).set(1)
+        UP.labels(alias, 'prowlarr').set(1)
     return res
 
 def update_system_data(data, alias):
