@@ -17,7 +17,7 @@ def get_indexers(url, api_key, version, alias):
     end_time = time.time()
 
     if res == {}:
-        UP.labels(alias).set(0)
+        UP.labels(alias, 'prowlarr').set(0)
     else:
         status = get(f"{url}/api/{version}/indexerstatus", api_key)
 
@@ -29,7 +29,7 @@ def get_indexers(url, api_key, version, alias):
             if indexer['id'] in stat_dict:
                 indexer['status'] = stat_dict[indexer['id']]
 
-        UP.labels(alias).set(1)
+        UP.labels(alias, 'prowlarr').set(1)
         prowlarr_metrics.LAST_SCRAPE.labels(alias).set(end_time)
         prowlarr_metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
     return res
