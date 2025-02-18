@@ -1884,7 +1884,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "up{job=\"$job\", service=\"radarr\"}",
+          "expr": "scraparr_services_up{job=\"$job\", scraparr_services=\"radarr\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
@@ -2319,7 +2319,7 @@
             "uid": "${datasource}"
           },
           "disableTextWrap": false,
-          "editorMode": "code",
+          "editorMode": "builder",
           "expr": "radarr_disk_size{job=\"$job\"}",
           "fullMetaSearch": false,
           "hide": false,
@@ -2665,13 +2665,13 @@
     ]
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-5m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Scraping",
   "uid": "becuowssfebcwa",
-  "version": 11,
+  "version": 12,
   "weekStart": ""
 }

@@ -16,8 +16,8 @@ QUEUE_WARNING = Gauge('radarr_queue_warning', 'Item in Radarr queue with warning
 # Metrics for Total Count
 MOVIE_COUNT = Gauge('radarr_movies', 'Number of movies in Radarr', ['path'])
 MOVIE_COUNT_T = Gauge('radarr_movies_total', 'Number of movies in Radarr')
-TOTAL_DISK_SIZE = Gauge('radarr_on_disk_size', 'Total disk size of movies in Radarr', ['path'])
-TOTAL_DISK_SIZE_T = Gauge('radarr_on_disk_size_total', 'Total disk size of movies in Radarr')
+TOTAL_DISK_SIZE = Gauge('radarr_disk_size', 'Total disk size of movies in Radarr', ['path'])
+TOTAL_DISK_SIZE_T = Gauge('radarr_disk_size_total', 'Total disk size of movies in Radarr')
 FREE_DISK_SIZE = Gauge('radarr_free_disk_size', 'Free disk size in Radarr', ['path'])
 AVAILABLE_DISK_SIZE = Gauge('radarr_available_disk_size', 'Available disk size in Radarr', ['path'])
 
