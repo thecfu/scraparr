@@ -73,9 +73,9 @@ def analyse_applications(applications, detailed):
             prowlarr_metrics.APPLICATION_ENABLED.labels(application["name"]).set(enabled)
             prowlarr_metrics.APPLICATION_SYNC_LEVEL.labels(application["name"], sync_level).set(1)
 
-    prowlarr_metrics.APPLICATION_ENABLED.labels("total").set(enabled_t)
+    prowlarr_metrics.APPLICATION_ENABLED_T.set(enabled_t)
     for sync_level, count in sync_level_count.items():
-        prowlarr_metrics.APPLICATION_SYNC_LEVEL.labels("total", sync_level).set(count)
+        prowlarr_metrics.APPLICATION_SYNC_LEVEL_T.labels(sync_level).set(count)
 
 def analyse_indexers(indexers, detailed):
     """Analyse the Indexers"""
@@ -124,6 +124,11 @@ def analyse_indexers(indexers, detailed):
         private = counts["private"]
         public = counts["public"]
 
+        if types == "total":
+            prowlarr_metrics.INDEXER_COUNT_T.set(total)
+            prowlarr_metrics.INDEXER_ENABLED_T.set(enabled)
+            prowlarr_metrics.INDEXER_PRIVACY_T.labels("private").set(private)
+            prowlarr_metrics.INDEXER_PRIVACY_T.labels("public").set(public)
         prowlarr_metrics.INDEXER_COUNT.labels(types).set(total)
         prowlarr_metrics.INDEXER_ENABLED.labels(types, "total").set(enabled)
         prowlarr_metrics.INDEXER_PRIVACY.labels(types, "private").set(private)

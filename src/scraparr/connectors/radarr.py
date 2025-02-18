@@ -37,22 +37,45 @@ def analyse_movies(movies, detailed):
     radarr_metrics.MOVIE_MISSING.clear()
 
     status_labels = {
-        "tba": {"func": radarr_metrics.TBA_MOVIES, "paths": {"total": 0}},
-        "in cinemas": {"func": radarr_metrics.IN_CINEMAS_MOVIES, "paths": {"total": 0}},
-        "announced": {"func": radarr_metrics.ANNOUNCED_MOVIES, "paths": {"total": 0}},
-        "released": {"func": radarr_metrics.RELEASED_MOVIES, "paths": {"total": 0}},
-        "deleted": {"func": radarr_metrics.DELETED_MOVIES, "paths": {"total": 0}}
+        "tba": {
+            "func": [radarr_metrics.TBA_MOVIES, radarr_metrics.TBA_MOVIES_T],
+            "paths": {"total": 0}
+        },
+        "in cinemas": {
+            "func": [radarr_metrics.IN_CINEMAS_MOVIES, radarr_metrics.IN_CINEMAS_MOVIES_T],
+            "paths": {"total": 0}
+        },
+        "announced": {
+            "func": [radarr_metrics.ANNOUNCED_MOVIES, radarr_metrics.ANNOUNCED_MOVIES_T],
+            "paths": {"total": 0}
+        },
+        "released": {
+            "func": [radarr_metrics.RELEASED_MOVIES, radarr_metrics.RELEASED_MOVIES_T],
+            "paths": {"total": 0}
+        },
+        "deleted": {
+            "func": [radarr_metrics.DELETED_MOVIES, radarr_metrics.DELETED_MOVIES_T],
+            "paths": {"total": 0}
+        }
     }
 
     quality_count = {}
     genre_count = {}
 
+    radarr_metrics.MOVIE_COUNT_T.set(len(movies))
+
     used_size = {"total": 0}
     movie_count = {
-        "total": {"paths": {"total": len(movies) }, "func": radarr_metrics.MOVIE_COUNT},
+        "total": {"paths": {}, "func": radarr_metrics.MOVIE_COUNT},
         "missing": {"paths": {"total": 0 }, "func": radarr_metrics.MISSING_MOVIES_COUNT},
         "monitored": {"paths": {"total": 0 }, "func": radarr_metrics.MONITORED_MOVIES},
         "unmonitored": {"paths": {"total": 0 }, "func": radarr_metrics.UNMONITORED_MOVIES}
+    }
+
+    total_count = {
+        "missing": [0, radarr_metrics.MISSING_MOVIES_COUNT_T],
+        "monitored": [0, radarr_metrics.MONITORED_MOVIES_T],
+        "unmonitored": [0, radarr_metrics.UNMONITORED_MOVIES_T]
     }
 
     for movie in movies:
@@ -80,16 +103,16 @@ def analyse_movies(movies, detailed):
         util.update_genre_count(movie["genres"], genre_count, root_folder)
 
         util.update_monitoring(
-            [movie, movie_count],
+            [movie, movie_count, total_count],
             title, root_folder,
             detailed, radarr_metrics.MOVIE_MISSING
         )
 
     util.update_media_metrics(
-        [quality_count, radarr_metrics.QUALITY_MOVIE_COUNT],
-        [used_size, radarr_metrics.TOTAL_DISK_SIZE],
-        [genre_count, radarr_metrics.MOVIE_GENRES_COUNT],
-        status_labels, movie_count,
+        [quality_count, radarr_metrics.QUALITY_MOVIE_COUNT, radarr_metrics.QUALITY_MOVIE_COUNT_T],
+        [used_size, radarr_metrics.TOTAL_DISK_SIZE, radarr_metrics.TOTAL_DISK_SIZE_T],
+        [genre_count, radarr_metrics.MOVIE_GENRES_COUNT, radarr_metrics.MOVIE_GENRES_COUNT_T],
+        status_labels, [movie_count, total_count]
     )
 
 def update_system_data(data):
