@@ -40,6 +40,9 @@ You can also check the [Docker-Compose](compose.yaml).
 Github Registry:
 `docker run -v ./config.cnf:/scraparr/config/config.cnf -p 7100:7100 ghcr.io/thecfu/scraparr`
 
+> [!NOTE]  
+> If your using any v1 Version the config is located at `/scraparr/config.cnf`
+
 ## Configuration
 
 Scraparr needs's to be configured using a [config.cnf](config.cnf) file. Ensure the configuration specifies the URLs, API Version and API keys for the *arr services you want to monitor.
