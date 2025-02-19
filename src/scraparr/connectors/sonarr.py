@@ -8,7 +8,7 @@ from scraparr import util
 from scraparr.metrics.general import UP
 import scraparr.metrics.sonarr as sonarr_metrics
 
-def get_series(url, api_key, version):
+def get_series(url, api_key, version, alias):
     """Grab the Series from the Sonarr Endpoint"""
 
     initial_time = time.time()
@@ -16,38 +16,60 @@ def get_series(url, api_key, version):
     end_time = time.time()
 
     if res == {}:
-        UP.labels("sonarr").set(0)
+        UP.labels(alias, 'sonarr').set(0)
     else:
         for series in res:
             episodes = util.get(f"{url}/api/{version}/episodefile?seriesId={series['id']}", api_key)
             series["episodes"] = episodes
 
-        UP.labels("sonarr").set(1)
-        sonarr_metrics.LAST_SCRAPE.set(end_time)
-        sonarr_metrics.SCRAPE_DURATION.set(end_time - initial_time)
+        UP.labels(alias, 'sonarr').set(1)
+        sonarr_metrics.LAST_SCRAPE.labels(alias).set(end_time)
+        sonarr_metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
     return res
-def analyse_series(series, detailed):
+
+def analyse_series(series, detailed, alias):
     """Analyse the Series and set the Correct Metrics"""
 
-    sonarr_metrics.SERIES_COUNT.labels("total").set(len(series))
-
     status_labels = {
-        "continuing": {"func": sonarr_metrics.CONTINUING_SERIES, "paths": {"total": 0 }},
-        "upcoming": {"func": sonarr_metrics.UPCOMING_SERIES, "paths": {"total": 0 }},
-        "ended": {"func": sonarr_metrics.ENDED_SERIES, "paths": {"total": 0 }},
-        "deleted": {"func": sonarr_metrics.DELETED_SERIES, "paths": {"total": 0 }}
+        "continuing": {
+            "func": [sonarr_metrics.CONTINUING_SERIES, sonarr_metrics.CONTINUING_SERIES_T],
+            "paths": {"total": 0}
+        },
+        "upcoming": {
+            "func": [sonarr_metrics.UPCOMING_SERIES, sonarr_metrics.UPCOMING_SERIES_T],
+            "paths": {"total": 0}
+        },
+        "ended": {
+            "func": [sonarr_metrics.ENDED_SERIES, sonarr_metrics.ENDED_SERIES_T],
+            "paths": {"total": 0}
+        },
+        "deleted": {
+            "func": [sonarr_metrics.DELETED_SERIES, sonarr_metrics.DELETED_SERIES_T],
+            "paths": {"total": 0}
+        }
     }
 
     quality_count = {}
     genre_count = {}
 
+    sonarr_metrics.SERIES_COUNT_T.labels(alias).set(len(series))
+
     used_size = {"total": 0}
-    series_count = {
-        "total": {"paths": {"total": len(series) }, "func": sonarr_metrics.SERIES_COUNT},
-        "missing": {"paths": {"total": 0 }, "func": sonarr_metrics.MISSING_EPISODE_COUNT},
-        "monitored": {"paths": {"total": 0 }, "func": sonarr_metrics.MONITORED_SERIES},
-        "unmonitored": {"paths": {"total": 0 }, "func": sonarr_metrics.UNMONITORED_SERIES},
-        "episode": {"paths": {"total": 0 }, "func": sonarr_metrics.EPISODE_COUNT}
+
+    counter = {
+        "path": {
+            "total": {"paths": {}, "func": sonarr_metrics.SERIES_COUNT},
+            "missing": {"paths": {}, "func": sonarr_metrics.MISSING_EPISODE_COUNT},
+            "monitored": {"paths": {}, "func": sonarr_metrics.MONITORED_SERIES},
+            "unmonitored": {"paths": {}, "func": sonarr_metrics.UNMONITORED_SERIES},
+            "episode": {"paths": {}, "func": sonarr_metrics.EPISODE_COUNT}
+        },
+        "total": {
+            "missing": [0, sonarr_metrics.MISSING_EPISODE_COUNT_T],
+            "monitored": [0, sonarr_metrics.MONITORED_SERIES_T],
+            "unmonitored": [0, sonarr_metrics.UNMONITORED_SERIES_T],
+            "episode": [0, sonarr_metrics.EPISODE_COUNT_T]
+        }
     }
 
     # Reset Titled Metrics to insure deletion of old Series
@@ -68,8 +90,8 @@ def analyse_series(series, detailed):
 
         util.update_count(
             [stats["sizeOnDisk"], used_size],
-            root_folder, series_count,
-            status_labels, stats["episodeFileCount"]
+            root_folder, counter["path"],
+            status_labels, [stats["episodeFileCount"], counter["total"]]
         )
 
         util.update_status(serie["status"], root_folder, status_labels)
@@ -80,58 +102,65 @@ def analyse_series(series, detailed):
             if season["monitored"]:
                 s_episode_count = season["statistics"]["episodeCount"]
                 missing = s_episode_count - season["statistics"]["episodeFileCount"]
-                series_count["missing"]["paths"]["total"] += missing
-                series_count["missing"]["paths"][root_folder] += missing
+                counter["total"]["missing"][0] += missing
+                counter["path"]["missing"]["paths"][root_folder] += missing
                 if detailed:
-                    sonarr_metrics.SERIES_MISSING_EPISODE_COUNT.labels(title).inc(missing)
+                    sonarr_metrics.SERIES_MISSING_EPISODE_COUNT.labels(alias, title).inc(missing)
 
         if detailed:
-            sonarr_metrics.SERIES_EPISODE_COUNT.labels(title).set(stats["episodeCount"])
-            sonarr_metrics.SERIES_SEASON_COUNT.labels(title).set(stats["seasonCount"])
-            sonarr_metrics.SERIES_DISK_SIZE.labels(title).set(stats["sizeOnDisk"])
-            sonarr_metrics.SERIES_DOWNLOAD_PERCENTAGE.labels(title).set(stats["percentOfEpisodes"])
-            sonarr_metrics.SERIES_MONITORED.labels(title).set(1 if serie["monitored"] else 0)
+            sonarr_metrics.SERIES_EPISODE_COUNT.labels(alias, title).set(stats["episodeCount"])
+            sonarr_metrics.SERIES_SEASON_COUNT.labels(alias, title).set(stats["seasonCount"])
+            sonarr_metrics.SERIES_DISK_SIZE.labels(alias, title).set(stats["sizeOnDisk"])
+            (sonarr_metrics
+                .SERIES_DOWNLOAD_PERCENTAGE.labels(alias, title)
+                .set(stats["percentOfEpisodes"]))
+            sonarr_metrics.SERIES_MONITORED.labels(alias, title).set(1 if serie["monitored"] else 0)
 
         if serie["monitored"]:
-            series_count["monitored"]["paths"]["total"] += 1
-            series_count["monitored"]["paths"][root_folder] += 1
+            counter["total"]["monitored"][0] += 1
+            counter["path"]["monitored"]["paths"][root_folder] += 1
         else:
-            series_count["unmonitored"]["paths"]["total"] += 1
-            series_count["unmonitored"]["paths"][root_folder] += 1
+            counter["total"]["unmonitored"][0] += 1
+            counter["path"]["unmonitored"]["paths"][root_folder] += 1
 
     util.update_media_metrics(
-        [quality_count, sonarr_metrics.QUALITY_EPISODE_COUNT],
-        [used_size, sonarr_metrics.TOTAL_DISK_SIZE],
-        [genre_count, sonarr_metrics.SERIES_GENRES_COUNT],
-        status_labels, series_count,
+        [[
+            quality_count,
+            sonarr_metrics.QUALITY_EPISODE_COUNT,
+            sonarr_metrics.QUALITY_EPISODE_COUNT_T
+        ],
+        [used_size, sonarr_metrics.TOTAL_DISK_SIZE, sonarr_metrics.TOTAL_DISK_SIZE_T],
+        [genre_count, sonarr_metrics.SERIES_GENRES_COUNT, sonarr_metrics.SERIES_GENRES_COUNT_T],
+        status_labels, counter], alias
     )
 
-def update_system_data(data):
+def update_system_data(data, alias):
     """Update the System Data Metrics"""
     for disk in data['root_folder']:
-        sonarr_metrics.FREE_DISK_SIZE.labels(disk["path"]).set(disk["freeSpace"])
-        sonarr_metrics.AVAILABLE_DISK_SIZE.labels(disk["path"]).set(disk["totalSpace"])
+        sonarr_metrics.FREE_DISK_SIZE.labels(alias, disk["path"]).set(disk["freeSpace"])
+        sonarr_metrics.AVAILABLE_DISK_SIZE.labels(alias, disk["path"]).set(disk["totalSpace"])
 
-    sonarr_metrics.QUEUE_COUNT.set(data["queue"]["totalCount"])
-    sonarr_metrics.QUEUE_ERROR.set(data["queue"]["errors"])
-    sonarr_metrics.QUEUE_WARNING.set(data["queue"]["warnings"])
+    sonarr_metrics.QUEUE_COUNT.labels(alias).set(data["queue"]["totalCount"])
+    sonarr_metrics.QUEUE_ERROR.labels(alias).set(data["queue"]["errors"])
+    sonarr_metrics.QUEUE_WARNING.labels(alias).set(data["queue"]["warnings"])
 
     start_time = datetime.strptime(data["status"]["startTime"], "%Y-%m-%dT%H:%M:%SZ").timestamp()
     build_time = datetime.strptime(data["status"]["buildTime"], "%Y-%m-%dT%H:%M:%SZ").timestamp()
-    sonarr_metrics.START_TIME.set(start_time)
-    sonarr_metrics.BUILD_TIME.set(build_time)
+    sonarr_metrics.START_TIME.labels(alias).set(start_time)
+    sonarr_metrics.BUILD_TIME.labels(alias).set(build_time)
 
 def scrape(config):
     """Scrape the Sonarr Service"""
 
     url = config.get('url')
     api_key = config.get('api_key')
-    api_version = config.get('api_version', 'v1')
+    api_version = config.get('api_version', 'v3')
+    alias = config.get('alias', 'sonarr')
 
-    return get_series(url, api_key, api_version)
+    return get_series(url, api_key, api_version, alias)
 
-def update_metrics(series, detailed):
+def update_metrics(series, detailed, alias):
     """Update the Metrics for the Sonarr Service"""
 
-    analyse_series(series["data"], detailed)
-    update_system_data(series["system"])
+    analyse_series(series["data"], detailed, alias)
+    update_system_data(series["system"], alias)

@@ -1,0 +1,34 @@
+general:
+  # Exporter Listening Address and Port
+  # address: 0.0.0.0
+  # port: 7100
+  # Exporter Metrics Path
+  # path: /metrics
+
+auth:
+  # Basic Auth
+  # username: user
+  # password: pass
+  # Bearer Token
+  # token: token
+
+sonarr:
+  url: http://sonarr:8989
+  api_key: key
+  # alias: sonarr # Optional to Differentiate between multiple Services
+  # api_version: v3 # Optional to use a different API Version
+  # detailed: true  # Get Data per Series
+
+radarr:
+  url: http://radarr:7878
+  api_key: key
+  # alias: radarr # Optional to Differentiate between multiple Services
+  # api_version: v3 # Optional to use a different API Version
+  # detailed: true  # Get Data per Movie
+
+prowlarr:
+  url: http://prowlarr:9696
+  api_key: key
+  # alias: prowlarr # Optional to Differentiate between multiple Services
+  # api_version: v1 # Optional to use a different API Version
+  # detailed: true  # Get Data per Application/Indexer

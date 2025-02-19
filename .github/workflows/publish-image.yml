@@ -28,7 +28,7 @@ jobs:
       - name: Check Latest Tag
         id: latest_tag
         run: |
-          LATEST_TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .name)
+          LATEST_TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
           if [[ "$LATEST_TAG" == "${{ github.ref_name }}" ]]; then
             echo "latest_tag=true" >> $GITHUB_OUTPUT
           else

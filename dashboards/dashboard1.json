@@ -121,7 +121,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "up{job=\"$job\", service=\"prowlarr\"}",
+          "expr": "scraparr_services_up{job=\"$job\", scraparr_services=\"prowlarr\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
@@ -231,7 +231,7 @@
               }
             ]
           },
-          "unit": "dtdurationms"
+          "unit": "dtdurations"
         },
         "overrides": []
       },
@@ -405,7 +405,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "prowlarr_application_count{job=\"$job\"}",
+          "expr": "prowlarr_applications_total{job=\"$job\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
@@ -476,8 +476,8 @@
             "uid": "${datasource}"
           },
           "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "prowlarr_application_enabled{job=\"$job\", application=\"total\"}",
+          "editorMode": "code",
+          "expr": "prowlarr_application_enabled_total{job=\"$job\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
@@ -549,7 +549,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "prowlarr_application_sync_level{job=\"scraparr\", application=\"total\"}",
+          "expr": "prowlarr_application_sync_level_total{job=\"scraparr\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
@@ -676,7 +676,7 @@
       "options": {
         "colorMode": "value",
         "graphMode": "none",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "orientation": "auto",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
@@ -755,7 +755,7 @@
       "options": {
         "colorMode": "value",
         "graphMode": "none",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "orientation": "auto",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
@@ -778,7 +778,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "prowlarr_indexer_privacy{job=\"$job\", type!=\"total\"}",
+          "expr": "prowlarr_indexer_privacy{job=\"$job\"}",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
@@ -972,7 +972,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "up{job=\"$job\", service=\"sonarr\"}",
+          "expr": "scraparr_services_up{job=\"$job\", scraparr_services=\"sonarr\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
@@ -1082,7 +1082,7 @@
               }
             ]
           },
-          "unit": "dtdurationms"
+          "unit": "dtdurations"
         },
         "overrides": []
       },
@@ -1274,7 +1274,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "sonarr_total_episodes{job=~\"$job\", path=\"total\"}",
+          "expr": "sonarr_episodes_total{job=~\"$job\"}",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
@@ -1291,7 +1291,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "sonarr_missing_episodes{job=~\"$job\", path=\"total\"}",
+          "expr": "sonarr_missing_episodes_total{job=~\"$job\"}",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
@@ -1362,7 +1362,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "sonarr_total_series{job=~\"$job\", path=\"total\"}",
+          "expr": "sonarr_series_total{job=~\"$job\"}",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
@@ -1379,7 +1379,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "sonarr_monitored_series{job=~\"$job\", path=\"total\"}",
+          "expr": "sonarr_monitored_series_total{job=~\"$job\"}",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
@@ -1446,7 +1446,20 @@
           },
           "unit": "bytes"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total:"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 4,
@@ -1481,7 +1494,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "sonarr_total_disk_size{job=\"$job\"}",
+          "expr": "sonarr_disk_size{job=\"$job\"}",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
@@ -1490,6 +1503,19 @@
           "range": true,
           "refId": "A",
           "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sonarr_disk_size_total{job=\"$job\"}",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "B"
         }
       ],
       "title": "Used Disk Size",
@@ -1649,8 +1675,8 @@
             "uid": "${datasource}"
           },
           "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "sonarr_quality_episodes{job=~\"$job\", path=\"total\"}",
+          "editorMode": "code",
+          "expr": "sonarr_quality_episodes_total{job=~\"$job\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
@@ -1745,8 +1771,8 @@
             "uid": "${datasource}"
           },
           "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "sonarr_genres_count{job=~\"$job\", path=\"total\"}",
+          "editorMode": "code",
+          "expr": "sonarr_genres_count_total{job=~\"$job\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
@@ -1858,7 +1884,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "up{job=\"$job\", service=\"radarr\"}",
+          "expr": "scraparr_services_up{job=\"$job\", scraparr_services=\"radarr\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
@@ -1968,7 +1994,7 @@
               }
             ]
           },
-          "unit": "dtdurationms"
+          "unit": "dtdurations"
         },
         "overrides": []
       },
@@ -2159,8 +2185,8 @@
             "uid": "${datasource}"
           },
           "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "radarr_total_movies{job=~\"$job\", path=\"total\"}",
+          "editorMode": "code",
+          "expr": "radarr_movies_total{job=~\"$job\"}",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
@@ -2176,8 +2202,8 @@
             "uid": "${datasource}"
           },
           "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "radarr_total_movies{job=~\"$job\"} - radarr_missing_movies{job=~\"$job\", path=\"total\"}",
+          "editorMode": "code",
+          "expr": "radarr_movies_total{job=~\"$job\"} - radarr_missing_movies_total{job=~\"$job\"}",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
@@ -2193,8 +2219,8 @@
             "uid": "${datasource}"
           },
           "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "radarr_monitored_movies{job=~\"$job\", path=\"total\"}",
+          "editorMode": "code",
+          "expr": "radarr_monitored_movies_total{job=~\"$job\"}",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
@@ -2210,8 +2236,8 @@
             "uid": "${datasource}"
           },
           "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "radarr_missing_movies{job=~\"$job\", path=\"total\"}",
+          "editorMode": "code",
+          "expr": "radarr_missing_movies_total{job=~\"$job\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
@@ -2246,7 +2272,20 @@
           },
           "unit": "bytes"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total:"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 4,
@@ -2281,7 +2320,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "radarr_total_disk_size{job=\"$job\"}",
+          "expr": "radarr_disk_size{job=\"$job\"}",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
@@ -2290,6 +2329,19 @@
           "range": true,
           "refId": "A",
           "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "radarr_disk_size_total{job=\"$job\"}",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "B"
         }
       ],
       "title": "Used Disk Size",
@@ -2448,8 +2500,8 @@
             "uid": "${datasource}"
           },
           "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "radarr_quality_movies{job=~\"$job\", path=\"total\"}",
+          "editorMode": "code",
+          "expr": "radarr_quality_movies_total{job=~\"$job\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
@@ -2544,8 +2596,8 @@
             "uid": "${datasource}"
           },
           "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "radarr_genres_count{job=~\"$job\", path=\"total\"}",
+          "editorMode": "code",
+          "expr": "radarr_genres_count_total{job=~\"$job\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
@@ -2597,13 +2649,13 @@
           "type": "prometheus",
           "uid": "${datasource}"
         },
-        "definition": "label_values(up,job)",
+        "definition": "label_values(scraparr_services_up,job)",
         "multi": true,
         "name": "job",
         "options": [],
         "query": {
           "qryType": 1,
-          "query": "label_values(up,job)",
+          "query": "label_values(scraparr_services_up,job)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 1,
@@ -2613,13 +2665,13 @@
     ]
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-5m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Scraping",
   "uid": "becuowssfebcwa",
-  "version": 9,
+  "version": 12,
   "weekStart": ""
 }

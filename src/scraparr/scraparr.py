@@ -12,10 +12,10 @@ License: GPL-3.0
 import time
 import sys
 import threading
-import configparser
 import logging
-
 from wsgiref.simple_server import make_server
+
+import yaml
 from prometheus_client import make_wsgi_app
 
 from scraparr.middleware import Middleware
@@ -23,33 +23,37 @@ import scraparr.connectors
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-CONFIG = configparser.ConfigParser()
-CONFIG.read('scraparr/config.cnf')
+with open('/scraparr/config/config.yaml', 'r', encoding='utf-8') as yaml_file:
+    CONFIG = yaml.safe_load(yaml_file)
 
-PATH = CONFIG.get('GENERAL', 'path', fallback="/metrics")
-ADDRESS = CONFIG.get('GENERAL', 'address', fallback="0.0.0.0")
-PORT = CONFIG.get('GENERAL', 'port', fallback=7100)
+PATH = CONFIG.get('GENERAL', {}).get('path', "/metrics")
+ADDRESS = CONFIG.get('GENERAL', {}).get('address', "0.0.0.0")
+PORT = CONFIG.get('GENERAL', {}).get('port', 7100)
 
-USERNAME = CONFIG.get('AUTH', 'username', fallback=None)
-PASSWORD = CONFIG.get('AUTH', 'password', fallback=None)
-BEARER_TOKEN = CONFIG.get('AUTH', 'token', fallback=None)
+USERNAME = CONFIG.get('AUTH', {}).get('username', None)
+PASSWORD = CONFIG.get('AUTH', {}).get('password', None)
+BEARER_TOKEN = CONFIG.get('AUTH', {}).get('token', None)
 
 metrics_app = make_wsgi_app()
 app = Middleware(metrics_app, USERNAME, PASSWORD, BEARER_TOKEN)
 
-ACTIVE_CONNECTORS = ['SONARR', 'RADARR', 'PROWLARR']
+ACTIVE_CONNECTORS = ['sonarr', 'radarr', 'prowlarr']
 BEAUTIFUL_CONNECTORS = ", ".join(ACTIVE_CONNECTORS[:-1]) + " or " + ACTIVE_CONNECTORS[-1]
 
 if __name__ == '__main__':
-    if not any(section in CONFIG.sections() for section in ACTIVE_CONNECTORS):
+    if not any(section in CONFIG for section in ACTIVE_CONNECTORS):
         logging.info("No configuration found for %s", BEAUTIFUL_CONNECTORS)
         sys.exit(1)
 
     connectors = scraparr.connectors.Connectors()
 
-    for section in CONFIG.sections():
-        if section in ACTIVE_CONNECTORS:
-            connectors.add_connector(section.lower(), dict(CONFIG.items(section)))
+    for service in CONFIG:
+        if service in ACTIVE_CONNECTORS:
+            if isinstance(CONFIG[service], dict):
+                config = [CONFIG[service]]
+            else:
+                config = CONFIG[service]
+            connectors.add_connector(service, config)
 
     try:
         def run_server():

@@ -9,7 +9,7 @@ from scraparr.util import get
 from scraparr.metrics.general import UP
 import scraparr.metrics.prowlarr as prowlarr_metrics
 
-def get_indexers(url, api_key, version):
+def get_indexers(url, api_key, version, alias):
     """Grab the Indexers from the Prowlarr Endpoint"""
 
     initial_time = time.time()
@@ -17,7 +17,7 @@ def get_indexers(url, api_key, version):
     end_time = time.time()
 
     if res == {}:
-        UP.labels("prowlarr").set(0)
+        UP.labels(alias, 'prowlarr').set(0)
     else:
         status = get(f"{url}/api/{version}/indexerstatus", api_key)
 
@@ -29,34 +29,34 @@ def get_indexers(url, api_key, version):
             if indexer['id'] in stat_dict:
                 indexer['status'] = stat_dict[indexer['id']]
 
-        UP.labels("prowlarr").set(1)
-        prowlarr_metrics.LAST_SCRAPE.set(end_time)
-        prowlarr_metrics.SCRAPE_DURATION.set(end_time - initial_time)
+        UP.labels(alias, 'prowlarr').set(1)
+        prowlarr_metrics.LAST_SCRAPE.labels(alias).set(end_time)
+        prowlarr_metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
     return res
 
-def get_applications(url, api_key, version):
+def get_applications(url, api_key, version, alias):
     """Grab the Applications from the Prowlarr Endpoint"""
 
     res = get(f"{url}/api/{version}/applications", api_key)
 
     if res == {}:
-        UP.labels("prowlarr").set(0)
+        UP.labels(alias, 'prowlarr').set(0)
     else:
-        UP.labels("prowlarr").set(1)
+        UP.labels(alias, 'prowlarr').set(1)
     return res
 
-def update_system_data(data):
+def update_system_data(data, alias):
     """Update the System Data"""
 
     start_time = datetime.strptime(data["status"]["startTime"], "%Y-%m-%dT%H:%M:%SZ").timestamp()
     build_time = datetime.strptime(data["status"]["buildTime"], "%Y-%m-%dT%H:%M:%SZ").timestamp()
-    prowlarr_metrics.START_TIME.set(start_time)
-    prowlarr_metrics.BUILD_TIME.set(build_time)
+    prowlarr_metrics.START_TIME.labels(alias).set(start_time)
+    prowlarr_metrics.BUILD_TIME.labels(alias).set(build_time)
 
-def analyse_applications(applications, detailed):
+def analyse_applications(applications, detailed, alias):
     """Analyse the Applications"""
 
-    prowlarr_metrics.APPLICATION_COUNT.set(len(applications))
+    prowlarr_metrics.APPLICATION_COUNT.labels(alias).set(len(applications))
     enabled_t = 0
     sync_level_count = {}
 
@@ -70,20 +70,32 @@ def analyse_applications(applications, detailed):
             sync_level_count[sync_level] = 1
 
         if detailed:
-            prowlarr_metrics.APPLICATION_ENABLED.labels(application["name"]).set(enabled)
-            prowlarr_metrics.APPLICATION_SYNC_LEVEL.labels(application["name"], sync_level).set(1)
+            prowlarr_metrics.APPLICATION_ENABLED.labels(alias, application["name"]).set(enabled)
+            (prowlarr_metrics
+                .APPLICATION_SYNC_LEVEL
+                .labels(alias, application["name"], sync_level).set(1)
+            )
 
-    prowlarr_metrics.APPLICATION_ENABLED.labels("total").set(enabled_t)
+    prowlarr_metrics.APPLICATION_ENABLED_T.labels(alias).set(enabled_t)
     for sync_level, count in sync_level_count.items():
-        prowlarr_metrics.APPLICATION_SYNC_LEVEL.labels("total", sync_level).set(count)
+        (prowlarr_metrics
+            .APPLICATION_SYNC_LEVEL_T
+            .labels(alias, sync_level).set(count)
+        )
 
-def analyse_indexers(indexers, detailed):
+def analyse_indexers(indexers, detailed, alias):
     """Analyse the Indexers"""
 
     indexer_count = {
-        "total": {"total": len(indexers), "enabled": 0, "private": 0, "public": 0},
-        "usenet": {"total": 0, "enabled": 0, "private": 0, "public": 0},
-        "torrent": {"total": 0, "enabled": 0, "private": 0, "public": 0}
+        "total": {
+            "total": len(indexers),
+            "enabled": 0,
+            "private": 0,
+            "public": 0,
+            "semiPrivate": 0
+        },
+        "usenet": {"total": 0, "enabled": 0, "private": 0, "public": 0, "semiPrivate": 0},
+        "torrent": {"total": 0, "enabled": 0, "private": 0, "public": 0, "semiPrivate": 0}
     }
 
     prowlarr_metrics.VIP_EXPIRATION.clear()
@@ -106,28 +118,39 @@ def analyse_indexers(indexers, detailed):
                 vip_expiration = field['value']
                 if vip_expiration:
                     vip_expiration = datetime.strptime(vip_expiration, "%Y-%m-%d").timestamp()
-                    prowlarr_metrics.VIP_EXPIRATION.labels(name).set(vip_expiration)
+                    prowlarr_metrics.VIP_EXPIRATION.labels(alias, name).set(vip_expiration)
                 break
 
         if detailed:
-            protocol = indexer["protocol"]
-            prowlarr_metrics.INDEXER_ENABLED.labels(protocol, name).set(enabled)
+            (prowlarr_metrics.INDEXER_ENABLED
+                .labels(alias, indexer["protocol"], name)
+                .set(enabled)
+            )
             if "status" in indexer:
                 status = indexer["status"].get("status", "unknown")
             else:
                 status = "unknown"
-            prowlarr_metrics.INDEXER_STATUS.labels(name, status).set(1)
+            prowlarr_metrics.INDEXER_STATUS.labels(alias, name, status).set(1)
 
     for types, counts in indexer_count.items():
-        total = counts["total"]
-        enabled = counts["enabled"]
-        private = counts["private"]
-        public = counts["public"]
-
-        prowlarr_metrics.INDEXER_COUNT.labels(types).set(total)
-        prowlarr_metrics.INDEXER_ENABLED.labels(types, "total").set(enabled)
-        prowlarr_metrics.INDEXER_PRIVACY.labels(types, "private").set(private)
-        prowlarr_metrics.INDEXER_PRIVACY.labels(types, "public").set(public)
+        if types == "total":
+            prowlarr_metrics.INDEXER_COUNT_T.labels(alias).set(counts["total"])
+            prowlarr_metrics.INDEXER_ENABLED_T.labels(alias).set(counts["enabled"])
+            prowlarr_metrics.INDEXER_PRIVACY_T.labels(alias, "private").set(counts["private"])
+            prowlarr_metrics.INDEXER_PRIVACY_T.labels(alias, "public").set(counts["public"])
+            (prowlarr_metrics.INDEXER_PRIVACY
+                .labels(alias, "semi-private")
+                .set(counts["semiPrivate"])
+            )
+        else:
+            prowlarr_metrics.INDEXER_COUNT.labels(alias, types).set(counts["total"])
+            prowlarr_metrics.INDEXER_ENABLED.labels(alias, types, "total").set(counts["enabled"])
+            prowlarr_metrics.INDEXER_PRIVACY.labels(alias, types, "private").set(counts["private"])
+            prowlarr_metrics.INDEXER_PRIVACY.labels(alias, types, "public").set(counts["public"])
+            (prowlarr_metrics.INDEXER_PRIVACY
+                .labels(alias, types, "semi-private")
+                .set(counts["semiPrivate"])
+            )
 
 
 def scrape(config):
@@ -136,15 +159,16 @@ def scrape(config):
     url = config.get('url')
     api_key = config.get('api_key')
     api_version = config.get('api_version', 'v1')
+    alias = config.get('alias', 'prowlarr')
 
     return {
-        'indexer': get_indexers(url, api_key, api_version),
-        'applications': get_applications(url, api_key, api_version)
+        'indexer': get_indexers(url, api_key, api_version, alias),
+        'applications': get_applications(url, api_key, api_version, alias)
     }
 
-def update_metrics(data, detailed):
+def update_metrics(data, detailed, alias):
     """Update the Metrics for the Prowlarr Service"""
 
-    update_system_data(data["system"])
-    analyse_indexers(data["data"]['indexer'], detailed)
-    analyse_applications(data["data"]['applications'], detailed)
+    update_system_data(data["system"], alias)
+    analyse_indexers(data["data"]['indexer'], detailed, alias)
+    analyse_applications(data["data"]['applications'], detailed, alias)
