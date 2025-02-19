@@ -3,7 +3,8 @@ Module to handle the Metrics of the Radarr Service
 """
 
 import time
-from datetime import datetime
+from dateutil.parser import parse
+
 import scraparr.metrics.radarr as radarr_metrics
 from scraparr.metrics.general import UP
 from scraparr import util
@@ -132,8 +133,8 @@ def update_system_data(data, alias):
     radarr_metrics.QUEUE_ERROR.labels(alias).set(data["queue"]["errors"])
     radarr_metrics.QUEUE_WARNING.labels(alias).set(data["queue"]["warnings"])
 
-    start_time = datetime.strptime(data["status"]["startTime"], "%Y-%m-%dT%H:%M:%SZ").timestamp()
-    build_time = datetime.strptime(data["status"]["buildTime"], "%Y-%m-%dT%H:%M:%SZ").timestamp()
+    start_time = parse(data["status"]["startTime"]).timestamp()
+    build_time = parse(data["status"]["buildTime"]).timestamp()
     radarr_metrics.START_TIME.labels(alias).set(start_time)
     radarr_metrics.BUILD_TIME.labels(alias).set(build_time)
 

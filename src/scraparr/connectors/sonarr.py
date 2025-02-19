@@ -3,7 +3,8 @@ Module to handle the Metrics of the Sonarr Service
 """
 
 import time
-from datetime import datetime
+from dateutil.parser import parse
+
 from scraparr import util
 from scraparr.metrics.general import UP
 import scraparr.metrics.sonarr as sonarr_metrics
@@ -144,8 +145,8 @@ def update_system_data(data, alias):
     sonarr_metrics.QUEUE_ERROR.labels(alias).set(data["queue"]["errors"])
     sonarr_metrics.QUEUE_WARNING.labels(alias).set(data["queue"]["warnings"])
 
-    start_time = datetime.strptime(data["status"]["startTime"], "%Y-%m-%dT%H:%M:%SZ").timestamp()
-    build_time = datetime.strptime(data["status"]["buildTime"], "%Y-%m-%dT%H:%M:%SZ").timestamp()
+    start_time = parse(data["status"]["startTime"]).timestamp()
+    build_time = parse(data["status"]["buildTime"]).timestamp()
     sonarr_metrics.START_TIME.labels(alias).set(start_time)
     sonarr_metrics.BUILD_TIME.labels(alias).set(build_time)
 
