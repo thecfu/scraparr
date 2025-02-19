@@ -50,8 +50,10 @@ Template for Service inside the config.cnf:
 [SONARR]
 url = http://localhost:8989
 api_key = YOUR_KEY
-api_version = v3
-detailed = true
+; (Optional) specify API version
+; api_version = v3
+; (Optional) Get Data per Series
+; detailed = true
 ```
 
 > [!NOTE]  
