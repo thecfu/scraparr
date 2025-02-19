@@ -113,7 +113,7 @@ def scrape(config):
 
     url = config.get('url')
     api_key = config.get('api_key')
-    api_version = config.get('api_version', 'v1')
+    api_version = config.get('api_version', 'v3')
 
     return get_movies(url, api_key, api_version)
 
