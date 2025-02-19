@@ -5,4 +5,4 @@ services:
     ports:
       - "7100:7100"
     volumes:
-      - ./config.cnf:/scraparr/config.cnf
+      - ./config.cnf:/scraparr/config/config.cnf
