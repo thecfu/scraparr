@@ -83,27 +83,30 @@ class Connectors:
                 report = []
                 seen_paths = set()  # To keep track of added paths
 
-                for rootfoler in folder:
+                for rootfolder in folder:
                     for disk in disks:
-                        if disk["path"] == rootfoler["path"] and disk["path"] not in seen_paths:
+                        if disk["path"] == rootfolder["path"] and disk["path"] not in seen_paths:
                             report.append(disk)
                             seen_paths.add(disk["path"])
                             break
                     else:
                         for disk in disks:
-                            if rootfoler["path"].startswith(disk["path"] and disk["path"] not in seen_paths):
+                            if (
+                                    rootfolder["path"].startswith(disk["path"])
+                                    and disk["path"] not in seen_paths
+                                ):
                                 report.append(disk)
                                 seen_paths.add(disk["path"])
                                 break
                         else:
                             logging.warning("No diskspace data found for %s,"
-                                            " using only available Data", rootfoler["path"])
+                                            " using only available Data", rootfolder["path"])
                             report.append({
-                                "path": rootfoler["path"],
-                                "freeSpace":  rootfoler["freeSpace"],
+                                "path": rootfolder["path"],
+                                "freeSpace":  rootfolder["freeSpace"],
                                 "totalSpace": -1
                             })
-                            seen_paths.add(rootfoler["path"])
+                            seen_paths.add(rootfolder["path"])
                 return report
             data = get(f"{url}/api/{api_version}/rootfolder", api_key)
             if data:
