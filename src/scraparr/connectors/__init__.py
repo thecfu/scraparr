@@ -85,18 +85,17 @@ class Connectors:
 
                 for rootfolder in folder:
                     for disk in disks:
-                        if disk["path"] == rootfolder["path"] and disk["path"] not in seen_paths:
-                            report.append(disk)
-                            seen_paths.add(disk["path"])
+                        if disk["path"] == rootfolder["path"]:
+                            if not disk["path"] in seen_paths:
+                                report.append(disk)
+                                seen_paths.add(disk["path"])
                             break
                     else:
                         for disk in disks:
-                            if (
-                                    rootfolder["path"].startswith(disk["path"])
-                                    and disk["path"] not in seen_paths
-                                ):
-                                report.append(disk)
-                                seen_paths.add(disk["path"])
+                            if rootfolder["path"].startswith(disk["path"]) and disk["path"] != '/':
+                                if not disk["path"] in seen_paths:
+                                    report.append(disk)
+                                    seen_paths.add(disk["path"])
                                 break
                         else:
                             logging.warning("No diskspace data found for %s,"
