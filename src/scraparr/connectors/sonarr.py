@@ -154,7 +154,7 @@ def scrape(config):
 
     url = config.get('url')
     api_key = config.get('api_key')
-    api_version = config.get('api_version', 'v3')
+    api_version = config.get('api_version')
     alias = config.get('alias', 'sonarr')
 
     return get_series(url, api_key, api_version, alias)

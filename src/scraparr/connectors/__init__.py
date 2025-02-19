@@ -21,10 +21,16 @@ class Connectors:
     def add_connector(self, service, configs):
         """Function to add a Connector on successful load into the List of Connectors"""
         importer = self.load_connector(service)
+        
+        api_versions = {"sonarr": "v3", "radarr": "v3", "prowlarr": "v1"}
 
         if importer:
             self.connectors[service] = []
             for config in configs:
+                
+                if config.get('api_version') is None:
+                    config['api_version'] = api_versions[service]
+                
                 connector_entry = {
                     "function": importer,
                     "config": config
@@ -92,7 +98,7 @@ class Connectors:
 
         url = config.get('url')
         api_key = config.get('api_key')
-        api_version = config.get('api_version', 'v1')
+        api_version = config.get('api_version')
 
         if service in indexers:
             return {'root_folder': root_folder(), 'queue': queue(), 'status': status()}
