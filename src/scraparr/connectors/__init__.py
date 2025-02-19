@@ -79,31 +79,38 @@ class Connectors:
     def get_system_data(service, config):
         """Function to get the System Data"""
         def root_folder():
-            data = get(f"{url}/api/{api_version}/rootfolder", api_key)
-            if data:
-                diskspace_data = get(f"{url}/api/{api_version}/diskspace", api_key)
-                if diskspace_data:
-                    report = []
-                    seen_paths = set()  # To keep track of added paths
+            def filter_data(folder, disks):
+                report = []
+                seen_paths = set()  # To keep track of added paths
 
-                    for rootfoler in data:
-                        for disk in diskspace_data:
-                            if disk["path"] == rootfoler["path"]:
+                for rootfoler in folder:
+                    for disk in disks:
+                        if disk["path"] == rootfoler["path"] and disk["path"] not in seen_paths:
+                            report.append(disk)
+                            seen_paths.add(disk["path"])
+                            break
+                    else:
+                        for disk in disks:
+                            if rootfoler["path"].startswith(disk["path"] and disk["path"] not in seen_paths):
                                 report.append(disk)
                                 seen_paths.add(disk["path"])
                                 break
                         else:
-                            for disk in diskspace_data:
-                                if disk["path"].startswith(rootfoler["path"]):
-                                    report.append(disk)
-                                    seen_paths.add(disk["path"])
-                                    break
-                            else:
-                                logging.warning("No diskspace data found for %s, using only available Data", rootfoler["path"])
-                                report.append({"path": rootfoler["path"], "freeSpace":  rootfoler["freeSpace"], "totalSpace": -1})
-                                seen_paths.add(rootfoler["path"])
-
-                    return report
+                            logging.warning("No diskspace data found for %s,"
+                                            " using only available Data", rootfoler["path"])
+                            report.append({
+                                "path": rootfoler["path"],
+                                "freeSpace":  rootfoler["freeSpace"],
+                                "totalSpace": -1
+                            })
+                            seen_paths.add(rootfoler["path"])
+                return report
+            data = get(f"{url}/api/{api_version}/rootfolder", api_key)
+            if data:
+                diskspace_data = get(f"{url}/api/{api_version}/diskspace", api_key)
+                if diskspace_data:
+                    return filter_data(data, diskspace_data)
+            logging.warning("No rootfolder data found")
             return None
 
         def queue():
