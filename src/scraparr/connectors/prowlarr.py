@@ -81,9 +81,15 @@ def analyse_indexers(indexers, detailed):
     """Analyse the Indexers"""
 
     indexer_count = {
-        "total": {"total": len(indexers), "enabled": 0, "private": 0, "public": 0},
-        "usenet": {"total": 0, "enabled": 0, "private": 0, "public": 0},
-        "torrent": {"total": 0, "enabled": 0, "private": 0, "public": 0}
+        "total": {
+            "total": len(indexers),
+            "enabled": 0,
+            "private": 0,
+            "public": 0,
+            "semiPrivate": 0
+        },
+        "usenet": {"total": 0, "enabled": 0, "private": 0, "public": 0, "semiPrivate": 0},
+        "torrent": {"total": 0, "enabled": 0, "private": 0, "public": 0, "semiPrivate": 0}
     }
 
     prowlarr_metrics.VIP_EXPIRATION.clear()
@@ -119,16 +125,11 @@ def analyse_indexers(indexers, detailed):
             prowlarr_metrics.INDEXER_STATUS.labels(name, status).set(1)
 
     for types, counts in indexer_count.items():
-        total = counts["total"]
-        enabled = counts["enabled"]
-        private = counts["private"]
-        public = counts["public"]
-
-        prowlarr_metrics.INDEXER_COUNT.labels(types).set(total)
-        prowlarr_metrics.INDEXER_ENABLED.labels(types, "total").set(enabled)
-        prowlarr_metrics.INDEXER_PRIVACY.labels(types, "private").set(private)
-        prowlarr_metrics.INDEXER_PRIVACY.labels(types, "public").set(public)
-
+        prowlarr_metrics.INDEXER_COUNT.labels(types).set(counts["total"])
+        prowlarr_metrics.INDEXER_ENABLED.labels(types, "total").set(counts["enabled"])
+        prowlarr_metrics.INDEXER_PRIVACY.labels(types, "private").set(counts["private"])
+        prowlarr_metrics.INDEXER_PRIVACY.labels(types, "public").set(counts["public"])
+        prowlarr_metrics.INDEXER_PRIVACY.labels(types, "semi-private").set(counts["semiPrivate"])
 
 def scrape(config):
     """Scrape the Prowlarr Service"""
