@@ -63,6 +63,9 @@ sonarr:
 
 To Configure multiple Instances of the same Service you can configure them like this:
 
+> [!CAUTION]  
+> When using multiple Instances of the same Service you need to use the alias, else the metrics are getting overwritten
+
 ```yaml
 sonarr:
   - url: http://sonarr:8989
