@@ -3,7 +3,7 @@ Module to handle the Metrics of the Prowlarr Service
 """
 
 import time
-from datetime import datetime
+from dateutil.parser import parse
 
 from scraparr.util import get
 from scraparr.metrics.general import UP
@@ -48,8 +48,8 @@ def get_applications(url, api_key, version, alias):
 def update_system_data(data, alias):
     """Update the System Data"""
 
-    start_time = datetime.strptime(data["status"]["startTime"], "%Y-%m-%dT%H:%M:%SZ").timestamp()
-    build_time = datetime.strptime(data["status"]["buildTime"], "%Y-%m-%dT%H:%M:%SZ").timestamp()
+    start_time = parse(data["status"]["startTime"]).timestamp()
+    build_time = parse(data["status"]["buildTime"]).timestamp()
     prowlarr_metrics.START_TIME.labels(alias).set(start_time)
     prowlarr_metrics.BUILD_TIME.labels(alias).set(build_time)
 
@@ -117,7 +117,7 @@ def analyse_indexers(indexers, detailed, alias):
             if field['name'] == 'vipExpiration':
                 vip_expiration = field['value']
                 if vip_expiration:
-                    vip_expiration = datetime.strptime(vip_expiration, "%Y-%m-%d").timestamp()
+                    vip_expiration = parse(vip_expiration).timestamp()
                     prowlarr_metrics.VIP_EXPIRATION.labels(alias, name).set(vip_expiration)
                 break
 
