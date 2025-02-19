@@ -84,9 +84,25 @@ class Connectors:
                 diskspace_data = get(f"{url}/api/{api_version}/diskspace", api_key)
                 if diskspace_data:
                     report = []
-                    for disk in diskspace_data:
-                        if any(disk["path"] == d["path"] for d in data):
-                            report.append(disk)
+                    seen_paths = set()  # To keep track of added paths
+
+                    for rootfoler in data:
+                        for disk in diskspace_data:
+                            if disk["path"] == rootfoler["path"]:
+                                report.append(disk)
+                                seen_paths.add(disk["path"])
+                                break
+                        else:
+                            for disk in diskspace_data:
+                                if disk["path"].startswith(rootfoler["path"]):
+                                    report.append(disk)
+                                    seen_paths.add(disk["path"])
+                                    break
+                            else:
+                                logging.warning("No diskspace data found for %s, using only available Data", rootfoler["path"])
+                                report.append({"path": rootfoler["path"], "freeSpace":  rootfoler["freeSpace"], "totalSpace": -1})
+                                seen_paths.add(rootfoler["path"])
+
                     return report
             return None
 
