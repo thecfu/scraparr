@@ -138,7 +138,7 @@ def analyse_indexers(indexers, detailed, alias):
             prowlarr_metrics.INDEXER_ENABLED_T.labels(alias).set(counts["enabled"])
             prowlarr_metrics.INDEXER_PRIVACY_T.labels(alias, "private").set(counts["private"])
             prowlarr_metrics.INDEXER_PRIVACY_T.labels(alias, "public").set(counts["public"])
-            (prowlarr_metrics.INDEXER_PRIVACY
+            (prowlarr_metrics.INDEXER_PRIVACY_T
                 .labels(alias, "semi-private")
                 .set(counts["semiPrivate"])
             )

@@ -23,8 +23,16 @@ import scraparr.connectors
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-with open('/scraparr/config/config.yaml', 'r', encoding='utf-8') as yaml_file:
-    CONFIG = yaml.safe_load(yaml_file)
+try:
+    with open('/scraparr/config/config.yaml', 'r', encoding='utf-8') as yaml_file:
+        CONFIG = yaml.safe_load(yaml_file)
+except FileNotFoundError:
+    logging.error("Configuration file not found: /scraparr/config/config.yaml,"
+                  " pls check the path or convert your .cnf to .yaml")
+    sys.exit(1)
+except yaml.YAMLError as exc:
+    logging.error("Error parsing YAML file: %s", exc)
+    sys.exit(1)
 
 PATH = CONFIG.get('GENERAL', {}).get('path', "/metrics")
 ADDRESS = CONFIG.get('GENERAL', {}).get('address', "0.0.0.0")
