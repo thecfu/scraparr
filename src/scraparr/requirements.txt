@@ -1,4 +1,5 @@
 prometheus_client
 requests
 werkzeug
+python-dateutil
 pyyaml
