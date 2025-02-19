@@ -14,6 +14,7 @@ import sys
 import threading
 import configparser
 import logging
+from os.path import exists
 
 from wsgiref.simple_server import make_server
 from prometheus_client import make_wsgi_app
@@ -23,8 +24,18 @@ import scraparr.connectors
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+def get_config_path():
+    """Check if the Config is in new or old location"""
+    config_path = '/scraparr/config/config.cnf'
+    if not exists(config_path):
+        logging.warning("No config found in new location, checking old location")
+        logging.warning("Please move the config to /scraparr/config/config.cnf")
+        config_path = '/scraparr/config.cnf'
+    return config_path
+
 CONFIG = configparser.ConfigParser()
-CONFIG.read('scraparr/config.cnf')
+
+CONFIG.read(get_config_path())
 
 PATH = CONFIG.get('GENERAL', 'path', fallback="/metrics")
 ADDRESS = CONFIG.get('GENERAL', 'address', fallback="0.0.0.0")
