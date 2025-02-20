@@ -43,6 +43,27 @@ Github Registry:
 > [!NOTE]  
 > If your using any v1 Version check the Readme of the [v1 Branch](https://github.com/thecfu/scraparr/tree/v1#readme)
 
+### Kubernetes
+
+Deployment on Kubernetes is possible via the [imgios/scraparr](https://github.com/imgios/scraparr) Helm Chart, which simplifies the process into two steps:
+
+1. Add the imgios/scraparr Helm Repository:
+
+```shell
+$ helm repo add imgios https://imgios.github.io/scraparr
+```
+
+2. Run the installation command:
+
+```shell
+$ helm install <release-name> imgios/scraparr \
+--namespace scraparr \
+--create-namespace \
+--values values.yaml
+```
+
+See the [Helm Chart repository README](https://github.com/imgios/scraparr) for details on deployment and how to fill the values.
+
 ## Configuration
 
 > [!NOTE]  
