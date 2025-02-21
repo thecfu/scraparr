@@ -3,6 +3,7 @@ Module to handle the Metrics of the Prowlarr Service
 """
 
 import time
+import re
 from dateutil.parser import parse
 
 from scraparr.util import get
@@ -19,7 +20,15 @@ def get_indexers(url, api_key, version, alias):
     if res == {}:
         UP.labels(alias, 'prowlarr').set(0)
     else:
+        UP.labels(alias, 'prowlarr').set(1)
+        prowlarr_metrics.LAST_SCRAPE.labels(alias).set(end_time)
+        prowlarr_metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
+
         status = get(f"{url}/api/{version}/indexerstatus", api_key)
+
+        if status == {}:
+            UP.labels(alias, 'prowlarr').set(0)
+            return res
 
         # Create a dictionary for fast lookup
         stat_dict = {stat['indexerId']: stat for stat in status}
@@ -27,12 +36,32 @@ def get_indexers(url, api_key, version, alias):
         # Update the status if the id matches
         for indexer in res:
             if indexer['id'] in stat_dict:
-                indexer['status'] = stat_dict[indexer['id']]
+                indexer['status'] = "disabled" if stat_dict[indexer['id']] else None
 
-        UP.labels(alias, 'prowlarr').set(1)
-        prowlarr_metrics.LAST_SCRAPE.labels(alias).set(end_time)
-        prowlarr_metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
+        health = get(f"{url}/api/{version}/health", api_key)
+
+        if health == {}:
+            UP.labels(alias, 'prowlarr').set(0)
+            return res
+
+        check_health(health, res)
+
     return res
+
+def check_health(health, res):
+    """Check the Health of the Indexers"""
+    for notification in health:
+        if notification['source'] == 'IndexerStatusCheck':
+            message = notification['message']
+            status_match = re.search(r"Indexers (\w+)", message)
+            status = status_match.group(1) if status_match else None
+
+            # Extract the word(s) after the colon
+            indexer_match = re.search(r": (.+)", message)
+            indexers = indexer_match.group(1).split(', ') if indexer_match else None
+            for indexer in res:
+                if indexer['name'] in indexers:
+                    indexer['status'] = {"status": status}
 
 def get_applications(url, api_key, version, alias):
     """Grab the Applications from the Prowlarr Endpoint"""
@@ -127,10 +156,13 @@ def analyse_indexers(indexers, detailed, alias):
                 .set(enabled)
             )
             if "status" in indexer:
-                status = indexer["status"].get("status", "unknown")
+                status = indexer["status"].get("status", "healthy")
             else:
-                status = "unknown"
-            prowlarr_metrics.INDEXER_STATUS.labels(alias, name, status).set(1)
+                status = "healthy"
+            if status == "healthy":
+                prowlarr_metrics.INDEXER_STATUS.labels(alias, name, status).set(1)
+            else:
+                prowlarr_metrics.INDEXER_STATUS.labels(alias, name, status).set(0)
 
     for types, counts in indexer_count.items():
         if types == "total":
