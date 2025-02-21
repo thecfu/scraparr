@@ -3,6 +3,7 @@ Module to handle the Metrics of the Sonarr Service
 """
 
 import time
+import logging
 from datetime import datetime
 from scraparr import util
 from scraparr.metrics.general import UP
@@ -60,10 +61,14 @@ def analyse_series(series, detailed):
 
     for serie in series:
         title = serie["titleSlug"]
+        stats = serie.get("statistics", None)
+
+        if stats is None:
+            logging.warning("No statistics found for %s", title)
+            continue
 
         util.increase_quality_count(quality_count, serie["episodes"], serie["rootFolderPath"])
 
-        stats = serie["statistics"]
         root_folder = serie["rootFolderPath"]
 
         util.update_count(
