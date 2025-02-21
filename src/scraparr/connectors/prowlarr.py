@@ -58,7 +58,7 @@ def check_health(health, res):
 
             # Extract the word(s) after the colon
             indexer_match = re.search(r": (.+)", message)
-            indexers = indexer_match.group(1) if indexer_match else None
+            indexers = indexer_match.group(1).split(', ') if indexer_match else None
             for indexer in res:
                 if indexer['name'] in indexers:
                     indexer['status'] = {"status": status}
