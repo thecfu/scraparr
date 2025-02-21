@@ -18,4 +18,4 @@ INDEXER_COUNT = Gauge("prowlarr_indexer_count", "Total number of Indexers", ["ty
 INDEXER_ENABLED = Gauge("prowlarr_indexer_enabled", "Enabled status of the Indexers", ["type", "indexer"])
 INDEXER_PRIVACY = Gauge("prowlarr_indexer_privacy", "Privacy status of the Indexers", ["type", "privacy"])
 VIP_EXPIRATION = Gauge("prowlarr_vip_expiration", "VIP Expiration of the Indexers", ["indexer"])
-INDEXER_STATUS = Gauge("prowlarr_indexer_status", "Status of the Indexers", ["indexer", "status"])
+INDEXER_STATUS = Gauge("prowlarr_indexer_status", "Status of the Indexers value 0 is unhealthy, 1 is healthy", ["indexer", "status"])
