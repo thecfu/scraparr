@@ -84,9 +84,9 @@ def analyse_series(series, detailed, alias):
 
     for serie in series:
         title = serie["titleSlug"]
-        stats = serie["statistics"]
+        stats = serie.get("statistics", None)
 
-        if not stats:
+        if stats is None:
             logging.warning("No statistics found for %s", title)
             continue
 
