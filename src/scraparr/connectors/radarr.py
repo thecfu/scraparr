@@ -7,7 +7,7 @@ from dateutil.parser import parse
 
 import scraparr.metrics.radarr as radarr_metrics
 from scraparr.metrics.general import UP
-from scraparr import util
+from scraparr.connectors import util
 
 def get_movies(url, api_key, version, alias):
     """Grab the Movies from the Radarr Endpoint"""

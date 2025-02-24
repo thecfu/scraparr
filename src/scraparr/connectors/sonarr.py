@@ -6,7 +6,7 @@ import time
 import logging
 from dateutil.parser import parse
 
-from scraparr import util
+from scraparr.connectors import util
 from scraparr.metrics.general import UP
 import scraparr.metrics.sonarr as sonarr_metrics
 

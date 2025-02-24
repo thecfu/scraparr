@@ -6,7 +6,7 @@ import time
 import re
 from dateutil.parser import parse
 
-from scraparr.util import get
+from scraparr.connectors.util import get
 from scraparr.metrics.general import UP
 import scraparr.metrics.prowlarr as prowlarr_metrics
 

@@ -7,7 +7,7 @@ import hashlib
 import json
 import logging
 import concurrent.futures
-from scraparr.util import get
+from scraparr.connectors.util import get
 
 indexers = ["sonarr", "radarr"]
 
