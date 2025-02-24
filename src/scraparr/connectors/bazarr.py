@@ -98,10 +98,10 @@ def analyse_data(data, wanted, detailed, alias):
         for wanted_mov in wanted["movies"]["data"]:
             wanted_movies[wanted_mov["title"]] = wanted_movies.get(wanted_mov["title"], 0) + 1
 
-        for series, data in wanted_episodes.items():
-            bazarr_metrics.WANTED_EPISODE_COUNT.labels(alias, series).set(data)
-        for movie, data in wanted_movies.items():
-            bazarr_metrics.WANTED_MOVIE_COUNT.labels(alias, movie).set(data)
+        for series, s_count in wanted_episodes.items():
+            bazarr_metrics.WANTED_EPISODE_COUNT.labels(alias, series).set(s_count)
+        for movie, m_count in wanted_movies.items():
+            bazarr_metrics.WANTED_MOVIE_COUNT.labels(alias, movie).set(m_count)
 
     bazarr_metrics.SERIES_COUNT_TOTAL.labels(alias).set(count["series"])
     bazarr_metrics.MOVIE_COUNT_TOTAL.labels(alias).set(count["movies"])
