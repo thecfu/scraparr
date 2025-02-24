@@ -9,7 +9,6 @@ Contributors: TheGameProfi
 License: GPL-3.0
 """
 
-import time
 import sys
 import threading
 import logging
@@ -48,6 +47,8 @@ app = Middleware(metrics_app, USERNAME, PASSWORD, BEARER_TOKEN)
 ACTIVE_CONNECTORS = ['sonarr', 'radarr', 'prowlarr']
 BEAUTIFUL_CONNECTORS = ", ".join(ACTIVE_CONNECTORS[:-1]) + " or " + ACTIVE_CONNECTORS[-1]
 
+RUNNING = True
+
 if __name__ == '__main__':
     if not any(section in CONFIG for section in ACTIVE_CONNECTORS):
         logging.info("No configuration found for %s", BEAUTIFUL_CONNECTORS)
@@ -63,20 +64,15 @@ if __name__ == '__main__':
                 config = CONFIG[service]
             connectors.add_connector(service, config)
 
-    try:
-        def run_server():
-            """Starts the WSGI server"""
-            httpd = make_server(ADDRESS, PORT, app)
-            httpd.serve_forever()
+    def run_server():
+        """Starts the WSGI server"""
+        httpd = make_server(ADDRESS, PORT, app)
+        while RUNNING:
+            httpd.handle_request()
+        logging.info("Metrics Endpoint Stopped")
 
-        server_thread = threading.Thread(target=run_server)
-        server_thread.start()
+    server_thread = threading.Thread(target=run_server)
+    server_thread.start()
 
-        while True:
-            logging.info("Scraping...")
-            connectors.scrape()
-            time.sleep(30)
-
-    except KeyboardInterrupt:
-        logging.info("Shutting down")
-        sys.exit(0)
+    connectors.scrape()
+    RUNNING = False

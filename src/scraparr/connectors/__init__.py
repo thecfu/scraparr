@@ -5,9 +5,9 @@ And update their Metrics
 
 import hashlib
 import json
+import time
 import logging
 import concurrent.futures
-from scraparr.util import get
 
 indexers = ["sonarr", "radarr"]
 
@@ -57,9 +57,9 @@ class Connectors:
     def scrape_service(self, service, config_index):
         """Function to Scrape the Service and Update the Metrics"""
         config = self.connectors[service][config_index]["config"]
-        scrape_data = {"data": self.connectors[service][config_index]["function"].scrape(config),
-                       "system": self.get_system_data(service, config)}
-        if scrape_data["data"] is not None and scrape_data["system"] is not None:
+        alias = config.get('alias', service)
+        scrape_data = self.connectors[service][config_index]["function"].scrape(config)
+        if scrape_data is not None:
             new_hash = self.get_hash(scrape_data)
             if new_hash != self.last_scrape[service][config_index]:
                 self.last_scrape[service][config_index] = new_hash
@@ -67,80 +67,32 @@ class Connectors:
                 func.update_metrics(
                     scrape_data,
                     config.get('detailed', False),
-                    config.get('alias', service)
+                    alias
                 )
-                logging.info("%s metrics updated for config %d", service, config_index)
+                logging.info("%s metrics updated for config %s", service, alias)
             else:
-                logging.info("No changes detected in %s for config %d", service, config_index)
+                logging.info("No changes detected in %s for config %s", service, alias)
         else:
-            logging.warning("%s scrape failed for config %d", service, config_index)
-
-    @staticmethod
-    def get_system_data(service, config):
-        """Function to get the System Data"""
-        def root_folder():
-            def filter_data(folder, disks):
-                report = []
-                seen_paths = set()  # To keep track of added paths
-
-                for rootfolder in folder:
-                    for disk in disks:
-                        if disk["path"] == rootfolder["path"]:
-                            if not disk["path"] in seen_paths:
-                                report.append(disk)
-                                seen_paths.add(disk["path"])
-                            break
-                    else:
-                        for disk in disks:
-                            if rootfolder["path"].startswith(disk["path"]) and disk["path"] != '/':
-                                if not disk["path"] in seen_paths:
-                                    report.append(disk)
-                                    seen_paths.add(disk["path"])
-                                break
-                        else:
-                            logging.warning("No diskspace data found for %s,"
-                                            " using only available Data", rootfolder["path"])
-                            report.append({
-                                "path": rootfolder["path"],
-                                "freeSpace":  rootfolder["freeSpace"],
-                                "totalSpace": -1
-                            })
-                            seen_paths.add(rootfolder["path"])
-                return report
-            data = get(f"{url}/api/{api_version}/rootfolder", api_key)
-            if data:
-                diskspace_data = get(f"{url}/api/{api_version}/diskspace", api_key)
-                if diskspace_data:
-                    return filter_data(data, diskspace_data)
-            logging.warning("No rootfolder data found")
-            return None
-
-        def queue():
-            return get(f"{url}/api/{api_version}/queue/status", api_key)
-
-        def status():
-            return get(f"{url}/api/{api_version}/system/status", api_key)
-
-        url = config.get('url')
-        api_key = config.get('api_key')
-        api_version = config.get('api_version')
-
-        if service in indexers:
-            return {'root_folder': root_folder(), 'queue': queue(), 'status': status()}
-        return {'status': status()}
+            logging.warning("%s scrape failed for config %s", service, alias)
 
     def scrape(self):
         """Function to Scrape all the Services"""
+
+        running = True
+
+        def scrape_with_interval(service, config_index, interval):
+            while running:
+                self.scrape_service(service, config_index)
+                time.sleep(interval)
+
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = {
-                executor.submit(self.scrape_service, service, config_index): (service, config_index)
-                for service, configs in self.connectors.items()
-                for config_index in range(len(configs))
-            }
-            for future in concurrent.futures.as_completed(futures):
-                service, config_index = futures[future]
-                try:
-                    future.result()
-                except Exception as e:
-                    logging.error("Scrape failed for %s (config %d): %s", service, config_index, e)
-                    raise e
+            futures = []
+            for service, configs in self.connectors.items():
+                for config_index, config in enumerate(configs):
+                    interval = config.get('interval', 30)
+                    futures.append(executor.submit(
+                        scrape_with_interval,
+                        service,
+                        config_index,
+                        interval
+                    ))

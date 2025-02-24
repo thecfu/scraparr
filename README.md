@@ -79,6 +79,7 @@ sonarr:
   api_key: key
   # alias: sonarr # Optional to Differentiate between multiple Services
   # api_version: v3 # Optional to use a different API Version
+  # interval: 30 # Optional to set a different Interval in Seconds
   # detailed: true  # Get Data per Series
 ```
 

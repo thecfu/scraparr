@@ -4,9 +4,10 @@ Module to handle the Metrics of the Prowlarr Service
 
 import time
 import re
+import logging
 from dateutil.parser import parse
 
-from scraparr.util import get
+from scraparr.connectors.util import get
 from scraparr.metrics.general import UP
 import scraparr.metrics.prowlarr as prowlarr_metrics
 
@@ -193,10 +194,18 @@ def scrape(config):
     api_version = config.get('api_version')
     alias = config.get('alias', 'prowlarr')
 
-    return {
+    data = {
         'indexer': get_indexers(url, api_key, api_version, alias),
         'applications': get_applications(url, api_key, api_version, alias)
     }
+
+    system = get(f"{url}/api/{api_version}/system/status", api_key)
+
+    if data['indexer'] == {} or data['applications'] == {} or system == {}:
+        logging.error("No Data found for Prowlarr, assuming Failure")
+        return {}
+
+    return {"data": data, "system": { "status": system}}
 
 def update_metrics(data, detailed, alias):
     """Update the Metrics for the Prowlarr Service"""

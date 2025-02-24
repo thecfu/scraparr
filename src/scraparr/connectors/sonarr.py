@@ -6,7 +6,7 @@ import time
 import logging
 from dateutil.parser import parse
 
-from scraparr import util
+from scraparr.connectors import util
 from scraparr.metrics.general import UP
 import scraparr.metrics.sonarr as sonarr_metrics
 
@@ -163,7 +163,23 @@ def scrape(config):
     api_version = config.get('api_version')
     alias = config.get('alias', 'sonarr')
 
-    return get_series(url, api_key, api_version, alias)
+    queue = util.get(f"{url}/api/{api_version}/queue/status", api_key)
+    status = util.get(f"{url}/api/{api_version}/system/status", api_key)
+
+    scrape_data = {
+        "system": {
+            "root_folder": util.get_root_folder(url, api_version, api_key),
+            "queue": queue,
+            "status": status
+        },
+        "data": get_series(url, api_key, api_version, alias)
+    }
+
+    if scrape_data["data"] == {} or scrape_data["system"]["status"] == {}:
+        logging.error("No Data found for Sonarr, assuming Failure")
+        return {}
+
+    return scrape_data
 
 def update_metrics(series, detailed, alias):
     """Update the Metrics for the Sonarr Service"""
