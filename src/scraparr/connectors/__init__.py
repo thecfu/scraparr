@@ -22,7 +22,7 @@ class Connectors:
         """Function to add a Connector on successful load into the List of Connectors"""
         importer = self.load_connector(service)
 
-        api_versions = {"sonarr": "v3", "radarr": "v3", "prowlarr": "v1"}
+        api_versions = {"sonarr": "v3", "radarr": "v3", "prowlarr": "v1", "bazarr": "dummy"}
 
         if importer:
             self.connectors[service] = []
