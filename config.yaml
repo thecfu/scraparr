@@ -1,16 +1,16 @@
 general:
   # Exporter Listening Address and Port
-  # address: 0.0.0.0
-  # port: 7100
+  # address: 0.0.0.0 # Optional
+  # port: 7100 # Optional
   # Exporter Metrics Path
-  # path: /metrics
+  # path: /metrics # Optional
 
 auth:
   # Basic Auth
-  # username: user
-  # password: pass
+  # username: user # Optional
+  # password: pass # Optional
   # Bearer Token
-  # token: token
+  # token: token # Optional
 
 sonarr:
   url: http://sonarr:8989
