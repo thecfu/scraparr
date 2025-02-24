@@ -69,11 +69,11 @@ class Connectors:
                     config.get('detailed', False),
                     alias
                 )
-                logging.info("%s metrics updated for config %d", service, alias)
+                logging.info("%s metrics updated for config %s", service, alias)
             else:
-                logging.info("No changes detected in %s for config %d", service, alias)
+                logging.info("No changes detected in %s for config %s", service, alias)
         else:
-            logging.warning("%s scrape failed for config %d", service, alias)
+            logging.warning("%s scrape failed for config %s", service, alias)
 
     def scrape(self):
         """Function to Scrape all the Services"""
