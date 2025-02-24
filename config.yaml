@@ -35,3 +35,10 @@ prowlarr:
   # api_version: v1 # Optional to use a different API Version
   # interval: 30 # Optional to set a different Interval in Seconds
   # detailed: true  # Get Data per Application/Indexer
+
+bazarr:
+  url: http://bazarr:6767
+  api_key: key
+  # alias: bazarr # Optional to Differentiate between multiple Services
+  # interval: 30 # Optional to set a different Interval in Seconds
+  # detailed: true  # Get Data per Series
