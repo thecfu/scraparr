@@ -3,6 +3,7 @@ Module to handle the Metrics of the Radarr Service
 """
 
 import time
+import logging
 from dateutil.parser import parse
 
 import scraparr.metrics.radarr as radarr_metrics
@@ -146,7 +147,21 @@ def scrape(config):
     api_version = config.get('api_version')
     alias = config.get('alias', 'radarr')
 
-    return get_movies(url, api_key, api_version, alias)
+    queue = util.get(f"{url}/api/{api_version}/queue/status", api_key)
+    status = util.get(f"{url}/api/{api_version}/system/status", api_key)
+
+    data = get_movies(url, api_key, api_version, alias)
+    system = {
+        "root_folder": util.get_root_folder(url, api_version, api_key),
+        "queue": queue,
+        "status": status
+    }
+
+    if data == {} or system["status"] == {}:
+        logging.error("No Data found for Radarr, assuming Failure")
+        return {}
+
+    return {"data": data, "system": system}
 
 def update_metrics(data, detailed, alias):
     """Update the Radarr Metrics"""
