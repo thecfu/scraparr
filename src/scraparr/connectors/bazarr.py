@@ -109,7 +109,7 @@ def analyse_data(data, wanted, detailed, alias):
 def analyse_providers(providers, alias):
     """Analyse the Providers and set the Correct Metrics"""
 
-    bazarr_metrics.PROVIDER_COUNT.labels(alias).set(len(providers))
+    bazarr_metrics.PROVIDER_COUNT.labels(alias).set(len(providers["data"]))
     bazarr_metrics.PROVIDER_STATUS.clear()
 
     for provider in providers["data"]:
