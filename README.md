@@ -114,6 +114,8 @@ scrape_configs:
 
 ### Grafana Dashboards
 
+The Main Dashboard is also available under Grafana Dashboards: [Scraparr](https://grafana.com/grafana/dashboards/22934)
+
 For example Grafana Dashboards have a look at [Dashboards](dashboards)
 
 ## Contributing
