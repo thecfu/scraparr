@@ -44,7 +44,7 @@ BEARER_TOKEN = CONFIG.get('AUTH', {}).get('token', None)
 metrics_app = make_wsgi_app()
 app = Middleware(metrics_app, USERNAME, PASSWORD, BEARER_TOKEN)
 
-ACTIVE_CONNECTORS = ['sonarr', 'radarr', 'prowlarr', 'bazarr']
+ACTIVE_CONNECTORS = ['sonarr', 'radarr', 'prowlarr', 'bazarr', 'readarr']
 BEAUTIFUL_CONNECTORS = ", ".join(ACTIVE_CONNECTORS[:-1]) + " or " + ACTIVE_CONNECTORS[-1]
 
 RUNNING = True

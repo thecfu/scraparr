@@ -9,8 +9,6 @@ import time
 import logging
 import concurrent.futures
 
-indexers = ["sonarr", "radarr"]
-
 class Connectors:
     """Class to initialize Variables that are used to Identify the Connectors
     and log the last Scrape"""
@@ -22,7 +20,13 @@ class Connectors:
         """Function to add a Connector on successful load into the List of Connectors"""
         importer = self.load_connector(service)
 
-        api_versions = {"sonarr": "v3", "radarr": "v3", "prowlarr": "v1", "bazarr": "dummy"}
+        api_versions = {
+            "sonarr": "v3",
+            "radarr": "v3",
+            "prowlarr": "v1", 
+            "bazarr": "dummy",
+            "readarr": "v1"
+        }
 
         if importer:
             self.connectors[service] = []
