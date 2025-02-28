@@ -93,7 +93,7 @@ def analyse_books(books, detailed, alias):
     book_rating = []
 
     readarr_metrics.BOOK_DISK_SIZE.clear()
-    readarr_metrics.BOOK_BOOK_COUNT.clear()
+    readarr_metrics.BOOK_PERCENTAGE.clear()
     readarr_metrics.BOOK_RATING.clear()
     readarr_metrics.BOOK_RATING_TOTAL.clear()
 
@@ -114,9 +114,9 @@ def analyse_books(books, detailed, alias):
                  .labels(alias, book)
                   .set(book["statistics"]["sizeOnDisk"])
                 )
-                (readarr_metrics.BOOK_BOOK_COUNT
+                (readarr_metrics.BOOK_PERCENTAGE
                  .labels(alias, book["title"])
-                 .set(book["statistics"]["bookCount"])
+                 .set(book["statistics"]["percentOfBooks"])
                 )
                 (readarr_metrics.BOOK_RATING
                  .labels(alias, book["title"])
