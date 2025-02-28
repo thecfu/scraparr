@@ -44,7 +44,7 @@ bazarr:
   # detailed: true  # Get Data per Series
 
 readarr:
-  url: http://readarr:
+  url: http://readarr:8787
   api_key: key
   # alias: prowlarr # Optional to Differentiate between multiple Services
   # api_version: v1 # Optional to use a different API Version
