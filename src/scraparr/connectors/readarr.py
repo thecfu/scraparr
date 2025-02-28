@@ -72,12 +72,18 @@ def analyse_authors(authors, detailed, alias):
 
         if detailed:
             if author.get("statistics", None) is not None:
-                readarr_metrics.AUTHOR_DISK_SIZE.labels(alias, author).set(author["statistics"]["sizeOnDisk"])
+                (readarr_metrics.AUTHOR_DISK_SIZE
+                 .labels(alias, author["sortName"])
+                 .set(author["statistics"]["sizeOnDisk"])
+                 )
                 (readarr_metrics.AUTHOR_BOOK_COUNT
                  .labels(alias, author["sortName"])
                  .set(author["statistics"]["bookCount"])
                 )
-                readarr_metrics.AUTHOR_RATING.labels(alias, author["sortName"]).set(author["ratings"]["value"])
+                (readarr_metrics.AUTHOR_RATING
+                 .labels(alias, author["sortName"])
+                 .set(author["ratings"]["value"])
+                 )
 
     for status, count in authors_status.items():
         readarr_metrics.AUTHOR_STATUS.labels(alias, status).set(count)
@@ -111,7 +117,7 @@ def analyse_books(books, detailed, alias):
         if detailed:
             if book.get("statistics", None) is not None:
                 (readarr_metrics.BOOK_DISK_SIZE
-                 .labels(alias, book)
+                 .labels(alias, book["title"])
                   .set(book["statistics"]["sizeOnDisk"])
                 )
                 (readarr_metrics.BOOK_PERCENTAGE
@@ -137,14 +143,11 @@ def scrape(config):
     api_version = config.get('api_version')
     alias = config.get('alias', 'sonarr')
 
-    queue = util.get(f"{url}/api/{api_version}/queue/status", api_key)
-    status = util.get(f"{url}/api/{api_version}/system/status", api_key)
-
     scrape_data = {
         "system": {
             "root_folder": util.get_root_folder(url, api_version, api_key),
-            "queue": queue,
-            "status": status
+            "queue": util.get(f"{url}/api/{api_version}/queue/status", api_key),
+            "status": util.get(f"{url}/api/{api_version}/system/status", api_key)
         },
         "data": {
             "books": get_books(url, api_key, api_version, alias),

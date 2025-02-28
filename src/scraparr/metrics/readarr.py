@@ -23,7 +23,7 @@ AUTHOR_RATING_TOTAL = Gauge("readarr_author_rating_total", "Overall Rating of th
 
 BOOK_GENRES = Gauge("readarr_book_genres", "Genres of the Books in Readarr", ["alias", "genre"])
 BOOK_DISK_SIZE = Gauge("readarr_book_disk_size", "Disk Size of the Books in Readarr", ["alias", "book"])
-BOOK_DISK_SIZE_TOTAL = Gauge("readarr_book_disk_size_total", "Disk Size of the Books in Readarr", ["alias", "book"])
+BOOK_DISK_SIZE_TOTAL = Gauge("readarr_book_disk_size_total", "Disk Size of the Books in Readarr", ["alias"])
 BOOK_RATING = Gauge("readarr_book_rating", "Rating of the Books in Readarr", ["alias", "book"])
 BOOK_RATING_TOTAL = Gauge("readarr_book_rating_total", "Overall Rating of the Books in Readarr", ["alias"])
 BOOK_PERCENTAGE = Gauge("readarr_book_percentage", "Percentage of the Book downloaded in Readarr", ["alias", "book"])
