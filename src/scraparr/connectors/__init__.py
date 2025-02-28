@@ -59,7 +59,7 @@ class Connectors:
         config = self.connectors[service][config_index]["config"]
         scrape_data = {"data": self.connectors[service][config_index]["function"].scrape(config),
                        "system": self.get_system_data(service, config)}
-        if scrape_data["data"] is not None and scrape_data["system"] is not None:
+        if scrape_data["data"] != {} and scrape_data["system"] != {}:
             new_hash = self.get_hash(scrape_data)
             if new_hash != self.last_scrape[service][config_index]:
                 self.last_scrape[service][config_index] = new_hash
@@ -113,7 +113,7 @@ class Connectors:
                 if diskspace_data:
                     return filter_data(data, diskspace_data)
             logging.warning("No rootfolder data found")
-            return None
+            return {}
 
         def queue():
             return get(f"{url}/api/{api_version}/queue/status", api_key)
@@ -126,8 +126,14 @@ class Connectors:
         api_version = config.get('api_version')
 
         if service in indexers:
-            return {'root_folder': root_folder(), 'queue': queue(), 'status': status()}
-        return {'status': status()}
+            data = {'root_folder': root_folder(), 'queue': queue(), 'status': status()}
+        else:
+            data = {'status': status()}
+
+        if any(value is {} for value in data.values()):
+            logging.warning("At least One Data is missing for %s, %s", service, config.get('alias', ""))
+            return {}
+        return data
 
     def scrape(self):
         """Function to Scrape all the Services"""

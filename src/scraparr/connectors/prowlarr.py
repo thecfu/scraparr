@@ -193,10 +193,14 @@ def scrape(config):
     api_version = config.get('api_version')
     alias = config.get('alias', 'prowlarr')
 
-    return {
+    data = {
         'indexer': get_indexers(url, api_key, api_version, alias),
         'applications': get_applications(url, api_key, api_version, alias)
     }
+
+    if data['indexer'] == {} or data['applications'] == {}:
+        return {}
+    return data
 
 def update_metrics(data, detailed, alias):
     """Update the Metrics for the Prowlarr Service"""
