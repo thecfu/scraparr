@@ -62,7 +62,7 @@ def check_health(health, res):
             indexers = indexer_match.group(1).split(', ') if indexer_match else None
             for indexer in res:
                 if indexer['name'] in indexers:
-                    indexer['status'] = {"status": status}
+                    indexer['status'] = status
 
 def get_applications(url, api_key, version, alias):
     """Grab the Applications from the Prowlarr Endpoint"""
@@ -157,7 +157,7 @@ def analyse_indexers(indexers, detailed, alias):
                 .set(enabled)
             )
             if "status" in indexer:
-                status = indexer["status"].get("status", "healthy")
+                status = indexer.get("status", "healthy")
             else:
                 status = "healthy"
             if status == "healthy":
