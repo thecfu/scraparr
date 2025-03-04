@@ -59,7 +59,7 @@ class Connectors:
         config = self.connectors[service][config_index]["config"]
         scrape_data = {"data": self.connectors[service][config_index]["function"].scrape(config),
                        "system": self.get_system_data(service, config)}
-        if scrape_data["data"] != {} and scrape_data["system"] != {}:
+        if not scrape_data["data"] and not scrape_data["system"]:
             new_hash = self.get_hash(scrape_data)
             if new_hash != self.last_scrape[service][config_index]:
                 self.last_scrape[service][config_index] = new_hash
@@ -130,8 +130,9 @@ class Connectors:
         else:
             data = {'status': status()}
 
-        if any(value is {} for value in data.values()):
-            logging.warning("At least One Data is missing for %s, %s", service, config.get('alias', ""))
+        if any(value == {} for value in data.values()):
+            logging.warning("At least One Data is missing for %s, %s",
+                            service, config.get('alias', ""))
             return {}
         return data
 
