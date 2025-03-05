@@ -40,6 +40,9 @@ You can also check the [Docker-Compose](compose.yaml).
 Github Registry:
 `docker run -v ./config.yaml:/scraparr/config/config.yaml -p 7100:7100 ghcr.io/thecfu/scraparr`
 
+Docker Hub:
+`docker run -v ./config.yaml:/scraparr/config/config.yaml -p 7100:7100 thegameprofi/scraparr`
+
 > [!NOTE]  
 > If your using any v1 Version check the Readme of the [v1 Branch](https://github.com/thecfu/scraparr/tree/v1#readme)
 
