@@ -43,6 +43,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@4574d27a4764455b42196d70a065bc6853246a25
 
@@ -54,7 +60,9 @@ jobs:
         id: meta
         uses: docker/metadata-action@369eb591f429131d6889c46b94e711f089e6ca96
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+            thegameprofi/scraparr
           flavor: |
             latest=${{ steps.latest_tag.outputs.latest_tag }}
           tags: |
@@ -75,7 +83,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
       
       # This step generates an artifact attestation for the image, which is an unforgeable statement about where and how it was built. It increases supply chain security for people who consume the image. For more information, see "[AUTOTITLE](/actions/security-guides/using-artifact-attestations-to-establish-provenance-for-builds)." 
-      - name: Generate artifact attestation
+      - name: Generate artifact attestation for GHCR.io
         uses: actions/attest-build-provenance@v1
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
