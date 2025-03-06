@@ -5,7 +5,7 @@ name: Create and publish the Main Docker Image
 on:
   push:
     branches:
-      - main
+      - dev
     paths:
       - 'src/**'
       - 'Dockerfile'
