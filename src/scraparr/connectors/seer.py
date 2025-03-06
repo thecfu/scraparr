@@ -37,15 +37,6 @@ class GetSeer:
         self.metrics.LAST_SCRAPE.labels(alias).set(end_time)
         self.metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
 
-        if res["pageInfo"].get("pages", 1) != res["pageInfo"].get("page", 1):
-            for page in range(2, res["pageInfo"]["pages"] + 1):
-                skip = 20 * page
-                more = get(f"{self.api_url}/user?take=20&skip={skip}", self.api_key)
-                if more == {}:
-                    logging.error("Failed to get more users, but expected more for %s", alias)
-                    return []
-                res["results"].extend(more["results"])
-
         for res_user in res["results"]:
             user = {"username": res_user["displayName"],
                     "requests": res_user["requestCount"]}
@@ -89,6 +80,11 @@ class GetSeer:
         if not res or "results" not in res:
             UP.labels(alias, service).set(0)
             return []
+        if len(res["results"]) == 0:
+            UP.labels(alias, service).set(1)
+            self.metrics.LAST_SCRAPE.labels(alias).set(end_time)
+            self.metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
+            return [{}]  # Return a single empty dict to indicate a successful scrape
 
         self.metrics.LAST_SCRAPE.labels(alias).set(end_time)
         self.metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
@@ -147,6 +143,11 @@ class GetSeer:
         if not res or "results" not in res:
             UP.labels(alias, service).set(0)
             return []
+        if len(res["results"]) == 0:
+            UP.labels(alias, service).set(1)
+            self.metrics.LAST_SCRAPE.labels(alias).set(end_time)
+            self.metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
+            return [{}] # Return a single empty dict to indicate a successful scrape
 
         UP.labels(alias, service).set(1)
         self.metrics.LAST_SCRAPE.labels(alias).set(end_time)
@@ -308,5 +309,11 @@ class UpdateSeer:
         issues = data["issues"]
 
         self.update_users(users)
-        self.update_requests(requests)
-        self.update_issues(issues)
+        if requests[0] != {}:
+            self.update_requests(requests)
+        else:
+            self.metrics.REQUEST_COUNT.labels(self.alias).set(0)
+        if issues[0] != {}:
+            self.update_issues(issues)
+        else:
+            self.metrics.ISSUE_COUNT.labels(self.alias).set(0)
