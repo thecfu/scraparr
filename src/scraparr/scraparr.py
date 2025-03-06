@@ -50,7 +50,8 @@ ACTIVE_CONNECTORS = [
     'prowlarr',
     'bazarr',
     'readarr',
-    'jellyseerr'
+    'jellyseerr',
+    'overseerr',
 ]
 BEAUTIFUL_CONNECTORS = ", ".join(ACTIVE_CONNECTORS[:-1]) + " or " + ACTIVE_CONNECTORS[-1]
 

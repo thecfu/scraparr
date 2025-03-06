@@ -56,4 +56,11 @@ jellyseerr:
   api_key: key
   # alias: jellyseerr # Optional to Differentiate between multiple Services
   # interval: 30 # Optional to set a different Interval in Seconds
-  # detailed: true  # Get Data per Series
+  # detailed: true  # Get Data per Request/Issue
+
+overseerr:
+  url: http://overseerr:5055
+  api_key: key
+  # alias: overseerr # Optional to Differentiate between multiple Services
+  # interval: 30 # Optional to set a different Interval in Seconds
+  # detailed: true  # Get Data per Request/Issue
