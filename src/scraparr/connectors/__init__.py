@@ -95,7 +95,7 @@ class Connectors:
             futures = []
             for service, configs in self.connectors.items():
                 for config_index, config in enumerate(configs):
-                    interval = config.get('interval', 30)
+                    interval = config["config"].get('interval', 30)
                     futures.append(executor.submit(
                         scrape_with_interval,
                         service,
