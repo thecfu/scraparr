@@ -80,7 +80,7 @@ class GetSeer:
         if not res or "results" not in res:
             UP.labels(alias, service).set(0)
             return []
-        elif len(res["results"]) == 0:
+        if len(res["results"]) == 0:
             UP.labels(alias, service).set(1)
             self.metrics.LAST_SCRAPE.labels(alias).set(end_time)
             self.metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
@@ -143,7 +143,7 @@ class GetSeer:
         if not res or "results" not in res:
             UP.labels(alias, service).set(0)
             return []
-        elif len(res["results"]) == 0:
+        if len(res["results"]) == 0:
             UP.labels(alias, service).set(1)
             self.metrics.LAST_SCRAPE.labels(alias).set(end_time)
             self.metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
