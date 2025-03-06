@@ -46,6 +46,10 @@ Docker Hub:
 > [!NOTE]  
 > If your using any v1 Version check the Readme of the [v1 Branch](https://github.com/thecfu/scraparr/tree/v1#readme)
 
+> [!NOTE]  
+> If you want to access new features before they are released, use the `main` tag.
+> 
+
 ### Kubernetes
 
 Deployment on Kubernetes is possible via the [imgios/scraparr](https://github.com/imgios/scraparr) Helm Chart, which simplifies the process into two steps:
