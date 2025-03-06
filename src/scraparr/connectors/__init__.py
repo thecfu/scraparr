@@ -25,7 +25,8 @@ class Connectors:
             "radarr": "v3",
             "prowlarr": "v1", 
             "bazarr": "dummy",
-            "readarr": "v1"
+            "readarr": "v1",
+            "jellyseerr": "v1"
         }
 
         if importer:
