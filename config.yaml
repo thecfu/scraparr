@@ -50,3 +50,10 @@ readarr:
   # api_version: v1 # Optional to use a different API Version
   # interval: 30 # Optional to set a different Interval in Seconds
   # detailed: true  # Get Data per Book
+
+jellyseerr:
+  url: http://jellyseerr:5055
+  api_key: key
+  # alias: jellyseerr # Optional to Differentiate between multiple Services
+  # interval: 30 # Optional to set a different Interval in Seconds
+  # detailed: true  # Get Data per Series
