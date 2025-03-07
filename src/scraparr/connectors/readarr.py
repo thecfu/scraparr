@@ -141,7 +141,7 @@ def scrape(config):
     url = config.get('url')
     api_key = config.get('api_key')
     api_version = config.get('api_version')
-    alias = config.get('alias', 'sonarr')
+    alias = config.get('alias', 'readarr')
 
     scrape_data = {
         "system": {
