@@ -12,3 +12,7 @@ https://grafana.com/grafana/dashboards/22934
 ![Dashboard 1 Sonarr](/.github/assets/grafana_dashboard1_sonarr.png)
 ### Bazarr
 ![Dashboard 1 Bazarr](/.github/assets/grafana_dashboard1_bazarr.png)
+### Readarr
+![Dashboard 1 Readarr](/.github/assets/grafana_dashboard1_readarr.png)
+### Jellyseerr & Overseerr
+![Dashboard 1 Jellyseerr & Overseerr](/.github/assets/grafana_dashboard1_seerr.png)
