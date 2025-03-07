@@ -8,8 +8,6 @@ def scrape(config):
 
     if config.get("alias", None) is None:
         config["alias"] = "jellyseerr"
-    if not config.get("service", None) is None:
-        config["service"] = "jellyseerr"
 
     get_seer = scraparr.connectors.seer.GetSeer(config, jellyseerr_metrics)
     users, requests, issues = get_seer.get()

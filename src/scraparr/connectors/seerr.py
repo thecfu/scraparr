@@ -14,7 +14,7 @@ class GetSeer:
         self.api_url = f"{config['url']}/api/{config['api_version']}"
         self.api_key = config['api_key']
         self.alias = config['alias']
-        self.service = config.get('service', 'seer')
+        self.service = config.get('service', 'seerr')
         self.metrics = metrics
 
     def get_users(self):
