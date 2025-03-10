@@ -65,7 +65,7 @@ class Connectors:
         config = self.connectors[service][config_index]["config"]
         alias = config.get('alias', service)
         scrape_data = self.connectors[service][config_index]["function"].scrape(config)
-        if scrape_data is not None:
+        if scrape_data:
             new_hash = self.get_hash(scrape_data)
             if new_hash != self.last_scrape[service][config_index]:
                 self.last_scrape[service][config_index] = new_hash
@@ -79,7 +79,7 @@ class Connectors:
             else:
                 logging.info("No changes detected in %s for config %s", service, alias)
         else:
-            logging.warning("%s scrape failed for config %s", service, alias)
+            logging.error("%s scrape failed for config %s", service, alias)
 
     def scrape(self):
         """Function to Scrape all the Services"""
