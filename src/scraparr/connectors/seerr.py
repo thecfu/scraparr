@@ -1,4 +1,4 @@
-"""Module to handle the Metrics of the Seer Services"""
+"""Module to handle the Metrics of the Seerr Services"""
 
 import time
 import logging
@@ -7,18 +7,18 @@ from dateutil.parser import parse
 from scraparr.connectors.util import get
 from scraparr.metrics.general import UP
 
-class GetSeer:
-    """Class to handle the Metrics for jellyseerr and Overseer"""
+class GetSeerr:
+    """Class to handle the Metrics for jellyseerr and Overseerr"""
 
     def __init__(self, config, metrics):
         self.api_url = f"{config['url']}/api/{config['api_version']}"
         self.api_key = config['api_key']
         self.alias = config['alias']
-        self.service = config.get('service', 'seer')
+        self.service = config.get('service', 'seerr')
         self.metrics = metrics
 
     def get_users(self):
-        """Grab Users from the Seer Endpoint"""
+        """Grab Users from the Seerr Endpoint"""
 
         alias = self.alias
         service = self.service
@@ -45,7 +45,7 @@ class GetSeer:
         return users
 
     def get_title(self, req):
-        """Grab the Title from the Seer Endpoint"""
+        """Grab the Title from the Seerr Endpoint"""
 
         if req["media"]["tmdbId"]:
             media_id = req["media"]["tmdbId"]
@@ -68,7 +68,7 @@ class GetSeer:
         return [title, seasons]
 
     def get_requests(self):
-        """Grab Requests from the Seer Endpoint"""
+        """Grab Requests from the Seerr Endpoint"""
 
         alias, service = self.alias, self.service
         requests = []
@@ -131,7 +131,7 @@ class GetSeer:
         return "Unknown"
 
     def get_issues(self):
-        """Grab Issues from the Seer Endpoint"""
+        """Grab Issues from the Seerr Endpoint"""
 
         alias, service = self.alias, self.service
         issues = []
@@ -209,8 +209,8 @@ class GetSeer:
 
         return users, requests, issues
 
-class UpdateSeer:
-    """Class to handle the Metrics for jellyseerr and Overseer"""
+class UpdateSeerr:
+    """Class to handle the Metrics for jellyseerr and Overseerr"""
 
     def __init__(self, detailed, alias, metrics):
         self.detailed = detailed
@@ -302,7 +302,7 @@ class UpdateSeer:
         self.metrics.ISSUE_COUNT.labels(alias).set(len(issues))
 
     def update(self, data):
-        """Update the Metrics for the Seer Services"""
+        """Update the Metrics for the Seerr Services"""
 
         users = data["users"]
         requests = data["requests"]

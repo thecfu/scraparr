@@ -1,6 +1,6 @@
 """Module to handle the overseerr Connector"""
 
-import scraparr.connectors.seer
+import scraparr.connectors.seerr
 import scraparr.metrics.overseerr as overseerr_metrics
 
 def scrape(config):
@@ -8,11 +8,9 @@ def scrape(config):
 
     if config.get("alias", None) is None:
         config["alias"] = "overseerr"
-    if not config.get("service", None) is None:
-        config["service"] = "overseerr"
 
-    get_seer = scraparr.connectors.seer.GetSeer(config, overseerr_metrics)
-    users, requests, issues = get_seer.get()
+    get_seerr = scraparr.connectors.seerr.GetSeerr(config, overseerr_metrics)
+    users, requests, issues = get_seerr.get()
 
     if not users or not requests or not issues:
         return None
@@ -22,5 +20,5 @@ def scrape(config):
 def update_metrics(data, detailed, alias):
     """Update the Metrics for the Overseerr Service"""
 
-    update_seer = scraparr.connectors.seer.UpdateSeer(detailed, alias, overseerr_metrics)
-    update_seer.update(data)
+    update_seerr = scraparr.connectors.seerr.UpdateSeerr(detailed, alias, overseerr_metrics)
+    update_seerr.update(data)
