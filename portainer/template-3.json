@@ -2,6 +2,7 @@
   "version": "3",
   "templates": [
     {
+      "id": 1,
       "type": 1,
       "title": "Scraparr",
       "name": "scraparr",
