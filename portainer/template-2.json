@@ -20,7 +20,7 @@
           "bind": "/portainer/Files/AppData/Scraparr/config",
           "container": "/scraparr/config"
         }
-      ],
-    },
-  ],
+      ]
+    }
+  ]
 }
