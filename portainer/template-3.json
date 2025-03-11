@@ -1,0 +1,23 @@
+{
+  "version": "3",
+  "templates": [
+    {
+      "id": 1,
+      "type": 1,
+      "title": "Scraparr",
+      "description": "Scraparr is a Prometheus Exporter for various components of the *arr Suite",
+      "categories": ["Monitoring"],
+      "platform": "linux",
+      "logo": "https://github.com/thecfu/scraparr/blob/main/.github/assets/logos/scraparr_logo.png",
+      "registry": "ghcr.io",
+      "image": "thecfu/scraparr:latest",
+      "ports": ["7100/tcp"],
+      "volumes": [
+        {
+          "bind": "/portainer/Files/AppData/Scraparr/config",
+          "container": "/scraparr/config"
+        }
+      ]
+    },
+  ],
+}
