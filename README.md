@@ -1,4 +1,4 @@
-# <img src="https://scraparr.thecfu.de/scraparr_logo.svg" alt="scraparr-logo" width="20%"> <img src="https://scraparr.thecfu.de/scraparr_only-text.png" alt="Scraparr" width="30%"> 
+# <img src="/.github/assets/logos/scraparr_logo.svg" alt="scraparr-logo" width="20%"> <img src="/.github/assets/logos/scraparr_only-text.png" alt="Scraparr" width="30%"> 
 ### A Exporter for the *arr Suite
 
 [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)]() [![Pylint](https://github.com/TheCfU/scraparr/actions/workflows/pylint.yml/badge.svg)](https://github.com/TheCfU/scraparr/actions/workflows/pylint.yml)<br>
@@ -50,7 +50,7 @@ Docker Hub:
 > If you want to access new features before they are released, use the `main` tag.
 > 
 
-### Kubernetes
+### Kubernetes (Community-Maintained)
 
 Deployment on Kubernetes is possible via the [imgios/scraparr](https://github.com/imgios/scraparr) Helm Chart, which simplifies the process into two steps:
 
@@ -70,6 +70,11 @@ $ helm install <release-name> imgios/scraparr \
 ```
 
 See the [Helm Chart repository README](https://github.com/imgios/scraparr) for details on deployment and how to fill the values.
+
+### Unraid Template (Community-Maintained)
+
+A Unraid Template is available in the Repo of jordan-dalby: https://github.com/jordan-dalby/unraidtemplates <br />
+> Note: This template is approved by TheCfU but is not monitored or maintained by us.
 
 ## Configuration
 
