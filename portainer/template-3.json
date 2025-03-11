@@ -9,8 +9,7 @@
       "categories": ["Monitoring"],
       "platform": "linux",
       "logo": "https://github.com/thecfu/scraparr/blob/main/.github/assets/logos/scraparr_logo.png",
-      "registry": "ghcr.io",
-      "image": "thecfu/scraparr:latest",
+      "image": "ghcr.io/thecfu/scraparr:latest",
       "ports": ["7100/tcp"],
       "volumes": [
         {
