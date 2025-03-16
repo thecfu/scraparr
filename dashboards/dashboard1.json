@@ -165,7 +165,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "scraparr_services_up{job=\"$job\", scraparr_services=\"seer\", alias=\"$seerr\"}",
+          "expr": "scraparr_services_up{job=\"$job\", scraparr_services=\"seerr\", alias=\"$seerr\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
@@ -5293,14 +5293,14 @@
       {
         "allowCustomValue": false,
         "current": {},
-        "definition": "label_values(scraparr_services_up{scraparr_services=\"seer\"},alias)",
+        "definition": "label_values(scraparr_services_up{scraparr_services=\"seerr\"},alias)",
         "hide": 2,
         "includeAll": true,
         "name": "seerr",
         "options": [],
         "query": {
           "qryType": 1,
-          "query": "label_values(scraparr_services_up{scraparr_services=\"seer\"},alias)",
+          "query": "label_values(scraparr_services_up{scraparr_services=\"seerr\"},alias)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 2,
@@ -5310,13 +5310,13 @@
     ]
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Scraping",
   "uid": "becuowssfebcwa",
-  "version": 21,
+  "version": 23,
   "weekStart": ""
 }
