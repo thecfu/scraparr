@@ -17,9 +17,11 @@ def get(api_url, api_key):
         if r.status_code == 401:
             logging.error("Unauthorized when trying to access %s: %s", api_url, r.status_code)
         elif r.status_code == 404:
-            logging.error("Not Found, check API Version and Docs: %s, returned HTML %s", api_url, r.status_code)
+            logging.error("Not Found, check API Version and Docs: %s, returned HTML %s",
+                          api_url, r.status_code)
         else:
-            logging.error("Request for %s returned unexpected HTML Status Code: %s", api_url, r.status_code)
+            logging.error("Request for %s returned unexpected HTML Status Code: %s",
+                          api_url, r.status_code)
     except requests.exceptions.RequestException as e:
         logging.error("Request for %s failed with: %s", api_url, e)
     return {}
