@@ -132,7 +132,10 @@ For example Grafana Dashboards have a look at [Dashboards](dashboards)
 
 ## Contributing
 
-Contributions are welcome! Please open an issue or submit a pull request. Make sure to follow the contribution guidelines.
+Contributions are welcome! Please feel free to open an issue or submit a pull request. Make sure to follow the contribution guidelines
+
+[!IMPORTANT]
+Please fork from the `dev` branch to include any un-released changes.
 
 ## License
 
