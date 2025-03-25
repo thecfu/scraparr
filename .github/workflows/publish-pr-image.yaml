@@ -62,5 +62,4 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pr${{ github.event.pull_request.number }}
-            thegameprofi/scraparr:main
           labels: ${{ steps.meta.outputs.labels }}
