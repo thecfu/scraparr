@@ -1,5 +1,5 @@
 #
-name: Create and publish a Image for the PR
+name: Remove the Image of the PR
 
 # Configures this workflow to run every time a change is pushed to the branch called `release`.
 on:
