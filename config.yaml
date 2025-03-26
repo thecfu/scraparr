@@ -64,3 +64,10 @@ overseerr:
   # alias: overseerr # Optional to Differentiate between multiple Services
   # interval: 30 # Optional to set a different Interval in Seconds
   # detailed: true  # Get Data per Request/Issue
+
+whisparr:
+  url: http://whisparr:6969
+  api_key: key
+  # alias: whisparr # Optional to Differentiate between multiple Services
+  # interval: 30 # Optional to set a different Interval in Seconds
+  # detailed: true  # Get Data per Performer/Scene
