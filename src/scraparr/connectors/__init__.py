@@ -28,6 +28,7 @@ class Connectors:
             "readarr": "v1",
             "jellyseerr": "v1",
             "overseerr": "v1",
+            "whisparr": "v3",
         }
 
         if importer:
