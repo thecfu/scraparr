@@ -53,6 +53,7 @@ ACTIVE_CONNECTORS = [
     'jellyseerr',
     'overseerr',
     'whisparr',
+    'jellyfin'
 ]
 BEAUTIFUL_CONNECTORS = ", ".join(ACTIVE_CONNECTORS[:-1]) + " or " + ACTIVE_CONNECTORS[-1]
 
