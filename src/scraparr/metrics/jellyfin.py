@@ -7,3 +7,4 @@ SCRAPE_DURATION = Gauge('jellyfin_scrape_duration', 'Duration of Jellyfin scrape
 # Status Stats
 START_TIME = Gauge('jellyfin_start_time', 'Jellyfin start time', ['alias'] )
 BUILD_TIME = Gauge('jellyfin_build_time', 'Jellyfin build time', ['alias'] )
+JELLYFIN_NUMBER_OF_DEVICES = ('jellyfin_number_of_devices', 'Jellyfin number of devices', ['alias'])
