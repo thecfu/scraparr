@@ -9,19 +9,16 @@ import logging
 from scraparr.metrics.general import UP
 
 
-def get_number_of_devices(url, api_key, alias):
-    """Grab the Indexers from the Prowlarr Endpoint"""
-    try:
-        initial_time = time.time()
-        token = f"Mediabrowser Token={api_key}"
-        headers = {"Authorization": token}
-        res = requests.get(f"{url}/Devices", headers=headers, timeout=10)  # Adding timeout
+def get_header(api_key):
+    token = f"Mediabrowser Token={api_key}"
+    return {"Authorization": token}
+
+
+def get_number_of_devices(url, headers_auth, alias):
+    """Grab the Indexers from the Jellyfin Endpoint"""
+    try:        
+        res = requests.get(f"{url}/Devices", headers=headers_auth, timeout=10)  # Adding timeout
         res.raise_for_status()  # Raise an error for bad responses (4xx, 5xx)
-        print(res.json())  # or res.text if it's not JSON
-        end_time = time.time()
-        print(res.json()['TotalRecordCount'])
-        jellyfin_metrics.LAST_SCRAPE.labels(alias).set(end_time)
-        jellyfin_metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
         return res.json()['TotalRecordCount']
     except requests.exceptions.RequestException as e:
         print(f"Request failed: {e}")
