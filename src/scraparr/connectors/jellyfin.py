@@ -38,6 +38,7 @@ def getGenres(url, headers_auth, alias):
     except requests.exceptions.RequestException as e:
         print(f"Request failed: {e}")    
         
+        
 def get_number_of_user(url, headers_auth, alias):
     """Grab the Indexers from the Jellyfin Endpoint"""
     try:
@@ -53,12 +54,19 @@ def get_number_of_user(url, headers_auth, alias):
    
     
 def scrape(config):
+    initial_time = time.time()
     """Scrape the Bazarr Service"""
-
     url = config.get('url')
     api_key = config.get('api_key')
     alias = config.get('alias', 'bazarr')
-    n_devices = get_number_of_devices(url, api_key,alias)
+    
+    headers_auth=get_header(api_key)
+    
+    n_devices = get_number_of_devices(url, headers_auth,alias)
+    n_user = get_number_of_user(url, headers_auth,alias)
+    end_time = time.time()
+    jellyfin_metrics.LAST_SCRAPE.labels(alias).set(end_time)
+    jellyfin_metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
     
 #    system = get_system_data(url, api_key, alias)
 #    providers = get_providers(url, api_key, alias)
@@ -69,7 +77,7 @@ def scrape(config):
 #        return {"data": data, "system": system, "providers": providers, "wanted": wanted}
 
     logging.info("Passing through Jellyfin Scrape")
-    return{"n_devices": n_devices}
+    return{"n_devices": n_devices, "n_user": n_user}
 
 def update_metrics(data, detailed, alias):
     """Update the Metrics for the Jellyseerr Service"""
