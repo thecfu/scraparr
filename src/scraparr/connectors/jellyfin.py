@@ -24,13 +24,20 @@ def get_number_of_devices(url, headers_auth, alias):
         print(f"Request failed: {e}")
    
 
-"""     if res == {}:
-        UP.labels(alias, 'prowlarr').set(0)
-    else:
-        UP.labels(alias, 'prowlarr').set(1)
-        jellyfin_metrics.LAST_SCRAPE.labels(alias).set(end_time)
-        jellyfin_metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time) """
 
+
+def getGenres(url, headers_auth, alias):
+    try:
+        
+        res = requests.get(f"{url}/Genres", headers=headers_auth, timeout=10)  # Adding timeout
+        res.raise_for_status()  # Raise an error for bad responses (4xx, 5xx)
+        data = res.json()
+        genre_names = [item["Name"] for item in data.get("Items", [])]
+                
+        return genre_names
+    except requests.exceptions.RequestException as e:
+        print(f"Request failed: {e}")    
+        
 def scrape(config):
     """Scrape the Bazarr Service"""
 
