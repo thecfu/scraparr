@@ -38,6 +38,20 @@ def getGenres(url, headers_auth, alias):
     except requests.exceptions.RequestException as e:
         print(f"Request failed: {e}")    
         
+def get_number_of_user(url, headers_auth, alias):
+    """Grab the Indexers from the Jellyfin Endpoint"""
+    try:
+        
+        res = requests.get(f"{url}/Users", headers=headers_auth, timeout=10)  # Adding timeout
+        res.raise_for_status()  # Raise an error for bad responses (4xx, 5xx)
+        #print(res.json())  # or res.text if it's not JSON
+        data = res.json()
+       
+        return len(data)
+    except requests.exceptions.RequestException as e:
+        print(f"Request failed: {e}")
+   
+    
 def scrape(config):
     """Scrape the Bazarr Service"""
 
@@ -60,6 +74,7 @@ def scrape(config):
 def update_metrics(data, detailed, alias):
     """Update the Metrics for the Jellyseerr Service"""
     jellyfin_metrics.JELLYFIN_NUMBER_OF_DEVICES = data["n_devices"]
-    print(jellyfin_metrics.JELLYFIN_NUMBER_OF_DEVICES)
+    jellyfin_metrics.JELLYFIN_NUMBER_OF_USERS = data["n_devices"]
+
     logging.info("Updating Jellyfin metrics")
 
