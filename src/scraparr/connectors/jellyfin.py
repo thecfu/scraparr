@@ -19,8 +19,10 @@ def get_number_of_devices(url, headers_auth, alias):
     try:
         res = requests.get(f"{url}/Devices", headers=headers_auth, timeout=10)
         res.raise_for_status()  # Raise an error for bad responses (4xx, 5xx)
+        UP.labels(alias).set(1)
         return res.json()['TotalRecordCount']
     except requests.exceptions.RequestException as e:
+        UP.labels(alias).set(0)
         print(f"Request failed: {e}")
         return None
 
@@ -30,11 +32,13 @@ def get_genres(url, headers_auth, alias):
     try:
         res = requests.get(f"{url}/Genres", headers=headers_auth, timeout=10)
         res.raise_for_status()  # Raise an error for bad responses (4xx, 5xx)
+        UP.labels(alias).set(1)
         data = res.json()
         genre_names = [item["Name"] for item in data.get("Items", [])]
                 
         return genre_names
     except requests.exceptions.RequestException as e:
+        UP.labels(alias).set(0)
         print(f"Request failed: {e}")
         return None
 
@@ -43,9 +47,11 @@ def get_number_of_user(url, headers_auth, alias):
     try:
         res = requests.get(f"{url}/Users", headers=headers_auth, timeout=10)
         res.raise_for_status()  # Raise an error for bad responses (4xx, 5xx)
+        UP.labels(alias).set(1)
         data = res.json()
         return len(data)
     except requests.exceptions.RequestException as e:
+        UP.labels(alias).set(0)
         print(f"Request failed: {e}")
         return None
 
@@ -55,9 +61,10 @@ def get_number_of_movies(url, headers_auth, alias):
         res = requests.get(f"{url}/Items?{QUERY}&IncludeItemTypes=Movie",
                            headers=headers_auth, timeout=10)
         res.raise_for_status()  # Raise an error for bad responses (4xx, 5xx)
-       
+        UP.labels(alias).set(1)
         return res.json()['TotalRecordCount']
     except requests.exceptions.RequestException as e:
+        UP.labels(alias).set(0)
         print(f"Request failed: {e}")
         return None
 
@@ -67,9 +74,10 @@ def get_number_of_series(url, headers_auth, alias):
         res = requests.get(f"{url}/Items?{QUERY}&IncludeItemTypes=Series",
                            headers=headers_auth, timeout=10)
         res.raise_for_status()  # Raise an error for bad responses (4xx, 5xx)
-       
+        UP.labels(alias).set(1)
         return res.json()['TotalRecordCount']
     except requests.exceptions.RequestException as e:
+        UP.labels(alias).set(0)
         print(f"Request failed: {e}")
         return None
 
