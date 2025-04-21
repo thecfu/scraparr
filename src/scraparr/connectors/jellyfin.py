@@ -113,16 +113,16 @@ def scrape(config):
 
 def update_metrics(data, detailed, alias):
     """Update the Metrics for the Jellyfin Service"""
-    jellyfin_metrics.JELLYFIN_NUMBER_OF_DEVICES.labels(alias).set(data["n_devices"])
-    jellyfin_metrics.JELLYFIN_NUMBER_OF_USERS.labels(alias).set(data["n_devices"])
-    jellyfin_metrics.JELLYFIN_NUMBER_OF_MOVIES.labels(alias).set(data["n_movies"])
-    jellyfin_metrics.JELLYFIN_NUMBER_OF_SERIES.labels(alias).set(data["n_series"])
+    jellyfin_metrics.NUMBER_OF_DEVICES.labels(alias).set(data["n_devices"])
+    jellyfin_metrics.NUMBER_OF_USERS.labels(alias).set(data["n_devices"])
+    jellyfin_metrics.NUMBER_OF_MOVIES.labels(alias).set(data["n_movies"])
+    jellyfin_metrics.NUMBER_OF_SERIES.labels(alias).set(data["n_series"])
 
-    jellyfin_metrics.JELLYFIN_GENRES.clear()
+    jellyfin_metrics.GENRES.clear()
     util.total_with_label(
         [{
             "total": data["genres"]},
             None,
-            jellyfin_metrics.JELLYFIN_GENRES
+            jellyfin_metrics.GENRES
         ],
         alias)
