@@ -29,6 +29,7 @@ class Connectors:
             "jellyseerr": "v1",
             "overseerr": "v1",
             "whisparr": "v3",
+            "jellyfin": "dummy"
         }
 
         if importer:
