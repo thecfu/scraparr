@@ -37,7 +37,7 @@ def _build_config(env: Mapping[str, str]) -> Dict[str, Optional[Dict[str, str]]]
     return config
 
 def parse_dotenv_config(path: str = "/scraparr/.env") -> Dict[str, Optional[Dict[str, str]]]:
-    return _build_config(dotenv_values(path))
+    return _build_config(dotenv_values(path)) # type: ignore
 
 def parse_env_config() -> Dict[str, Optional[Dict[str, str]]]:
     return _build_config(os.environ)
