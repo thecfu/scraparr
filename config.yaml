@@ -71,3 +71,9 @@ whisparr:
   # alias: whisparr # Optional to Differentiate between multiple Services
   # interval: 30 # Optional to set a different Interval in Seconds
   # detailed: true  # Get Data per Performer/Scene
+
+jellyfin:
+  url: http://jellyfin:8096
+  api_key: key
+  # alias: jellyfin # Optional to Differentiate between multiple Services
+  # interval: 30 # Optional to set a different Interval in Seconds
