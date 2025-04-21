@@ -20,10 +20,10 @@ def get_number_of_devices(url, headers_auth, alias):
     try:
         res = requests.get(f"{url}/Devices", headers=headers_auth, timeout=10)
         res.raise_for_status()  # Raise an error for bad responses (4xx, 5xx)
-        UP.labels(alias).set(1)
+        UP.labels(alias, "jellyfin").set(1)
         return res.json()['TotalRecordCount']
     except requests.exceptions.RequestException as e:
-        UP.labels(alias).set(0)
+        UP.labels(alias, "jellyfin").set(0)
         print(f"Request failed: {e}")
         return None
 
@@ -33,12 +33,12 @@ def get_genres(url, headers_auth, alias):
     try:
         res = requests.get(f"{url}/Genres", headers=headers_auth, timeout=10)
         res.raise_for_status()  # Raise an error for bad responses (4xx, 5xx)
-        UP.labels(alias).set(1)
+        UP.labels(alias, "jellyfin").set(1)
         data = res.json()
         genre_names = {item["Name"]: 1 for item in data.get("Items", [])}
         return genre_names
     except requests.exceptions.RequestException as e:
-        UP.labels(alias).set(0)
+        UP.labels(alias, "jellyfin").set(0)
         print(f"Request failed: {e}")
         return None
 
@@ -47,11 +47,11 @@ def get_number_of_user(url, headers_auth, alias):
     try:
         res = requests.get(f"{url}/Users", headers=headers_auth, timeout=10)
         res.raise_for_status()  # Raise an error for bad responses (4xx, 5xx)
-        UP.labels(alias).set(1)
+        UP.labels(alias, "jellyfin").set(1)
         data = res.json()
         return len(data)
     except requests.exceptions.RequestException as e:
-        UP.labels(alias).set(0)
+        UP.labels(alias, "jellyfin").set(0)
         print(f"Request failed: {e}")
         return None
 
@@ -61,10 +61,10 @@ def get_number_of_movies(url, headers_auth, alias):
         res = requests.get(f"{url}/Items?{QUERY}&IncludeItemTypes=Movie",
                            headers=headers_auth, timeout=10)
         res.raise_for_status()  # Raise an error for bad responses (4xx, 5xx)
-        UP.labels(alias).set(1)
+        UP.labels(alias, "jellyfin").set(1)
         return res.json()['TotalRecordCount']
     except requests.exceptions.RequestException as e:
-        UP.labels(alias).set(0)
+        UP.labels(alias, "jellyfin").set(0)
         print(f"Request failed: {e}")
         return None
 
@@ -74,10 +74,10 @@ def get_number_of_series(url, headers_auth, alias):
         res = requests.get(f"{url}/Items?{QUERY}&IncludeItemTypes=Series",
                            headers=headers_auth, timeout=10)
         res.raise_for_status()  # Raise an error for bad responses (4xx, 5xx)
-        UP.labels(alias).set(1)
+        UP.labels(alias, "jellyfin").set(1)
         return res.json()['TotalRecordCount']
     except requests.exceptions.RequestException as e:
-        UP.labels(alias).set(0)
+        UP.labels(alias, "jellyfin").set(0)
         print(f"Request failed: {e}")
         return None
 
@@ -100,9 +100,13 @@ def scrape(config):
     jellyfin_metrics.LAST_SCRAPE.labels(alias).set(end_time)
     jellyfin_metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
 
-    if any((n_devices, n_user, n_movies, n_series, genres) is None):
+    if any(x is None for x in (n_devices, n_user,
+                               n_movies, n_series,
+                               genres, sessions,
+                               infos,)):
         logging.error("No Data found for Jellyfin, assuming Failure")
         return None
+
     return{
         "n_devices": n_devices,
         "n_user": n_user,
@@ -118,10 +122,9 @@ def update_metrics(data, detailed, alias):
     jellyfin_metrics.NUMBER_OF_MOVIES.labels(alias).set(data["n_movies"])
     jellyfin_metrics.NUMBER_OF_SERIES.labels(alias).set(data["n_series"])
 
-    jellyfin_metrics.GENRES.clear()
     util.total_with_label(
-        [{
-            "total": data["genres"]},
+        [
+            data["genres"],
             None,
             jellyfin_metrics.GENRES
         ],
