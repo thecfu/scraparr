@@ -11,3 +11,4 @@ JELLYFIN_NUMBER_OF_DEVICES = Gauge('jellyfin_number_of_devices', 'Jellyfin numbe
 JELLYFIN_NUMBER_OF_USERS = Gauge('jellyfin_number_of_users', 'Jellyfin number of users', ['alias'])
 JELLYFIN_NUMBER_OF_MOVIES = Gauge('jellyfin_number_of_movies', 'Jellyfin number of movies', ['alias'])
 JELLYFIN_NUMBER_OF_SERIES = Gauge('jellyfin_number_of_series', 'Jellyfin number of series', ['alias'])
+JELLYFIN_GENRES = Gauge('jellyfin_genres_total', 'Jellyfin number of genres', ['alias', 'genre'])

@@ -6,6 +6,7 @@ import logging
 import requests
 import scraparr.metrics.jellyfin as jellyfin_metrics
 from scraparr.metrics.general import UP
+from scraparr.connectors import util
 
 QUERY = "SortBy=SortName%2CProductionYear&SortOrder=Ascending&Recursive=true"
 
@@ -34,8 +35,7 @@ def get_genres(url, headers_auth, alias):
         res.raise_for_status()  # Raise an error for bad responses (4xx, 5xx)
         UP.labels(alias).set(1)
         data = res.json()
-        genre_names = [item["Name"] for item in data.get("Items", [])]
-                
+        genre_names = {item["Name"]: 1 for item in data.get("Items", [])}
         return genre_names
     except requests.exceptions.RequestException as e:
         UP.labels(alias).set(0)
@@ -89,11 +89,12 @@ def scrape(config):
     alias = config.get('alias', 'jellyfin')
 
     headers_auth=get_header(api_key)
-    
-    n_devices = get_number_of_devices(url, headers_auth,alias)
-    n_user = get_number_of_user(url, headers_auth,alias)
-    n_movies = get_number_of_movies(url, headers_auth,alias)
-    n_series = get_number_of_series(url, headers_auth,alias)
+
+    n_devices = get_number_of_devices(url, headers_auth, alias)
+    n_user = get_number_of_user(url, headers_auth, alias)
+    n_movies = get_number_of_movies(url, headers_auth, alias)
+    n_series = get_number_of_series(url, headers_auth, alias)
+    genres = get_genres(url, headers_auth, alias)
 
     end_time = time.time()
     jellyfin_metrics.LAST_SCRAPE.labels(alias).set(end_time)
@@ -117,4 +118,11 @@ def update_metrics(data, detailed, alias):
     jellyfin_metrics.JELLYFIN_NUMBER_OF_MOVIES.labels(alias).set(data["n_movies"])
     jellyfin_metrics.JELLYFIN_NUMBER_OF_SERIES.labels(alias).set(data["n_series"])
 
-
+    jellyfin_metrics.JELLYFIN_GENRES.clear()
+    util.total_with_label(
+        [{
+            "total": data["genres"]},
+            None,
+            jellyfin_metrics.JELLYFIN_GENRES
+        ],
+        alias)
