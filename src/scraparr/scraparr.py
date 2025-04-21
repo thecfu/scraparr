@@ -10,6 +10,7 @@ License: GPL-3.0
 """
 
 import sys
+import os
 import threading
 import logging
 from wsgiref.simple_server import make_server
@@ -19,15 +20,26 @@ from prometheus_client import make_wsgi_app
 
 from scraparr.middleware import Middleware
 import scraparr.connectors
+from scraparr.parser import parse_env_config
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+CONFIG_FILE_LOCATION = "/scraparr/config/config.yaml"
+
 try:
-    with open('/scraparr/config/config.yaml', 'r', encoding='utf-8') as yaml_file:
+    with open(CONFIG_FILE_LOCATION, 'r', encoding='utf-8') as yaml_file:
         CONFIG = yaml.safe_load(yaml_file)
 except FileNotFoundError:
-    logging.error("Configuration file not found: /scraparr/config/config.yaml,"
-                  " pls check the path or convert your .cnf to .yaml")
+    logging.error(f"Configuration file not found: {CONFIG_FILE_LOCATION},"
+                  " will try to load from environment variables")
+
+    CONFIG = parse_env_config()
+
+    if not CONFIG:
+        logging.error("No configuration found in environment variables.")
+        sys.exit(1)
+except PermissionError:
+    logging.error(f"Permission denied to read the configuration file: {CONFIG_FILE_LOCATION}") 
     sys.exit(1)
 except yaml.YAMLError as exc:
     logging.error("Error parsing YAML file: %s", exc)
