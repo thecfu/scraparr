@@ -9,7 +9,6 @@
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}/src",
       "env": {
-        "SCRAPARR_ACCEPT_INSECURE_CERTIFICATES": "true",
         "SONARR_URL": "http://sonarr:8989",
         "SONARR_API_KEY": "key"
         // "RADARR_URL": "http://radarr:7878",
