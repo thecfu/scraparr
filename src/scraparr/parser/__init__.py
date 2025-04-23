@@ -1,7 +1,9 @@
+"""Parses Scraparr configuration from environment or .env file."""
+
 import os
-from dotenv import dotenv_values
 from typing import Optional, Dict, Mapping
 
+from dotenv import dotenv_values
 
 def _build_config(env: Mapping[str, str]) -> Dict[str, Optional[Dict[str, str]]]:
     services = [
@@ -37,7 +39,9 @@ def _build_config(env: Mapping[str, str]) -> Dict[str, Optional[Dict[str, str]]]
     return config
 
 def parse_dotenv_config(path: str = "/scraparr/.env") -> Dict[str, Optional[Dict[str, str]]]:
-    return _build_config(dotenv_values(path)) # type: ignore
+    """Parse configuration from a .env file at the given path."""
+    return _build_config(dotenv_values(path))  # type: ignore
 
 def parse_env_config() -> Dict[str, Optional[Dict[str, str]]]:
+    """Parse configuration from the current environment variables."""
     return _build_config(os.environ)

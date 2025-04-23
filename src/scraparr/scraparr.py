@@ -10,7 +10,6 @@ License: GPL-3.0
 """
 
 import sys
-import os
 import threading
 import logging
 from wsgiref.simple_server import make_server
@@ -30,8 +29,7 @@ try:
     with open(CONFIG_FILE_LOCATION, 'r', encoding='utf-8') as yaml_file:
         CONFIG = yaml.safe_load(yaml_file)
 except FileNotFoundError:
-    logging.error(f"Configuration file not found: {CONFIG_FILE_LOCATION},"
-                  " will try to load from environment variables")
+    logging.error("Configuration file not found: %s, will try to load from environment variables", CONFIG_FILE_LOCATION)
 
     CONFIG = parse_env_config()
 
@@ -39,7 +37,7 @@ except FileNotFoundError:
         logging.error("No configuration found in environment variables.")
         sys.exit(1)
 except PermissionError:
-    logging.error(f"Permission denied to read the configuration file: {CONFIG_FILE_LOCATION}") 
+    logging.error("Permission denied to read the configuration file: %s", CONFIG_FILE_LOCATION)
     sys.exit(1)
 except yaml.YAMLError as exc:
     logging.error("Error parsing YAML file: %s", exc)

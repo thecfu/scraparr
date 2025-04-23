@@ -32,7 +32,7 @@ class Connectors:
 
         if importer:
             self.connectors[service] = []
-            if configs is not None: 
+            if configs is not None:
                 for config in configs:
                     if config.get('api_version') is None:
                         config['api_version'] = api_versions[service]
@@ -41,7 +41,7 @@ class Connectors:
                         "config": config
                     }
                     self.connectors[service].append(connector_entry)
-                    self.last_scrape[service] = [None] * len(configs)  # track last scrape per config
+                    self.last_scrape[service] = [None] * len(configs)
         else:
             logging.error("Couldn't import Connector")
 
