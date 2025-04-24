@@ -29,7 +29,10 @@ try:
     with open(CONFIG_FILE_LOCATION, 'r', encoding='utf-8') as yaml_file:
         CONFIG = yaml.safe_load(yaml_file)
 except FileNotFoundError:
-    logging.error("Configuration file not found: %s, will try to load from environment variables", CONFIG_FILE_LOCATION)
+    logging.error(
+    	"Configuration file not found: %s, will try to load from environment variables",
+    	CONFIG_FILE_LOCATION
+    )
 
     CONFIG = parse_env_config()
 
