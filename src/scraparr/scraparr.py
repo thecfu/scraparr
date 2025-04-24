@@ -19,27 +19,40 @@ from prometheus_client import make_wsgi_app
 
 from scraparr.middleware import Middleware
 import scraparr.connectors
+from scraparr.parser import parse_env_config
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+CONFIG_FILE_LOCATION = "/scraparr/config/config.yaml"
+
 try:
-    with open('/scraparr/config/config.yaml', 'r', encoding='utf-8') as yaml_file:
+    with open(CONFIG_FILE_LOCATION, 'r', encoding='utf-8') as yaml_file:
         CONFIG = yaml.safe_load(yaml_file)
 except FileNotFoundError:
-    logging.error("Configuration file not found: /scraparr/config/config.yaml,"
-                  " pls check the path or convert your .cnf to .yaml")
+    logging.error(
+    	"Configuration file not found: %s, will try to load from environment variables",
+    	CONFIG_FILE_LOCATION
+    )
+
+    CONFIG = parse_env_config()
+
+    if not CONFIG:
+        logging.error("No configuration found in environment variables.")
+        sys.exit(1)
+except PermissionError:
+    logging.error("Permission denied to read the configuration file: %s", CONFIG_FILE_LOCATION)
     sys.exit(1)
 except yaml.YAMLError as exc:
     logging.error("Error parsing YAML file: %s", exc)
     sys.exit(1)
 
-PATH = CONFIG.get('GENERAL', {}).get('path', "/metrics")
-ADDRESS = CONFIG.get('GENERAL', {}).get('address', "0.0.0.0")
-PORT = CONFIG.get('GENERAL', {}).get('port', 7100)
+PATH = CONFIG.get('GENERAL', {}).get('path', "/metrics") # type: ignore
+ADDRESS = CONFIG.get('GENERAL', {}).get('address', "0.0.0.0") # type: ignore
+PORT = CONFIG.get('GENERAL', {}).get('port', 7100) # type: ignore
 
-USERNAME = CONFIG.get('AUTH', {}).get('username', None)
-PASSWORD = CONFIG.get('AUTH', {}).get('password', None)
-BEARER_TOKEN = CONFIG.get('AUTH', {}).get('token', None)
+USERNAME = CONFIG.get('AUTH', {}).get('username', None) # type: ignore
+PASSWORD = CONFIG.get('AUTH', {}).get('password', None) # type: ignore
+BEARER_TOKEN = CONFIG.get('AUTH', {}).get('token', None) # type: ignore
 
 metrics_app = make_wsgi_app()
 app = Middleware(metrics_app, USERNAME, PASSWORD, BEARER_TOKEN)
@@ -76,7 +89,7 @@ if __name__ == '__main__':
 
     def run_server():
         """Starts the WSGI server"""
-        httpd = make_server(ADDRESS, PORT, app)
+        httpd = make_server(ADDRESS, PORT, app) # type: ignore
         while RUNNING:
             httpd.handle_request()
         logging.info("Metrics Endpoint Stopped")
