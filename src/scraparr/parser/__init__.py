@@ -2,22 +2,17 @@
 
 import os
 from typing import Optional, Dict, Mapping
-
 from dotenv import dotenv_values
 
+from scraparr.const import ACTIVE_CONNECTORS, OPTIONAL_FIELDS
+
 def _build_config(env: Mapping[str, str]) -> Dict[str, Optional[Dict[str, str]]]:
-    services = [
-        'sonarr', 'radarr', 'prowlarr',
-        'bazarr', 'readarr', 'jellyseerr', 'overseerr'
-    ]
     config: Dict[str, Optional[Dict[str, str]]] = {
         'general': None,
         'auth': None,
     }
 
-    optional_fields = ['alias', 'api_version', 'interval', 'detailed']
-
-    for service in services:
+    for service in ACTIVE_CONNECTORS:
         prefix = service.upper()
         url = env.get(f'{prefix}_URL')
         api_key = env.get(f'{prefix}_API_KEY')
@@ -28,7 +23,7 @@ def _build_config(env: Mapping[str, str]) -> Dict[str, Optional[Dict[str, str]]]
                 'api_key': api_key,
                 **{
                     field: val
-                    for field in optional_fields
+                    for field in OPTIONAL_FIELDS
                     if (val := env.get(f'{prefix}_{field.upper()}')) is not None
                 }
             }
