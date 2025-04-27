@@ -81,7 +81,18 @@ A Unraid Template is available in the Repo of jordan-dalby: https://github.com/j
 > [!NOTE]  
 > If your using any v1 Version check the Readme of the [v1 Branch](https://github.com/thecfu/scraparr/tree/v1#readme)
 
-Scraparr need's to be configured using a [config.yaml](config.yaml) file. Ensure the configuration specifies the URLs and API keys for the *arr services you want to monitor.
+> [!WARNING]  
+> If using the Docker Variant you need to use the IP or configure & use the extra_host `host.docker.internal:host-gateway`
+
+Scraparr can be configured either by using a [config.yaml](config.yaml) file or by setting environment variables.  
+For environment variables, please refer to the [sample.env](sample.env) file. You can set them directly as environment options or create an `.env` file and import it using your container host.
+
+> [!IMPORTANT]
+> The environment variables don't support the configuration of Multiple Instances to use them you need to switch to the config
+
+Make sure the configuration specifies the URLs and API keys for the *arr services you want to monitor.
+
+### Config.yaml
 
 Template for Service inside the config.yaml:
 
@@ -94,6 +105,8 @@ sonarr:
   # interval: 30 # Optional to set a different Interval in Seconds
   # detailed: true  # Get Data per Series
 ```
+
+#### Multiple Instances
 
 To Configure multiple Instances of the same Service you can configure them like this:
 
@@ -109,9 +122,6 @@ sonarr:
     api_key: key
     alias: sonarr2
 ```
-
-> [!WARNING]  
-> If using the Docker Variant you need to use the IP or configure & use the extra_host `host.docker.internal:host-gateway`
 
 ## Usage
 
