@@ -21,6 +21,8 @@ from scraparr.middleware import Middleware
 import scraparr.connectors
 from scraparr.parser import parse_env_config
 
+from scraparr.const import ACTIVE_CONNECTORS, BEAUTIFUL_CONNECTORS
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 CONFIG_FILE_LOCATION = "/scraparr/config/config.yaml"
@@ -56,19 +58,6 @@ BEARER_TOKEN = CONFIG.get('AUTH', {}).get('token', None) # type: ignore
 
 metrics_app = make_wsgi_app()
 app = Middleware(metrics_app, USERNAME, PASSWORD, BEARER_TOKEN)
-
-ACTIVE_CONNECTORS = [
-    'sonarr',
-    'radarr',
-    'prowlarr',
-    'bazarr',
-    'readarr',
-    'jellyseerr',
-    'overseerr',
-    'whisparr',
-    'jellyfin'
-]
-BEAUTIFUL_CONNECTORS = ", ".join(ACTIVE_CONNECTORS[:-1]) + " or " + ACTIVE_CONNECTORS[-1]
 
 RUNNING = True
 
