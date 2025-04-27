@@ -3,3 +3,4 @@ requests
 werkzeug
 python-dateutil
 pyyaml
+python-dotenv

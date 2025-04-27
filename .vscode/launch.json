@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python Debugger: scraparr as module",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "scraparr.scraparr",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}/src",
+      "env": {
+        "SONARR_URL": "http://sonarr:8989",
+        "SONARR_API_KEY": "key"
+        // "RADARR_URL": "http://radarr:7878",
+        // "RADARR_API_KEY": "key",
+        // "PROWLARR_URL": "http://prowlarr:9696",
+        // "PROWLARR_API_KEY": "key",
+        // "BAZARR_URL": "http://bazarr:6767",
+        // "BAZARR_API_KEY": "key",
+        // "READARR_URL": "http://readarr:8787",
+        // "READARR_API_KEY": "key",
+        // "JELLYSEERR_URL": "http://jellyseerr:5055",
+        // "JELLYSEERR_API_KEY": "key",
+        // "OVERSEERR_URL": "http://overseerr:5055",
+        // "OVERSEERR_API_KEY": "key"
+      }
+    }
+  ]
+}

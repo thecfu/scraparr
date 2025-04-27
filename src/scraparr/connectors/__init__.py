@@ -9,6 +9,8 @@ import time
 import logging
 import concurrent.futures
 
+from scraparr.const import API_VERSIONS
+
 class Connectors:
     """Class to initialize Variables that are used to Identify the Connectors
     and log the last Scrape"""
@@ -20,29 +22,18 @@ class Connectors:
         """Function to add a Connector on successful load into the List of Connectors"""
         importer = self.load_connector(service)
 
-        api_versions = {
-            "sonarr": "v3",
-            "radarr": "v3",
-            "prowlarr": "v1", 
-            "bazarr": "dummy",
-            "readarr": "v1",
-            "jellyseerr": "v1",
-            "overseerr": "v1",
-        }
-
         if importer:
             self.connectors[service] = []
-            for config in configs:
-
-                if config.get('api_version') is None:
-                    config['api_version'] = api_versions[service]
-
-                connector_entry = {
-                    "function": importer,
-                    "config": config
-                }
-                self.connectors[service].append(connector_entry)
-                self.last_scrape[service] = [None] * len(configs)  # track last scrape per config
+            if configs is not None:
+                for config in configs:
+                    if config.get('api_version') is None:
+                        config['api_version'] = API_VERSIONS[service]
+                    connector_entry = {
+                        "function": importer,
+                        "config": config
+                    }
+                    self.connectors[service].append(connector_entry)
+                    self.last_scrape[service] = [None] * len(configs)
         else:
             logging.error("Couldn't import Connector")
 
