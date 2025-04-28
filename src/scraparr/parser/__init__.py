@@ -1,6 +1,7 @@
 """Parses Scraparr configuration from environment or .env file."""
 
 import os
+import sys
 from typing import Optional, Dict, Mapping
 from dotenv import dotenv_values
 
@@ -11,25 +12,28 @@ def _build_config(env: Mapping[str, str]) -> Dict[str, Optional[Dict[str, str]]]
         'general': None,
         'auth': None,
     }
-
     for service in ACTIVE_CONNECTORS:
-        prefix = service.upper()
-        url = env.get(f'{prefix}_URL')
-        api_key = env.get(f'{prefix}_API_KEY')
+        try:
+            prefix = service.upper()
+            url = env.get(f'{prefix}_URL')
+            api_key = env.get(f'{prefix}_API_KEY')
 
-        if url and api_key:
-            service_config = {
-                'url': url,
-                'api_key': api_key,
-                **{
-                    field: val
-                    for field in OPTIONAL_FIELDS
-                    if (val := env.get(f'{prefix}_{field.upper()}')) is not None
+            if url and api_key:
+                service_config = {
+                    'url': url,
+                    'api_key': api_key,
+                    **{
+                        field: int(val) if field in {"interval", "within"} else val
+                        for field in OPTIONAL_FIELDS
+                        if (val := env.get(f'{prefix}_{field.upper()}')) is not None
+                    }
                 }
-            }
-            config[service] = service_config
-        else:
-            config[service] = None
+                config[service] = service_config
+            else:
+                config[service] = None
+        except ValueError as e:
+            print(f"Error parsing environment variables for {service}: {e}")
+            sys.exit(1)
 
     return config
 
