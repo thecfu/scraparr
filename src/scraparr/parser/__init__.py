@@ -23,9 +23,7 @@ def _build_config(env: Mapping[str, str]) -> Dict[str, Optional[Dict[str, str]]]
                     'url': url,
                     'api_key': api_key,
                     **{
-                        field: int(val) if field == "interval"
-                                           or field == "within"
-                        else val
+                        field: int(val) if field in {"interval", "within"} else val
                         for field in OPTIONAL_FIELDS
                         if (val := env.get(f'{prefix}_{field.upper()}')) is not None
                     }
