@@ -128,10 +128,6 @@ def analyse_indexers(indexers, detailed, alias):
         "torrent": {"total": 0, "enabled": 0, "private": 0, "public": 0, "semiPrivate": 0}
     }
 
-    prowlarr_metrics.VIP_EXPIRATION.clear()
-    prowlarr_metrics.INDEXER_STATUS.clear()
-    prowlarr_metrics.INDEXER_ENABLED.clear()
-
     for indexer in indexers:
         enabled = 1 if indexer["enable"] else 0
         indexer_count["total"]["enabled"] += enabled

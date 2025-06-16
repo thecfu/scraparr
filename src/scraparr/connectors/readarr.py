@@ -57,12 +57,6 @@ def analyse_authors(authors, detailed, alias):
     authors_status = {}
     author_rating = []
 
-    readarr_metrics.AUTHOR_BOOK_COUNT.clear()
-    readarr_metrics.AUTHOR_STATUS.clear()
-    readarr_metrics.AUTHOR_DISK_SIZE.clear()
-    readarr_metrics.AUTHOR_RATING.clear()
-    readarr_metrics.AUTHOR_RATING_TOTAL.clear()
-
     for author in authors:
         status = author.get("status", "Unknown")
         authors_status[status] = author.get(status, 0) + 1
@@ -97,11 +91,6 @@ def analyse_books(books, detailed, alias):
     book_genres = {}
     book_disk_size = []
     book_rating = []
-
-    readarr_metrics.BOOK_DISK_SIZE.clear()
-    readarr_metrics.BOOK_PERCENTAGE.clear()
-    readarr_metrics.BOOK_RATING.clear()
-    readarr_metrics.BOOK_RATING_TOTAL.clear()
 
     for book in books:
 

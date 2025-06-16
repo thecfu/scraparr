@@ -72,9 +72,6 @@ def get_wanted(url, api_key):
 def analyse_data(data, wanted, detailed, alias):
     """Analyse the Data and set the Correct Metrics"""
 
-    bazarr_metrics.WANTED_EPISODE_COUNT.clear()
-    bazarr_metrics.WANTED_MOVIE_COUNT.clear()
-
     wanted_episodes = {}
     wanted_movies = {}
     count = {"movies": 0, "series": 0}
@@ -110,7 +107,6 @@ def analyse_providers(providers, alias):
     """Analyse the Providers and set the Correct Metrics"""
 
     bazarr_metrics.PROVIDER_COUNT.labels(alias).set(len(providers["data"]))
-    bazarr_metrics.PROVIDER_STATUS.clear()
 
     for provider in providers["data"]:
         bazarr_metrics.PROVIDER_STATUS.labels(alias, provider["name"], provider["status"]).set(1)

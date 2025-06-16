@@ -236,9 +236,6 @@ class UpdateSeerr:
         request_count = {}
         requested_seasons = 0
 
-        self.metrics.REQUEST_TIMESTAMP.clear()
-        self.metrics.REQUEST_SEASONS.clear()
-
         for request in requests:
             request_status[request["status"]] = request_status.get(request["status"], 0) + 1
             request_count[request["type"]] = request_count.get(request["type"], 0) + 1
@@ -270,11 +267,6 @@ class UpdateSeerr:
         issue_media_type = {}
         issue_and_media_type = {}
         issue_title = {}
-
-        self.metrics.ISSUE_TITLE.clear()
-        self.metrics.ISSUE_CREATED.clear()
-        self.metrics.ISSUE_UPDATED.clear()
-        self.metrics.ISSUE_TITLE.clear()
 
         for issue in issues:
             issue_status[issue["status"]] = issue_status.get(issue["status"], 0) + 1
