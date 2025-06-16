@@ -32,12 +32,6 @@ def get_movies(url, api_key, version, alias):
 def analyse_movies(movies, detailed, alias):
     """Analyse the Movies and set the Correct Metrics"""
 
-    # Reset Titled Metrics to insure deletion of old Movies
-    radarr_metrics.MOVIE_FILE_COUNT.clear()
-    radarr_metrics.MOVIE_DISK_SIZE.clear()
-    radarr_metrics.MOVIE_MONITORED.clear()
-    radarr_metrics.MOVIE_MISSING.clear()
-
     status_labels = {
         "tba": {
             "func": [radarr_metrics.TBA_MOVIES, radarr_metrics.TBA_MOVIES_T],

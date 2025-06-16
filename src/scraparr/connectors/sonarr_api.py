@@ -86,14 +86,6 @@ class SonarrApi:
             }
         }
 
-        # Reset Titled Metrics to insure deletion of old Series
-        self.metrics.SERIES_EPISODE_COUNT.clear()
-        self.metrics.SERIES_MISSING_EPISODE_COUNT.clear()
-        self.metrics.SERIES_COUNT.clear()
-        self.metrics.SERIES_DISK_SIZE.clear()
-        self.metrics.SERIES_DOWNLOAD_PERCENTAGE.clear()
-        self.metrics.SERIES_MONITORED.clear()
-
         for serie in series:
             title = serie["titleSlug"]
             stats = serie.get("statistics", None)

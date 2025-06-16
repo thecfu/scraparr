@@ -10,6 +10,8 @@ import logging
 import concurrent.futures
 
 from scraparr.const import API_VERSIONS
+from scraparr.metrics.clear import clear
+
 
 class Connectors:
     """Class to initialize Variables that are used to Identify the Connectors
@@ -79,6 +81,7 @@ class Connectors:
 
         def scrape_with_interval(service, config_index, interval):
             while running:
+                clear(service)
                 self.scrape_service(service, config_index)
                 time.sleep(interval)
 
