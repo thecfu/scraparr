@@ -1,3 +1,8 @@
+# Ignore secret configs
+*.secret.yaml
+*.secret.cnf
+*.secret.env
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

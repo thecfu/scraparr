@@ -1,0 +1,24 @@
+services:
+  scraparr:
+    image: ghcr.io/thecfu/scraparr:latest
+    #build: . # Use build if the requirements got changed
+    ports:
+      - "7100:7100"
+    volumes:
+      - ./src/scraparr:/scraparr
+      - ./config.secret.yaml:/scraparr/config/config.yaml
+    #env_file:
+    #  - ./dev.secret.env
+  scraparr1:
+    image: ghcr.io/thecfu/scraparr:1.0.0
+#    build: .
+    ports:
+      - "7100:7100"
+    volumes:
+      - ./config.secret.cnf:/scraparr/config/config.cnf
+  linter:
+    build:
+        context: .
+        dockerfile: Dockerfile-pylint
+    volumes:
+      - ./src/scraparr:/scraparr
