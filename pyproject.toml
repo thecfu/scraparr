@@ -4,7 +4,10 @@ version = "1.0.0"
 description = "Prometheus Exporter for *Arr Suite"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = ["prometheus_client", "requests", "werkzeug"]
+dynamic = ["dependencies"]
 
 [project.scripts]
 scraparr = "scraparr.scraparr:main"
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["src/scraparr/requirements.txt"]}
