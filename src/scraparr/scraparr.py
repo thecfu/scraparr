@@ -61,7 +61,7 @@ app = Middleware(metrics_app, USERNAME, PASSWORD, BEARER_TOKEN)
 
 RUNNING = True
 
-if __name__ == '__main__':
+def main():
     if not any(section in CONFIG for section in ACTIVE_CONNECTORS):
         logging.info("No configuration found for %s", BEAUTIFUL_CONNECTORS)
         sys.exit(1)
@@ -88,3 +88,7 @@ if __name__ == '__main__':
 
     connectors.scrape()
     RUNNING = False
+
+
+if __name__ == '__main__':
+    main()

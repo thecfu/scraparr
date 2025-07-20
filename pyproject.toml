@@ -5,3 +5,6 @@ description = "Prometheus Exporter for *Arr Suite"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = ["prometheus_client", "requests", "werkzeug"]
+
+[project.scripts]
+scraparr = "scraparr.scraparr:main"
