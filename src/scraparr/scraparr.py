@@ -59,8 +59,6 @@ BEARER_TOKEN = CONFIG.get('AUTH', {}).get('token', None) # type: ignore
 metrics_app = make_wsgi_app()
 app = Middleware(metrics_app, USERNAME, PASSWORD, BEARER_TOKEN)
 
-RUNNING = True
-
 def main():
     """Main function to start the Scraparr Prometheus Exporter"""
     if not any(section in CONFIG for section in ACTIVE_CONNECTORS):
@@ -77,10 +75,12 @@ def main():
                 config = CONFIG[service]
             connectors.add_connector(service, config)
 
+    running = True
+
     def run_server():
         """Starts the WSGI server"""
         httpd = make_server(ADDRESS, PORT, app) # type: ignore
-        while RUNNING:
+        while running:
             httpd.handle_request()
         logging.info("Metrics Endpoint Stopped")
 
@@ -88,7 +88,7 @@ def main():
     server_thread.start()
 
     connectors.scrape()
-    RUNNING = False
+    running = False
 
 
 if __name__ == '__main__':
