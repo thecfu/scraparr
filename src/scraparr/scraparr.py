@@ -62,6 +62,7 @@ app = Middleware(metrics_app, USERNAME, PASSWORD, BEARER_TOKEN)
 RUNNING = True
 
 def main():
+    """Main function to start the Scraparr Prometheus Exporter"""
     if not any(section in CONFIG for section in ACTIVE_CONNECTORS):
         logging.info("No configuration found for %s", BEAUTIFUL_CONNECTORS)
         sys.exit(1)
