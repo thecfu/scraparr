@@ -9,13 +9,6 @@ services:
       - ./config.secret.yaml:/scraparr/config/config.yaml
     #env_file:
     #  - ./dev.secret.env
-  scraparr1:
-    image: ghcr.io/thecfu/scraparr:1.0.0
-#    build: .
-    ports:
-      - "7100:7100"
-    volumes:
-      - ./config.secret.cnf:/scraparr/config/config.cnf
   linter:
     build:
         context: .

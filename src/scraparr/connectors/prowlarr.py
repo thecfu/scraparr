@@ -49,6 +49,202 @@ def get_indexers(url, api_key, version, alias):
 
     return res
 
+def get_indexerstats(url, api_key, version, alias):
+    """Grab the Indexerstats from the Prowlarr Endpoint"""
+
+    res = get(f"{url}/api/{version}/indexerstats", api_key)
+
+    return res
+
+def get_indexer_grabs(data, alias):
+    """Get the Grabs for the Indexers"""
+    grabs = {}
+    try:
+        indexers = data.get('indexers', [])
+        total_grab_response_time = 0
+        indexer_count = 0
+
+        for indexer in indexers:
+            indexer_name = indexer.get('indexerName', f"Indexer_{indexer.get('indexerId', 'Unknown')}")
+            grabs[indexer_name] = indexer.get('numberOfGrabs', 0)
+            grab_response_time = indexer.get('averageGrabResponseTime', 0)
+
+            logging.info(f"Indexer: {indexer_name}, Grabs: {grabs[indexer_name]}")
+
+            # Einzelne Metriken
+            prowlarr_metrics.GRABS_BY_INDEXER.labels(alias, indexer_name).set(grabs[indexer_name])
+            prowlarr_metrics.GRAB_RESPONSE_TIME_BY_INDEXER.labels(alias, indexer_name).set(grab_response_time)
+
+            total_grab_response_time += grab_response_time
+            indexer_count += 1
+
+    except Exception as e:
+        logging.error("No Grab Data found for Prowlarr, assuming Failure", str(e))
+        return {}
+
+    total_grabs = sum(grabs.values())
+    avg_grab_response_time = total_grab_response_time / indexer_count if indexer_count > 0 else 0
+
+    logging.info(f"Total Grabs: {total_grabs}")
+    logging.info(f"Average Grab Response Time: {avg_grab_response_time}ms")
+
+    # Total Metriken
+    prowlarr_metrics.GRABS_BY_INDEXER_T.labels(alias).set(total_grabs)
+    prowlarr_metrics.GRAB_RESPONSE_TIME_BY_INDEXER_T.labels(alias).set(avg_grab_response_time)
+
+    return grabs
+
+def get_indexer_failed_queries(data, alias):
+    """Get the Failed Queries for the Indexers"""
+    failed_queries = {}
+    try:
+        indexers = data.get('indexers', [])
+        for indexer in indexers:
+            indexer_name = indexer.get('indexerName', f"Indexer_{indexer.get('indexerId', 'Unknown')}")
+            failed_queries[indexer_name] = indexer.get('numberOfFailedQueries', 0)
+            logging.info(f"Indexer: {indexer_name}, Failed Queries: {failed_queries[indexer_name]}")
+
+            prowlarr_metrics.FAILED_QUERIES_BY_INDEXER.labels(alias, indexer_name).set(failed_queries[indexer_name])
+
+    except Exception as e:
+        logging.error(f"Error processing indexer failed queries: {e}")
+        return {}
+
+    total_failed_queries = sum(failed_queries.values())
+    logging.info(f"Total Failed Queries: {total_failed_queries}")
+
+    prowlarr_metrics.FAILED_QUERIES_BY_INDEXER_T.labels(alias).set(total_failed_queries)
+    
+    return failed_queries
+
+def get_indexer_queries(data, alias):
+    """Get the Queries for the Indexers"""
+    queries = {}
+    try:
+        indexers = data.get('indexers', [])
+        total_response_time = 0
+        indexer_count = 0
+
+        for indexer in indexers:
+            indexer_name = indexer.get('indexerName', f"Indexer_{indexer.get('indexerId', 'Unknown')}")
+            queries[indexer_name] = indexer.get('numberOfQueries', 0)
+            response_time = indexer.get('averageResponseTime', 0)
+
+            # Einzelne Metriken
+            prowlarr_metrics.QUERIES_BY_INDEXER.labels(alias, indexer_name).set(queries[indexer_name])
+            prowlarr_metrics.RESPONSE_TIME_BY_INDEXER.labels(alias, indexer_name).set(response_time)
+
+            total_response_time += response_time
+            indexer_count += 1
+
+    except Exception as e:
+        logging.error(f"Error processing indexer queries: {e}")
+        return {}
+
+    total_queries = sum(queries.values())
+    avg_response_time = total_response_time / indexer_count if indexer_count > 0 else 0
+
+    logging.info(f"Total Queries: {total_queries}")
+    logging.info(f"Average Response Time: {avg_response_time}ms")
+
+    # Total Metriken
+    prowlarr_metrics.QUERIES_BY_INDEXER_T.labels(alias).set(total_queries)
+    prowlarr_metrics.RESPONSE_TIME_BY_INDEXER_T.labels(alias).set(avg_response_time)
+
+    return queries
+
+def get_user_agent_queries(data, alias):
+    """Get the Queries for the User Agents"""
+    queries = {}
+    try:
+        user_agents = data.get('userAgents', [])
+        for user_agent in user_agents:
+            user_agent_name = user_agent.get('userAgent', 'Unknown')
+            queries[user_agent_name] = user_agent.get('numberOfQueries', 0)
+            logging.info(f"User Agent: {user_agent_name}, Queries: {queries[user_agent_name]}")
+
+            prowlarr_metrics.QUERIES_BY_USER_AGENT.labels(alias, user_agent_name).set(queries[user_agent_name])
+
+    except Exception as e:
+        logging.error(f"Error processing user agent queries: {e}")
+        return {}
+
+    total_queries = sum(queries.values())
+    logging.info(f"Total User Agent Queries: {total_queries}")
+
+    prowlarr_metrics.QUERIES_BY_USER_AGENT_T.labels(alias).set(total_queries)
+
+    return queries
+
+def get_user_agent_grabs(data, alias):
+    """Get the Grabs for the User Agents"""
+    grabs = {}
+    try:
+        user_agents = data.get('userAgents', [])
+        for user_agent in user_agents:
+            user_agent_name = user_agent.get('userAgent', 'Unknown')
+            grabs[user_agent_name] = user_agent.get('numberOfGrabs', 0)
+            logging.info(f"User Agent: {user_agent_name}, Grabs: {grabs[user_agent_name]}")
+
+            prowlarr_metrics.GRABS_BY_USER_AGENT.labels(alias, user_agent_name).set(grabs[user_agent_name])
+
+    except Exception as e:
+        logging.error(f"Error processing user agent grabs: {e}")
+        return {}
+
+    total_grabs = sum(grabs.values())
+    logging.info(f"Total User Agent Grabs: {total_grabs}")
+
+    prowlarr_metrics.GRABS_BY_USER_AGENT_T.labels(alias).set(total_grabs)
+
+    return grabs
+
+def get_host_queries(data, alias):
+    """Get the Queries for the Hosts"""
+    queries = {}
+    try:
+        hosts = data.get('hosts', [])
+        for host in hosts:
+            host_name = host.get('host', 'Unknown')
+            queries[host_name] = host.get('numberOfQueries', 0)
+            logging.info(f"Host: {host_name}, Queries: {queries[host_name]}")
+
+            prowlarr_metrics.QUERIES_BY_HOST.labels(alias, host_name).set(queries[host_name])
+
+    except Exception as e:
+        logging.error(f"Error processing host queries: {e}")
+        return {}
+
+    total_queries = sum(queries.values())
+    logging.info(f"Total Host Queries: {total_queries}")
+
+    prowlarr_metrics.QUERIES_BY_HOST_T.labels(alias).set(total_queries)
+
+    return queries
+
+def get_host_grabs(data, alias):
+    """Get the Grabs for the Hosts"""
+    grabs = {}
+    try:
+        hosts = data.get('hosts', [])
+        for host in hosts:
+            host_name = host.get('host', 'Unknown')
+            grabs[host_name] = host.get('numberOfGrabs', 0)
+            logging.info(f"Host: {host_name}, Grabs: {grabs[host_name]}")
+
+            prowlarr_metrics.GRABS_BY_HOST.labels(alias, host_name).set(grabs[host_name])
+
+    except Exception as e:
+        logging.error(f"Error processing host grabs: {e}")
+        return {}
+
+    total_grabs = sum(grabs.values())
+    logging.info(f"Total Host Grabs: {total_grabs}")
+
+    prowlarr_metrics.GRABS_BY_HOST_T.labels(alias).set(total_grabs)
+
+    return grabs
+
 def check_health(health, res):
     """Check the Health of the Indexers"""
     for notification in health:
@@ -192,7 +388,8 @@ def scrape(config):
 
     data = {
         'indexer': get_indexers(url, api_key, api_version, alias),
-        'applications': get_applications(url, api_key, api_version, alias)
+        'applications': get_applications(url, api_key, api_version, alias),
+        'indexerstats': get_indexerstats(url, api_key, api_version, alias)
     }
 
     system = get(f"{url}/api/{api_version}/system/status", api_key)
@@ -205,7 +402,13 @@ def scrape(config):
 
 def update_metrics(data, detailed, alias):
     """Update the Metrics for the Prowlarr Service"""
-
     update_system_data(data["system"], alias)
     analyse_indexers(data["data"]['indexer'], detailed, alias)
     analyse_applications(data["data"]['applications'], detailed, alias)
+    get_indexer_grabs(data["data"]['indexerstats'], alias)
+    get_indexer_failed_queries(data["data"]['indexerstats'], alias)
+    get_indexer_queries(data["data"]['indexerstats'], alias)
+    get_user_agent_queries(data["data"]['indexerstats'], alias)
+    get_user_agent_grabs(data["data"]['indexerstats'], alias)
+    get_host_grabs(data["data"]['indexerstats'], alias)
+    get_host_queries(data["data"]['indexerstats'], alias)
