@@ -26,13 +26,18 @@ cd scraparr/src
 ```sh
 pip install -r scraparr/requirements.txt
 ```
+3. Setup Env Vars:
+See [sample.env](sample.env) for the Env-Vars you can set them up via:
+```sh
+export SONARR_URL=http://localhost:8989
+```
 
-3. Run the exporter:
+4. Run the exporter:
 ```sh
 python -m scraparr.scraparr
 ```
 
-### Docker Setup
+### Docker Setup (Recommended)
 
 You can either Clone the Repo and build the Docker Image locally or you can use the Image published in the Github Registry
 You can also check the [Docker-Compose](compose.yaml).
@@ -43,10 +48,10 @@ Github Registry:
 Docker Hub:
 `docker run -v ./config.yaml:/scraparr/config/config.yaml -p 7100:7100 thegameprofi/scraparr`
 
-> [!NOTE]  
+> [!NOTE]
 > If your using any v1 Version check the Readme of the [v1 Branch](https://github.com/thecfu/scraparr/tree/v1#readme)
 
-> [!NOTE]  
+> [!NOTE]
 > If you want to access new features before they are released, use the `main` tag.
 > 
 
@@ -78,10 +83,10 @@ A Unraid Template is available in the Repo of jordan-dalby: https://github.com/j
 
 ## Configuration
 
-> [!NOTE]  
+> [!NOTE]
 > If your using any v1 Version check the Readme of the [v1 Branch](https://github.com/thecfu/scraparr/tree/v1#readme)
 
-> [!WARNING]  
+> [!WARNING]
 > If using the Docker Variant you need to use the IP or configure & use the extra_host `host.docker.internal:host-gateway`
 
 Scraparr can be configured either by using a [config.yaml](config.yaml) file or by setting environment variables.  
@@ -146,6 +151,15 @@ Contributions are welcome! Please feel free to open an issue or submit a pull re
 
 > [!IMPORTANT]
 > Please fork from the `dev` branch to include any un-released changes.
+
+You can setup a local testing env using the [compose-dev.yaml](compose-dev.yaml), which mounts a `config.save.yaml` and the src folder inside the container so you are not required to build it each time. <br />
+Please note that if you change something in the [requirements.txt](requirements.txt) you need to build it locally. <br />
+If you want to verify your code before pushing to prevent the Pipeline to fail. Please use the `linter` service inside the compose File which build and runs a pylint against the code.
+
+```bash
+# remove the build arg if not needed
+docker compose --file compose-dev.yaml up --build
+```
 
 ## 🚀 Stay Connected
 * [Discord](https://discord.gg/z54hWyGcam)
