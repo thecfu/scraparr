@@ -81,7 +81,6 @@ class Connectors:
 
         def scrape_with_interval(service, config_index, interval):
             while running:
-                clear(service)
                 self.scrape_service(service, config_index)
                 time.sleep(interval)
 
