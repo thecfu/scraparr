@@ -148,18 +148,16 @@ def analyse_indexers(indexers, detailed, alias):
                 break
 
         if detailed:
+            print(f"Processing Indexer: {name} - {indexer['protocol']} - {indexer['privacy']}")
             (prowlarr_metrics.INDEXER_ENABLED
                 .labels(alias, indexer["protocol"], name)
                 .set(enabled)
             )
-            if "status" in indexer:
-                status = indexer.get("status", "healthy")
-            else:
-                status = "healthy"
+            status = indexer.get("status", "healthy")
             if status == "healthy":
-                prowlarr_metrics.INDEXER_STATUS.labels(alias, name, status).set(1)
+                prowlarr_metrics.INDEXER_HEALTHY.labels(alias, name).set(1)
             else:
-                prowlarr_metrics.INDEXER_STATUS.labels(alias, name, status).set(0)
+                prowlarr_metrics.INDEXER_HEALTHY.labels(alias, name).set(0)
 
     for types, counts in indexer_count.items():
         if types == "total":
