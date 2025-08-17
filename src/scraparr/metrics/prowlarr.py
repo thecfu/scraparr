@@ -23,6 +23,6 @@ INDEXER_PRIVACY = Gauge("prowlarr_indexer_privacy", "Privacy status of the Index
 INDEXER_ENABLED_T = Gauge("prowlarr_indexer_enabled_total", "Enabled status of the Indexers", ["alias"])
 INDEXER_PRIVACY_T = Gauge("prowlarr_indexer_privacy_total", "Privacy status of the Indexers", ["alias", "privacy"])
 VIP_EXPIRATION = Gauge("prowlarr_vip_expiration", "VIP Expiration of the Indexers", ["alias", "indexer"])
-#INDEXER_STATUS = Gauge("prowlarr_indexer_status", "Status of the Indexers value 0 is unhealthy, 1 is healthy", ["alias", "indexer", "status"])
+INDEXER_STATUS = Gauge("prowlarr_indexer_status", "Status of the Indexers value 0 is unhealthy, 1 is healthy", ["alias", "indexer", "status"])
 INDEXER_HEALTHY = Gauge("prowlarr_indexer_healthy", "Healthy Status of the Indexer", ["alias", "indexer"])
 
