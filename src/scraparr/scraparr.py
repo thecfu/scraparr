@@ -75,20 +75,18 @@ def main():
                 config = CONFIG[service]
             connectors.add_connector(service, config)
 
-    running = True
+    httpd = make_server(ADDRESS, PORT, app) # type: ignore
 
     def run_server():
         """Starts the WSGI server"""
-        httpd = make_server(ADDRESS, PORT, app) # type: ignore
-        while running:
-            httpd.handle_request()
+        httpd.serve_forever()
         logging.info("Metrics Endpoint Stopped")
 
     server_thread = threading.Thread(target=run_server)
     server_thread.start()
 
     connectors.scrape()
-    running = False
+    httpd.shutdown()
 
 
 if __name__ == '__main__':
