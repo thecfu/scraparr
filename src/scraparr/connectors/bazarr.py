@@ -14,28 +14,31 @@ def get_system_data(url, api_key, alias):
     """Grab the System Data from the Bazarr Endpoint"""
 
     initial_time = time.time()
-    res = get(f"{url}/api/system/status", api_key)["data"]
+    res = get(f"{url}/api/system/status", api_key)
     end_time = time.time()
 
     if res == {}:
         UP.labels(alias, 'bazarr').set(0)
-    else:
-        UP.labels(alias, 'bazarr').set(1)
-        bazarr_metrics.LAST_SCRAPE.labels(alias).set(end_time)
-        bazarr_metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
+        return res
 
-        bazarr_metrics.START_TIME.labels(alias).set(res['start_time'])
+    data = res["data"]
 
-        releases = get(f"{url}/api/system/releases", api_key)
+    UP.labels(alias, 'bazarr').set(1)
+    bazarr_metrics.LAST_SCRAPE.labels(alias).set(end_time)
+    bazarr_metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
 
-        if releases != {}:
-            for release in releases["data"]:
-                if release["name"] == f"v{res['bazarr_version']}":
-                    build_time = parse(release["date"]).timestamp()
-                    bazarr_metrics.BUILD_TIME.labels(alias).set(build_time)
-                    break
+    bazarr_metrics.START_TIME.labels(alias).set(data['start_time'])
 
-    return res
+    releases = get(f"{url}/api/system/releases", api_key)
+
+    if releases != {}:
+        for release in releases["data"]:
+            if release["name"] == f"v{data['bazarr_version']}":
+                build_time = parse(release["date"]).timestamp()
+                bazarr_metrics.BUILD_TIME.labels(alias).set(build_time)
+                break
+
+    return data
 
 def get_providers(url, api_key, alias):
     """Grab the Providers from the Bazarr Endpoint"""
