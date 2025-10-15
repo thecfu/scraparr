@@ -17,6 +17,19 @@ class Module(ConnectorModule):
     def __init__(self, config):
         ConnectorModule.__init__(self, config, "readarr")
 
+    def clear(self):
+        """Clear the metrics"""
+
+        readarr_metrics.BOOK_DISK_SIZE.remove_by_labels({"alias": self.alias})
+        readarr_metrics.BOOK_PERCENTAGE.remove_by_labels({"alias": self.alias})
+        readarr_metrics.BOOK_RATING.remove_by_labels({"alias": self.alias})
+        readarr_metrics.BOOK_RATING_TOTAL.remove_by_labels({"alias": self.alias})
+        readarr_metrics.AUTHOR_BOOK_COUNT.remove_by_labels({"alias": self.alias})
+        readarr_metrics.AUTHOR_STATUS.remove_by_labels({"alias": self.alias})
+        readarr_metrics.AUTHOR_DISK_SIZE.remove_by_labels({"alias": self.alias})
+        readarr_metrics.AUTHOR_RATING.remove_by_labels({"alias": self.alias})
+        readarr_metrics.AUTHOR_RATING_TOTAL.remove_by_labels({"alias": self.alias})
+
     def get_authors(self):
         """Grab the Authors from the Readarr Endpoint"""
 
