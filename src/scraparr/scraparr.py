@@ -27,7 +27,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 CONFIG_FILE_LOCATION = "/scraparr/config/config.yaml"
 
-config_file = None
+CONFIG = None
 
 try:
     with open(CONFIG_FILE_LOCATION, 'r', encoding='utf-8') as yaml_file:
@@ -50,17 +50,17 @@ except yaml.YAMLError as exc:
     logging.error("Error parsing YAML file: %s", exc)
     sys.exit(1)
 
-if not config_file:
+if not CONFIG:
     logging.error("Configuration is empty. Please provide a valid configuration.")
     sys.exit(1)
 
-GENERAL = config_file.get('GENERAL', {})
+GENERAL = CONFIG.get('GENERAL', {})
 PATH = GENERAL.get('path', "/metrics")
 ADDRESS = GENERAL.get('address', "0.0.0.0")
 PORT = GENERAL.get('port', 7100)
 WORKERS = GENERAL.get('workers', 5)
 
-AUTH = config_file.get('AUTH', {})
+AUTH = CONFIG.get('AUTH', {})
 USERNAME = AUTH.get('username', None)
 PASSWORD = AUTH.get('password', None)
 BEARER_TOKEN = AUTH.get('token', None)
@@ -74,7 +74,7 @@ def main():
         logging.info("No configuration found for %s", BEAUTIFUL_CONNECTORS)
         sys.exit(1)
 
-    connectors = scraparr.connectors.Connectors()
+    connectors = scraparr.connectors.Connectors(WORKERS)
 
     for service in config_file:
         if service in ACTIVE_CONNECTORS:
@@ -84,7 +84,7 @@ def main():
                 config = config_file[service]
             connectors.add_connector(service, config)
 
-    httpd = make_server(ADDRESS, PORT, app) # type: ignore
+    httpd = make_server(ADDRESS, PORT, app)
 
     def run_server():
         """Starts the WSGI server"""
