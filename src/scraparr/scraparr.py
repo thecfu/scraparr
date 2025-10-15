@@ -58,6 +58,7 @@ GENERAL = CONFIG.get('GENERAL', {})
 PATH = GENERAL.get('path', "/metrics")
 ADDRESS = GENERAL.get('address', "0.0.0.0")
 PORT = GENERAL.get('port', 7100)
+WORKERS = GENERAL.get('workers', 5)
 
 AUTH = CONFIG.get('AUTH', {})
 USERNAME = AUTH.get('username', None)
