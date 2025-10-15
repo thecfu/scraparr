@@ -27,6 +27,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 CONFIG_FILE_LOCATION = "/scraparr/config/config.yaml"
 
+CONFIG = None
+
 try:
     with open(CONFIG_FILE_LOCATION, 'r', encoding='utf-8') as yaml_file:
         CONFIG = yaml.safe_load(yaml_file)
@@ -48,13 +50,19 @@ except yaml.YAMLError as exc:
     logging.error("Error parsing YAML file: %s", exc)
     sys.exit(1)
 
-PATH = CONFIG.get('GENERAL', {}).get('path', "/metrics") # type: ignore
-ADDRESS = CONFIG.get('GENERAL', {}).get('address', "0.0.0.0") # type: ignore
-PORT = CONFIG.get('GENERAL', {}).get('port', 7100) # type: ignore
+if not CONFIG:
+    logging.error("Configuration is empty. Please provide a valid configuration.")
+    sys.exit(1)
 
-USERNAME = CONFIG.get('AUTH', {}).get('username', None) # type: ignore
-PASSWORD = CONFIG.get('AUTH', {}).get('password', None) # type: ignore
-BEARER_TOKEN = CONFIG.get('AUTH', {}).get('token', None) # type: ignore
+GENERAL = CONFIG.get('GENERAL', {})
+PATH = GENERAL.get('path', "/metrics")
+ADDRESS = GENERAL.get('address', "0.0.0.0")
+PORT = GENERAL.get('port', 7100)
+
+AUTH = CONFIG.get('AUTH', {})
+USERNAME = AUTH.get('username', None)
+PASSWORD = AUTH.get('password', None)
+BEARER_TOKEN = AUTH.get('token', None)
 
 metrics_app = make_wsgi_app()
 app = Middleware(metrics_app, USERNAME, PASSWORD, BEARER_TOKEN)
@@ -65,7 +73,7 @@ def main():
         logging.info("No configuration found for %s", BEAUTIFUL_CONNECTORS)
         sys.exit(1)
 
-    connectors = scraparr.connectors.Connectors()
+    connectors = scraparr.connectors.Connectors(WORKERS)
 
     for service in CONFIG:
         if service in ACTIVE_CONNECTORS:
@@ -75,7 +83,7 @@ def main():
                 config = CONFIG[service]
             connectors.add_connector(service, config)
 
-    httpd = make_server(ADDRESS, PORT, app) # type: ignore
+    httpd = make_server(ADDRESS, PORT, app)
 
     def run_server():
         """Starts the WSGI server"""
