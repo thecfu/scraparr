@@ -68,7 +68,7 @@ class Connectors:
 
     @staticmethod
     def _scrape_connector(service, connector):
-        logging.debug("Scraping %s config %s", service, connector)
+        logging.warning("Scraping %s config %s", service, connector)
         try:
             connector.start()
         except Exception as e: # pylint: disable=broad-except

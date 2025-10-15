@@ -6,5 +6,5 @@ from scraparr.connectors.seerr import Seerr
 class Module(Seerr):
     """Class to handle the Overseerr Metrics"""
 
-    def __init__(self, config):
-        Seerr.__init__(self, config, overseerr_metrics, "overseerr")
+    def __init__(self, alias):
+        Seerr.__init__(self, "overseerr", alias, overseerr_metrics)

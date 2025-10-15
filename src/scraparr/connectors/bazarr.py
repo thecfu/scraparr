@@ -17,12 +17,6 @@ class Module(ConnectorModule):
     def __init__(self, config):
         ConnectorModule.__init__(self, config, "bazarr")
 
-    def clear(self):
-        """Clear Radarr metrics to remove any previous data."""
-        bazarr_metrics.WANTED_EPISODE_COUNT.remove_by_labels({"alias": self.alias})
-        bazarr_metrics.WANTED_MOVIE_COUNT.remove_by_labels({"alias": self.alias})
-        bazarr_metrics.PROVIDER_STATUS.remove_by_labels({"alias": self.alias})
-
     def scrape(self):
         """Scrape the Bazarr Service"""
 
