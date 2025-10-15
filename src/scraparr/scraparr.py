@@ -27,20 +27,20 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 CONFIG_FILE_LOCATION = "/scraparr/config/config.yaml"
 
-CONFIG = None
+config = None
 
 try:
     with open(CONFIG_FILE_LOCATION, 'r', encoding='utf-8') as yaml_file:
-        config_file = yaml.safe_load(yaml_file)
+        config = yaml.safe_load(yaml_file)
 except FileNotFoundError:
     logging.error(
     	"Configuration file not found: %s, will try to load from environment variables",
     	CONFIG_FILE_LOCATION
     )
 
-    config_file = parse_env_config()
+    config = parse_env_config()
 
-    if not config_file:
+    if not config:
         logging.error("No configuration found in environment variables.")
         sys.exit(1)
 except PermissionError:
@@ -50,17 +50,17 @@ except yaml.YAMLError as exc:
     logging.error("Error parsing YAML file: %s", exc)
     sys.exit(1)
 
-if not CONFIG:
+if not config:
     logging.error("Configuration is empty. Please provide a valid configuration.")
     sys.exit(1)
 
-GENERAL = CONFIG.get('GENERAL', {})
+GENERAL = config.get('GENERAL', {})
 PATH = GENERAL.get('path', "/metrics")
 ADDRESS = GENERAL.get('address', "0.0.0.0")
 PORT = GENERAL.get('port', 7100)
 WORKERS = GENERAL.get('workers', 5)
 
-AUTH = CONFIG.get('AUTH', {})
+AUTH = config.get('AUTH', {})
 USERNAME = AUTH.get('username', None)
 PASSWORD = AUTH.get('password', None)
 BEARER_TOKEN = AUTH.get('token', None)
@@ -70,18 +70,18 @@ app = Middleware(metrics_app, USERNAME, PASSWORD, BEARER_TOKEN)
 
 def main():
     """Main function to start the Scraparr Prometheus Exporter"""
-    if not any(section in config_file for section in ACTIVE_CONNECTORS):
+    if not any(section in config for section in ACTIVE_CONNECTORS):
         logging.info("No configuration found for %s", BEAUTIFUL_CONNECTORS)
         sys.exit(1)
 
     connectors = scraparr.connectors.Connectors(WORKERS)
 
-    for service in config_file:
+    for service in config:
         if service in ACTIVE_CONNECTORS:
-            if isinstance(config_file[service], dict):
-                config = [config_file[service]]
+            if isinstance(config[service], dict):
+                config = [config[service]]
             else:
-                config = config_file[service]
+                config = config[service]
             connectors.add_connector(service, config)
 
     httpd = make_server(ADDRESS, PORT, app)
