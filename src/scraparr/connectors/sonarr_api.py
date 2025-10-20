@@ -179,7 +179,7 @@ class SonarrApi(ConnectorModule):
         }
 
         if scrape_data["data"] == {} or scrape_data["system"]["status"] == {}:
-            logging.error("No Data found for Sonarr, assuming Failure")
+            logging.error("No Data found for %s, assuming Failure", self.service)
             return {}
 
         return scrape_data
