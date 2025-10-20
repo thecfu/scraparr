@@ -4,38 +4,46 @@ import time
 import logging
 from dateutil.parser import parse
 
+from scraparr.connectors.module import ConnectorModule
 from scraparr.connectors.util import get
 from scraparr.metrics.general import UP
 
-class GetSeerr:
+class Seerr(ConnectorModule):
     """Class to handle the Metrics for jellyseerr and Overseerr"""
 
-    def __init__(self, config, metrics):
-        self.api_url = f"{config['url']}/api/{config['api_version']}"
-        self.api_key = config['api_key']
-        self.alias = config['alias']
-        self.service = config.get('service', 'seerr')
+    def __init__(self, config, metrics, service):
+        ConnectorModule.__init__(self, config, service)
         self.metrics = metrics
+        self.url = f"{config['url']}/api/{config['api_version']}"
+
+    def scrape(self):
+        """Scrape the Seerr Service"""
+
+        initial_time = time.time()
+        users, requests, issues = self.get()
+        end_time = time.time()
+
+        self.metrics.LAST_SCRAPE.labels(self.alias).set(end_time)
+        self.metrics.SCRAPE_DURATION.labels(self.alias).set(end_time - initial_time)
+
+        if not users or not requests or not issues:
+            logging.error("No Data found for %s %s, assuming Failure", self.service, self.alias)
+            return {}
+
+        return {"users": users, "requests": requests, "issues": issues}
 
     def get_users(self):
         """Grab Users from the Seerr Endpoint"""
 
-        alias = self.alias
-        service = self.service
-
         users = []
 
-        initial_time = time.time()
         res = self.fetch_paginated_results("user")
-        end_time = time.time()
 
         if not res or "results" not in res:
-            UP.labels(alias, service).set(0)
+            UP.labels(self.alias, self.service).set(0)
             return []
 
-        UP.labels(alias, service).set(1)
-        self.metrics.LAST_SCRAPE.labels(alias).set(end_time)
-        self.metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
+        UP.labels(self.alias, self.service).set(1)
 
         for res_user in res["results"]:
             user = {"username": res_user["displayName"],
@@ -57,11 +65,11 @@ class GetSeerr:
             media_id = 0
 
         if req["type"] == "movie":
-            media = get(f"{self.api_url}/movie/{media_id}", self.api_key)
+            media = get(f"{self.url}/movie/{media_id}", self.api_key)
             seasons = 0
             title = media.get("title", media_id)
         else:
-            media = get(f"{self.api_url}/tv/{media_id}", self.api_key)
+            media = get(f"{self.url}/tv/{media_id}", self.api_key)
             seasons = req.get("seasonCount", 0)
             title = media.get("title", media_id)
 
@@ -70,24 +78,16 @@ class GetSeerr:
     def get_requests(self):
         """Grab Requests from the Seerr Endpoint"""
 
-        alias, service = self.alias, self.service
         requests = []
 
-        initial_time = time.time()
         res = self.fetch_paginated_results("request")
-        end_time = time.time()
 
         if not res or "results" not in res:
-            UP.labels(alias, service).set(0)
+            UP.labels(self.alias, self.service).set(0)
             return []
+        UP.labels(self.alias, self.service).set(1)
         if len(res["results"]) == 0:
-            UP.labels(alias, service).set(1)
-            self.metrics.LAST_SCRAPE.labels(alias).set(end_time)
-            self.metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
             return [{}]  # Return a single empty dict to indicate a successful scrape
-
-        self.metrics.LAST_SCRAPE.labels(alias).set(end_time)
-        self.metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
 
         # Process the Requests
         for res_request in res["results"]:
@@ -133,25 +133,16 @@ class GetSeerr:
     def get_issues(self):
         """Grab Issues from the Seerr Endpoint"""
 
-        alias, service = self.alias, self.service
         issues = []
 
-        initial_time = time.time()
         res = self.fetch_paginated_results("issue")
-        end_time = time.time()
 
         if not res or "results" not in res:
-            UP.labels(alias, service).set(0)
+            UP.labels(self.alias, self.service).set(0)
             return []
+        UP.labels(self.alias, self.service).set(1)
         if len(res["results"]) == 0:
-            UP.labels(alias, service).set(1)
-            self.metrics.LAST_SCRAPE.labels(alias).set(end_time)
-            self.metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
             return [{}] # Return a single empty dict to indicate a successful scrape
-
-        UP.labels(alias, service).set(1)
-        self.metrics.LAST_SCRAPE.labels(alias).set(end_time)
-        self.metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
 
         for res_issue in res["results"]:
             res_issue["type"] = res_issue["media"]["mediaType"]
@@ -170,14 +161,14 @@ class GetSeerr:
 
     def fetch_paginated_results(self, endpoint):
         """Handles API pagination for endpoints like 'issue' or 'request'"""
-        res = get(f"{self.api_url}/{endpoint}?take=20", self.api_key)
+        res = get(f"{self.url}/{endpoint}?take=20", self.api_key)
         if not res or "pageInfo" not in res:
             return {}
 
         total_pages = res["pageInfo"].get("pages", 1)
         for page in range(2, total_pages + 1):
             skip = 20 * page
-            more = get(f"{self.api_url}/{endpoint}?take=20&skip={skip}", self.api_key)
+            more = get(f"{self.url}/{endpoint}?take=20&skip={skip}", self.api_key)
             if not more or "results" not in more:
                 logging.error("Failed to get more %ss, but expected more for %s",
                               endpoint, self.alias)
@@ -209,14 +200,6 @@ class GetSeerr:
 
         return users, requests, issues
 
-class UpdateSeerr:
-    """Class to handle the Metrics for jellyseerr and Overseerr"""
-
-    def __init__(self, detailed, alias, metrics):
-        self.detailed = detailed
-        self.alias = alias
-        self.metrics = metrics
-
     def update_users(self, users):
         """Update the User Metrics"""
 
@@ -230,8 +213,6 @@ class UpdateSeerr:
     def update_requests(self, requests):
         """Update the Request Metrics"""
 
-        alias = self.alias
-
         request_status = {}
         request_count = {}
         requested_seasons = 0
@@ -243,24 +224,22 @@ class UpdateSeerr:
 
             if self.detailed:
                 (self.metrics.REQUEST_TIMESTAMP
-                 .labels(alias, request["title"])
+                 .labels(self.alias, request["title"])
                  .set(request["requested"]))
                 if "seasons" in request and request["seasons"] > 0:
                     (self.metrics.REQUEST_SEASONS
-                     .labels(alias, request["title"])
+                     .labels(self.alias, request["title"])
                      .set(request.get("seasons", 0)))
 
         for status, count in request_status.items():
-            self.metrics.REQUEST_STATUS.labels(alias, status).set(count)
-        self.metrics.REQUEST_TV.labels(alias).set(request_count.get("tv", 0))
-        self.metrics.REQUEST_MOVIE.labels(alias).set(request_count.get("movie", 0))
-        self.metrics.REQUEST_COUNT.labels(alias).set(len(requests))
-        self.metrics.REQUEST_SEASONS_T.labels(alias).set(requested_seasons)
+            self.metrics.REQUEST_STATUS.labels(self.alias, status).set(count)
+        self.metrics.REQUEST_TV.labels(self.alias).set(request_count.get("tv", 0))
+        self.metrics.REQUEST_MOVIE.labels(self.alias).set(request_count.get("movie", 0))
+        self.metrics.REQUEST_COUNT.labels(self.alias).set(len(requests))
+        self.metrics.REQUEST_SEASONS_T.labels(self.alias).set(requested_seasons)
 
     def update_issues(self, issues):
         """Update the Issue Metrics"""
-
-        alias = self.alias
 
         issue_status = {}
         issue_type = {}
@@ -277,23 +256,23 @@ class UpdateSeerr:
 
             if self.detailed:
                 issue_title[issue["title"]] = issue_title.get(issue["title"], 0) + 1
-                self.metrics.ISSUE_CREATED.labels(alias, issue["title"]).set(issue["created"])
-                self.metrics.ISSUE_UPDATED.labels(alias, issue["title"]).set(issue["updated"])
+                self.metrics.ISSUE_CREATED.labels(self.alias, issue["title"]).set(issue["created"])
+                self.metrics.ISSUE_UPDATED.labels(self.alias, issue["title"]).set(issue["updated"])
 
         for status, count in issue_status.items():
-            self.metrics.ISSUE_STATUS.labels(alias, status).set(count)
+            self.metrics.ISSUE_STATUS.labels(self.alias, status).set(count)
         for issue_type, count in issue_type.items():
-            self.metrics.ISSUE_TYPE.labels(alias, issue_type).set(count)
+            self.metrics.ISSUE_TYPE.labels(self.alias, issue_type).set(count)
         for media_type, count in issue_media_type.items():
-            self.metrics.ISSUE_MEDIA_TYPE.labels(alias, media_type).set(count)
+            self.metrics.ISSUE_MEDIA_TYPE.labels(self.alias, media_type).set(count)
         for (issue_type, media_type), count in issue_and_media_type.items():
-            self.metrics.ISSUE_AND_MEDIA_TYPE.labels(alias, issue_type, media_type).set(count)
+            self.metrics.ISSUE_AND_MEDIA_TYPE.labels(self.alias, issue_type, media_type).set(count)
         for title, count in issue_title.items():
-            self.metrics.ISSUE_TITLE.labels(alias, title).set(count)
+            self.metrics.ISSUE_TITLE.labels(self.alias, title).set(count)
 
-        self.metrics.ISSUE_COUNT.labels(alias).set(len(issues))
+        self.metrics.ISSUE_COUNT.labels(self.alias).set(len(issues))
 
-    def update(self, data):
+    def update_metrics(self, data):
         """Update the Metrics for the Seerr Services"""
 
         users = data["users"]

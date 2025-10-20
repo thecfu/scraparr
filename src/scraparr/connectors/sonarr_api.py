@@ -7,19 +7,16 @@ import logging
 from dateutil.parser import parse
 
 from scraparr.connectors import util
+from scraparr.connectors.module import ConnectorModule
 from scraparr.metrics.general import UP
 
-class SonarrApi:
+class SonarrApi(ConnectorModule):
     """Class to handle the SonarrAPI Metrics"""
 
     def __init__(self, service, config, metrics):
-        self.service = service
-        self.url = config.get('url')
-        self.api_key = config.get('api_key')
-        self.api_version = config.get('api_version')
-        self.alias = config.get('alias', 'sonarr')
+        ConnectorModule.__init__(self, config, service)
         self.metrics = metrics
-        self.detailed = config.get('detailed', False)
+
 
     def get_series(self):
         """Grab the Series from the SonarrAPI Endpoint"""
@@ -182,7 +179,7 @@ class SonarrApi:
         }
 
         if scrape_data["data"] == {} or scrape_data["system"]["status"] == {}:
-            logging.error("No Data found for Sonarr, assuming Failure")
+            logging.error("No Data found for %s, assuming Failure", self.service)
             return {}
 
         return scrape_data
