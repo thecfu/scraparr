@@ -6,5 +6,5 @@ from scraparr.connectors.seerr import Seerr
 class Module(Seerr):
     """Class to handle the Jellyseerr Metrics"""
 
-    def __init__(self, alias):
-        Seerr.__init__(self, "jellyseerr", alias, jellyseerr_metrics)
+    def __init__(self, config):
+        Seerr.__init__(self, config, jellyseerr_metrics, "jellyseerr")

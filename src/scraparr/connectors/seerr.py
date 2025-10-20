@@ -14,6 +14,7 @@ class Seerr(ConnectorModule):
     def __init__(self, config, metrics, service):
         ConnectorModule.__init__(self, config, service)
         self.metrics = metrics
+        self.url = f"{config['url']}/api/{config['api_version']}"
 
     def scrape(self):
         """Scrape the Seerr Service"""
