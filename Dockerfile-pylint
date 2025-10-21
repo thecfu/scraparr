@@ -1,4 +1,4 @@
-FROM python:3.13-alpine
+FROM python:3.14-alpine
 
 # Copy the current directory contents into the container at /app
 COPY src /
