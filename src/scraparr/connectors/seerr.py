@@ -21,8 +21,8 @@ class Seerr(ConnectorModule):
         self.metrics.REQUEST_TIMESTAMP.remove_by_labels({"alias": self.alias})
         self.metrics.REQUEST_SEASONS.remove_by_labels({"alias": self.alias})
         self.metrics.ISSUE_TITLE.remove_by_labels({"alias": self.alias})
-        self.metrics.ISSUE_CREATORS.remove_by_labels({"alias": self.alias})
-        self.metrics.ISSUE_UPDATES.remove_by_labels({"alias": self.alias})
+        self.metrics.ISSUE_CREATED.remove_by_labels({"alias": self.alias})
+        self.metrics.ISSUE_UPDATED.remove_by_labels({"alias": self.alias})
         self.metrics.ISSUE_TITLE.remove_by_labels({"alias": self.alias})
 
     def scrape(self):
