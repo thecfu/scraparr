@@ -17,6 +17,15 @@ class SonarrApi(ConnectorModule):
         ConnectorModule.__init__(self, config, service)
         self.metrics = metrics
 
+    def clear(self):
+        """Clear the metrics"""
+
+        self.metrics.SERIES_EPISODE_COUNT.remove_by_labels({"alias": self.alias})
+        self.metrics.SERIES_MISSING_EPISODE_COUNT.remove_by_labels({"alias": self.alias})
+        self.metrics.SERIES_COUNT.remove_by_labels({"alias": self.alias})
+        self.metrics.SERIES_DISK_SIZE.remove_by_labels({"alias": self.alias})
+        self.metrics.SERIES_DOWNLOAD_PERCENTAGE.remove_by_labels({"alias": self.alias})
+        self.metrics.SERIES_MONITORED.remove_by_labels({"alias": self.alias})
 
     def get_series(self):
         """Grab the Series from the SonarrAPI Endpoint"""
