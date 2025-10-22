@@ -16,6 +16,15 @@ class Seerr(ConnectorModule):
         self.metrics = metrics
         self.url = f"{config['url']}/api/{config['api_version']}"
 
+    def clear(self):
+        """Clear the Metrics for the Service"""
+        self.metrics.REQUEST_TIMESTAMP.remove_by_labels({"alias": self.alias})
+        self.metrics.REQUEST_SEASONS.remove_by_labels({"alias": self.alias})
+        self.metrics.ISSUE_TITLE.remove_by_labels({"alias": self.alias})
+        self.metrics.ISSUE_CREATORS.remove_by_labels({"alias": self.alias})
+        self.metrics.ISSUE_UPDATES.remove_by_labels({"alias": self.alias})
+        self.metrics.ISSUE_TITLE.remove_by_labels({"alias": self.alias})
+
     def scrape(self):
         """Scrape the Seerr Service"""
 
