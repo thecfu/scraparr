@@ -28,6 +28,8 @@ jobs:
         python-version: [ "3.12", "3.13", "3.14" ]
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v3
         with:
@@ -60,6 +62,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
 
       # Uses the `docker/login-action` action to log in to the Container registry registry using the account and password that will publish the packages. Once published, the packages are scoped to the account defined here.
       - name: Log in to the Container registry
