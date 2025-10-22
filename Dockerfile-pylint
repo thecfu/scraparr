@@ -9,6 +9,11 @@ WORKDIR /scraparr
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy lib and install them
+COPY lib /lib
+
+RUN pip install /lib/client_python
+
 RUN pip install pylint
 
 ENTRYPOINT ["pylint", "--recursive=y", "/scraparr"]
