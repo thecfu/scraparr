@@ -74,7 +74,7 @@ def main():
         logging.info("No configuration found for %s", BEAUTIFUL_CONNECTORS)
         sys.exit(1)
 
-    connectors = scraparr.connectors.Connectors(WORKERS)
+    connectors = scraparr.connectors.Connectors()
 
     for service in config_file:
         if service in ACTIVE_CONNECTORS:
@@ -84,7 +84,7 @@ def main():
                 config = config_file[service]
             connectors.add_connector(service, config)
 
-    httpd = make_server(ADDRESS, PORT, app)
+    httpd = make_server(ADDRESS, PORT, app) # type: ignore
 
     def run_server():
         """Starts the WSGI server"""
