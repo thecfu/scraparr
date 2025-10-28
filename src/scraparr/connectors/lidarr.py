@@ -122,6 +122,9 @@ class Module(ConnectorModule):
 
             missing_release_count = 0
             for release in artist["releases"]:
+                if release.get("statistics", None) is None:
+                    logging.warning("No statistics found for %s by %s", release["title"], name)
+                    continue
                 if release["monitored"]:
                     release_counter["total"]["monitored"] += 1
                     release_counter["path"]["monitored"]["paths"][root_folder] += 1
@@ -190,7 +193,7 @@ class Module(ConnectorModule):
     def scrape(self):
         """Scrape the Lidarr Service"""
 
-        data = self.get_artists(self.url, self.api_key, self.api_version, self.alias)
+        data = self.get_artists()
         system = {
             "root_folder": util.get_root_folder(self.url, self.api_version, self.api_key),
             "queue": util.get(f"{self.url}/api/{self.api_version}/queue/status", self.api_key),
@@ -206,5 +209,5 @@ class Module(ConnectorModule):
     def update_metrics(self, data):
         """Update the Lidarr Metrics"""
 
-        self.analyse_artists(data["data"], self.detailed, self.alias)
-        self.update_system_data(data["system"], self.alias)
+        self.analyse_artists(data["data"])
+        self.update_system_data(data["system"])
