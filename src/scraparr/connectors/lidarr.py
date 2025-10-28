@@ -48,6 +48,7 @@ class Module(ConnectorModule):
             lidarr_metrics.SCRAPE_DURATION.labels(self.alias).set(end_time - initial_time)
         return res
 
+    # pylint: disable=too-many-locals, too-many-statements
     def analyse_artists(self, artists):
         """Analyse Artists and set the correct metrics"""
 
@@ -69,7 +70,6 @@ class Module(ConnectorModule):
 
         used_size = {"total": 0}
 
-        # check this
         counter = {
             "path": {
                 "total": {"paths": {}, "func": lidarr_metrics.ARTIST_COUNT},
@@ -157,8 +157,10 @@ class Module(ConnectorModule):
                 counter["total"]["unmonitored"][0] += 1
                 counter["path"]["unmonitored"]["paths"][root_folder] += 1
 
-        lidarr_metrics.MONITORED_RELEASE_T.labels(self.alias).set(release_counter["total"]["monitored"])
-        lidarr_metrics.UNMONITORED_RELEASE_T.labels(self.alias).set(release_counter["total"]["unmonitored"])
+        (lidarr_metrics.MONITORED_RELEASE_T.labels(self.alias)
+         .set(release_counter["total"]["monitored"]))
+        (lidarr_metrics.UNMONITORED_RELEASE_T.labels(self.alias)
+         .set(release_counter["total"]["unmonitored"]))
         for folder, count in release_counter["path"]["monitored"]["paths"].items():
             lidarr_metrics.MONITORED_RELEASE.labels(self.alias, folder).set(count)
         for folder, count in release_counter["path"]["unmonitored"]["paths"].items():
@@ -179,7 +181,8 @@ class Module(ConnectorModule):
         """Update the System Data Metrics"""
         for disk in data["root_folder"]:
             lidarr_metrics.FREE_DISK_SIZE.labels(self.alias, disk["path"]).set(disk["freeSpace"])
-            lidarr_metrics.AVAILABLE_DISK_SIZE.labels(self.alias, disk["path"]).set(disk["totalSpace"])
+            (lidarr_metrics.AVAILABLE_DISK_SIZE.labels(self.alias, disk["path"])
+             .set(disk["totalSpace"]))
 
         lidarr_metrics.QUEUE_COUNT.labels(self.alias).set(data["queue"]["totalCount"])
         lidarr_metrics.QUEUE_ERROR.labels(self.alias).set(data["queue"]["errors"])
