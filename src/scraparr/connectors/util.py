@@ -45,6 +45,18 @@ def update_genre_count(genres, genre_count, root_folder):
         genre_count[genre][root_folder] += 1
 
 
+def update_type_count(releases, type_count, root_folder):
+    """Update the Release Type count for Lidarr"""
+    for release in releases:
+        release_type = release["albumType"]
+        if release_type not in type_count:
+            type_count[release_type] = {"total": 0, root_folder: 0}
+        elif root_folder not in type_count[release_type]:
+            type_count[release_type][root_folder] = 0
+        type_count[release_type]["total"] += 1
+        type_count[release_type][root_folder] += 1
+
+
 def increase_quality_count(quality_count, files, path):
     """Increase the Quality Count"""
     for file in files:
