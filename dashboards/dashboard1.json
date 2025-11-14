@@ -1686,11 +1686,12 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "readarr_book_genres{job=~\"$job\", alias=\"$readarr\"}",
+          "expr": "sort_desc(readarr_book_genres{job=~\"$job\", alias=\"$readarr\"})",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
-          "range": true,
+          "range": false,
+          "instant": true,
           "refId": "A",
           "useBackend": false
         }
@@ -4221,11 +4222,12 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "sonarr_quality_episodes_total{job=~\"$job\", alias=\"$sonarr\"}",
+          "expr": "sort_desc(sonarr_quality_episodes_total{job=~\"$job\", alias=\"$sonarr\"})",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
-          "range": true,
+          "instant": true,
+          "range": false,
           "refId": "A",
           "useBackend": false
         }
@@ -4317,11 +4319,12 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "sonarr_genres_count_total{job=~\"$job\", alias=\"$sonarr\"}",
+          "expr": "sort_desc(sonarr_genres_count_total{job=~\"$job\", alias=\"$sonarr\"})",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
-          "range": true,
+          "instant": true,
+          "range": false,
           "refId": "A",
           "useBackend": false
         }
@@ -5047,11 +5050,12 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "radarr_quality_movies_total{job=~\"$job\", alias=\"$radarr\"}",
+          "expr": "sort_desc(radarr_quality_movies_total{job=~\"$job\", alias=\"$radarr\"})",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
-          "range": true,
+          "instant": true,
+          "range": false,
           "refId": "A",
           "useBackend": false
         }
@@ -5143,11 +5147,12 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "radarr_genres_count_total{job=~\"$job\", alias=\"$radarr\"}",
+          "expr": "sort_desc(radarr_genres_count_total{job=~\"$job\", alias=\"$radarr\"})",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
-          "range": true,
+          "instant": true,
+          "range": false,
           "refId": "A",
           "useBackend": false
         }
