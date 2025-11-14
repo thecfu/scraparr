@@ -1686,11 +1686,12 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "readarr_book_genres{job=~\"$job\", alias=\"$readarr\"}",
+          "expr": "sort_desc(readarr_book_genres{job=~\"$job\", alias=\"$readarr\"})",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
-          "range": true,
+          "range": false,
+          "instant": true,
           "refId": "A",
           "useBackend": false
         }
