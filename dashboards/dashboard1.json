@@ -3044,6 +3044,7 @@
           "color": {
             "mode": "thresholds"
           },
+          "displayName": "${__field.labels.sync_level}:",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -3071,7 +3072,7 @@
       "options": {
         "colorMode": "value",
         "graphMode": "none",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "orientation": "auto",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
@@ -3094,7 +3095,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "prowlarr_application_sync_level_total{job=\"scraparr\", alias=\"$prowlarr\"}",
+          "expr": "prowlarr_application_sync_level_total{job=~\"$job\", alias=\"$prowlarr\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
