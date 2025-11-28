@@ -53,7 +53,7 @@ class Connectors:
         next_run = {}
         for service, conns in self.connectors.items():
             for i, conn in enumerate(conns):
-                next_run[(service, i)] = time.time() + conn.interval
+                next_run[(service, i)] = time.time()
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.workers) as executor:
             while True:
