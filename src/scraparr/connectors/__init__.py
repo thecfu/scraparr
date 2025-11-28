@@ -50,21 +50,24 @@ class Connectors:
 
     def scrape(self):
         """Run all connectors in a threaded scheduler loop"""
-        next_run = {}
+        next_run = []
         for service, conns in self.connectors.items():
             for i, conn in enumerate(conns):
-                next_run[(service, i)] = time.time()
+                next_run.append([service, i, conn, time.time(), None])
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.workers) as executor:
             while True:
                 now = time.time()
-                for (service, i), run_at in next_run.items():
-                    if now >= run_at:
-                        connector = self.connectors[service][i]
-                        executor.submit(self._scrape_connector, service, connector)
-                        # keep interval consistent (no drift)
-                        next_run[(service, i)] += connector.interval
-                time.sleep(1)
+                for run in next_run:
+                    service, i, connector, run_at, future = run
+                    if future is not None and future.done():
+                        # Update next run time after completion
+                        run[3] = now + connector.interval
+                        run[4] = None
+                    if future is None and now >= run_at:
+                        run[4] = executor.submit(self._scrape_connector, service, connector)
+                sleep_time = min(max(run[3] - now, 0) for run in next_run)
+                time.sleep(sleep_time)
 
     @staticmethod
     def _scrape_connector(service, connector):
