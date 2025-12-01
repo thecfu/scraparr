@@ -36,6 +36,7 @@ class ConnectorModule(ABC): # pylint: disable=too-few-public-methods, too-many-i
         data = self.scrape()
         if data:
             if self.validate_data(data):
+                self.clear()
                 self.update_metrics(data)
                 self.logger.info("metrics updated")
         else:
@@ -48,3 +49,7 @@ class ConnectorModule(ABC): # pylint: disable=too-few-public-methods, too-many-i
     @abstractmethod
     def update_metrics(self, data):
         """Update the Metrics for the Service"""
+
+    @abc.abstractmethod
+    def clear(self):
+        """Clear the Metrics for the Service"""

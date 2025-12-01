@@ -17,6 +17,13 @@ class Module(ConnectorModule):
         ConnectorModule.__init__(self, config, "Radarr")
         self.url = f"{self.url}/api/{self.api_version}"
 
+    def clear(self):
+        """Clear the Radarr metrics"""
+        radarr_metrics.MOVIE_FILE_COUNT.remove_by_labels({"alias": self.alias})
+        radarr_metrics.MOVIE_DISK_SIZE.remove_by_labels({"alias": self.alias})
+        radarr_metrics.MOVIE_MONITORED.remove_by_labels({"alias": self.alias})
+        radarr_metrics.MOVIE_MISSING.remove_by_labels({"alias": self.alias})
+
     def get_movies(self):
         """Grab the Movies from the Radarr Endpoint"""
 

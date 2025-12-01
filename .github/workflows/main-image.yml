@@ -25,9 +25,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ "3.11", "3.12", "3.13" ]
+        python-version: [ "3.12", "3.13", "3.14" ]
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v3
         with:
@@ -43,6 +45,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r src/scraparr/requirements.txt
+          pip install lib/client_python packaging
           pip install pylint
       - name: Analysing the code with pylint
         run: |
@@ -59,6 +62,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
 
       # Uses the `docker/login-action` action to log in to the Container registry registry using the account and password that will publish the packages. Once published, the packages are scoped to the account defined here.
       - name: Log in to the Container registry
@@ -88,7 +93,7 @@ jobs:
           images: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
             thegameprofi/scraparr
-          
+
       # This step uses the `docker/build-push-action` action to build the image, based on your repository's `Dockerfile`. If the build succeeds, it pushes the image to GitHub Packages.
       # It uses the `context` parameter to define the build's context as the set of files located in the specified path. For more information, see "[Usage](https://github.com/docker/build-push-action#usage)" in the README of the `docker/build-push-action` repository.
       # It uses the `tags` and `labels` parameters to tag and label the image with the output from the "meta" step.

@@ -20,6 +20,10 @@ class Module(ConnectorModule):
         self.within = config.get('within', 300)
         self.header = None
 
+    def clear(self):
+        """Clear the Metrics for the Service"""
+
+
     def get_header(self):
         """Translate the API Key into a Header for Jellyfin"""
         token = f"Mediabrowser Token={self.api_key}"

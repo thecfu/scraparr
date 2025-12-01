@@ -35,6 +35,12 @@ class Module(ConnectorModule):
         ConnectorModule.__init__(self, config, "prowlarr")
         self.url = f"{self.url}/api/{self.api_version}"
 
+    def clear(self):
+        """Clear the Metrics of the Prowlarr Service"""
+        prowlarr_metrics.VIP_EXPIRATION.remove_by_labels({"alias": self.alias})
+        prowlarr_metrics.INDEXER_STATUS.remove_by_labels({"alias": self.alias})
+        prowlarr_metrics.INDEXER_ENABLED.remove_by_labels({"alias": self.alias})
+
     def get_indexers(self):
         """Grab the Indexers from the Prowlarr Endpoint"""
 
