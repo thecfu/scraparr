@@ -183,7 +183,7 @@ def update_media_metrics(media, alias):
     status_update(status_labels, alias)
 
 
-def get_root_folder(url, api_version, api_key):
+def get_root_folder(url, api_key):
     """Get the Root Folder Data"""
 
     def filter_data(folder, disks):

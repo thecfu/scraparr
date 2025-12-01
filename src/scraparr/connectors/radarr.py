@@ -158,7 +158,7 @@ class Module(ConnectorModule):
 
         data = self.get_movies()
         system = {
-            "root_folder": util.get_root_folder(self.url, self.api_version, self.api_key),
+            "root_folder": util.get_root_folder(self.url, self.api_key),
             "queue": queue,
             "status": status
         }
