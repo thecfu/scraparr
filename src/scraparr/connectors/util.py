@@ -203,9 +203,9 @@ def get_root_folder(url, api_version, api_key):
                     seen_paths.add(rootfolder["path"])
         return report
 
-    data = get(f"{url}/api/{api_version}/rootfolder", api_key)
+    data = get(f"{url}/rootfolder", api_key)
     if data:
-        diskspace_data = get(f"{url}/api/{api_version}/diskspace", api_key)
+        diskspace_data = get(f"{url}/diskspace", api_key)
         if diskspace_data:
             return filter_data(data, diskspace_data)
     logging.warning("No rootfolder data found")
