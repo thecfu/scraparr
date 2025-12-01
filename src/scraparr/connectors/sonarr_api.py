@@ -3,7 +3,6 @@ Module to handle the Metrics of the SonarrAPI
 """
 
 import time
-import logging
 from dateutil.parser import parse
 
 from scraparr.connectors import util
@@ -16,6 +15,7 @@ class SonarrApi(ConnectorModule):
     def __init__(self, service, config, metrics):
         ConnectorModule.__init__(self, config, service)
         self.metrics = metrics
+        self.url = f"{self.url}/api/{self.api_version}"
 
     def clear(self):
         """Clear the metrics"""
@@ -31,15 +31,13 @@ class SonarrApi(ConnectorModule):
         """Grab the Series from the SonarrAPI Endpoint"""
 
         initial_time = time.time()
-        res = util.get(f"{self.url}/api/{self.api_version}/series", self.api_key)
+        res = util.get(f"{self.url}/series", self.api_key)
         end_time = time.time()
-        base_url = f"{self.url}/api/{self.api_version}/"
-
         if res == {}:
             UP.labels(self.alias, self.service).set(0)
         else:
             for series in res:
-                episodes = util.get(f"{base_url}episodefile?seriesId={series['id']}", self.api_key)
+                episodes = util.get(f"{self.url}/episodefile?seriesId={series['id']}", self.api_key)
                 series["episodes"] = episodes
 
             UP.labels(self.alias, self.service).set(1)
@@ -97,7 +95,7 @@ class SonarrApi(ConnectorModule):
             stats = serie.get("statistics", None)
 
             if stats is None:
-                logging.warning("No statistics found for %s", title)
+                self.logger.warning("No statistics found for %s", title)
                 continue
 
             util.increase_quality_count(quality_count, serie["episodes"], serie["rootFolderPath"])
@@ -175,12 +173,12 @@ class SonarrApi(ConnectorModule):
     def scrape(self):
         """Scrape the SonarrAPI Service"""
 
-        queue = util.get(f"{self.url}/api/{self.api_version}/queue/status", self.api_key)
-        status = util.get(f"{self.url}/api/{self.api_version}/system/status", self.api_key)
+        queue = util.get(f"{self.url}/queue/status", self.api_key)
+        status = util.get(f"{self.url}/system/status", self.api_key)
 
         scrape_data = {
             "system": {
-                "root_folder": util.get_root_folder(self.url, self.api_version, self.api_key),
+                "root_folder": util.get_root_folder(self.url, self.api_key),
                 "queue": queue,
                 "status": status
             },
@@ -188,7 +186,6 @@ class SonarrApi(ConnectorModule):
         }
 
         if scrape_data["data"] == {} or scrape_data["system"]["status"] == {}:
-            logging.error("No Data found for %s, assuming Failure", self.service)
             return {}
 
         return scrape_data

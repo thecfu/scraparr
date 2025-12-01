@@ -17,6 +17,7 @@ from wsgiref.simple_server import make_server
 import yaml
 from prometheus_client import make_wsgi_app
 
+from scraparr.connectors import util
 from scraparr.middleware import Middleware
 import scraparr.connectors
 from scraparr.parser import parse_env_config
@@ -57,7 +58,7 @@ if not config_file:
 GENERAL = config_file.get('GENERAL', {})
 PATH = GENERAL.get('path', "/metrics")
 ADDRESS = GENERAL.get('address', "0.0.0.0")
-PORT = GENERAL.get('port', 7100)
+PORT = int(GENERAL.get('port', 7100))
 WORKERS = GENERAL.get('workers', 5)
 
 AUTH = config_file.get('AUTH', {})
@@ -71,8 +72,10 @@ app = Middleware(metrics_app, USERNAME, PASSWORD, BEARER_TOKEN)
 def main():
     """Main function to start the Scraparr Prometheus Exporter"""
     if not any(section in config_file for section in ACTIVE_CONNECTORS):
-        logging.info("No configuration found for %s", BEAUTIFUL_CONNECTORS)
+        logging.error("No configuration found for %s", BEAUTIFUL_CONNECTORS)
         sys.exit(1)
+
+    util.log_level = GENERAL.get('log_level', 'INFO').upper()
 
     connectors = scraparr.connectors.Connectors(WORKERS)
 

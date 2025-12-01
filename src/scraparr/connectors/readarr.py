@@ -3,7 +3,6 @@ Module to handle the Metrics of the Readarr Service
 """
 
 import time
-import logging
 from dateutil.parser import parse
 
 from scraparr.connectors import util
@@ -16,6 +15,7 @@ class Module(ConnectorModule):
 
     def __init__(self, config):
         ConnectorModule.__init__(self, config, "readarr")
+        self.url = f"{self.url}/api/{self.api_version}"
 
     def clear(self):
         """Clear the metrics"""
@@ -34,7 +34,7 @@ class Module(ConnectorModule):
         """Grab the Authors from the Readarr Endpoint"""
 
         initial_time = time.time()
-        res = util.get(f"{self.url}/api/{self.api_version}/author", self.api_key)
+        res = util.get(f"{self.url}/author", self.api_key)
         end_time = time.time()
 
         if res == {}:
@@ -48,7 +48,7 @@ class Module(ConnectorModule):
     def get_books(self):
         """Grab the Books from the Readarr Endpoint"""
 
-        res = util.get(f"{self.url}/api/{self.api_version}/book", self.api_key)
+        res = util.get(f"{self.url}/book", self.api_key)
 
         if res == {}:
             UP.labels(self.api_key, "readarr").set(0)
@@ -151,9 +151,9 @@ class Module(ConnectorModule):
 
         scrape_data = {
             "system": {
-                "root_folder": util.get_root_folder(self.url, self.api_version, self.api_key),
-                "queue": util.get(f"{self.url}/api/{self.api_version}/queue/status", self.api_key),
-                "status": util.get(f"{self.url}/api/{self.api_version}/system/status", self.api_key)
+                "root_folder": util.get_root_folder(self.url, self.api_key),
+                "queue": util.get(f"{self.url}/queue/status", self.api_key),
+                "status": util.get(f"{self.url}/system/status", self.api_key)
             },
             "data": {
                 "books": self.get_books(),
@@ -162,7 +162,6 @@ class Module(ConnectorModule):
         }
 
         if scrape_data["data"]["books"] == {} or scrape_data["system"]["status"] == {}:
-            logging.error("No Data found for Readarr, assuming Failure")
             return {}
 
         return scrape_data

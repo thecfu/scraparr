@@ -1,7 +1,6 @@
 """Module to handle the Metrics of the Seerr Services"""
 
 import time
-import logging
 from dateutil.parser import parse
 
 from scraparr.connectors.module import ConnectorModule
@@ -36,7 +35,6 @@ class Seerr(ConnectorModule):
         self.metrics.SCRAPE_DURATION.labels(self.alias).set(end_time - initial_time)
 
         if not users or not requests or not issues:
-            logging.error("No Data found for %s %s, assuming Failure", self.service, self.alias)
             return {}
 
         return {"users": users, "requests": requests, "issues": issues}
@@ -179,8 +177,8 @@ class Seerr(ConnectorModule):
             skip = 20 * page
             more = get(f"{self.url}/{endpoint}?take=20&skip={skip}", self.api_key)
             if not more or "results" not in more:
-                logging.error("Failed to get more %ss, but expected more for %s",
-                              endpoint, self.alias)
+                self.logger.error("No new results found, but expected more. Endpoint: %s",
+                              endpoint)
                 return {}
             res["results"].extend(more["results"])
 

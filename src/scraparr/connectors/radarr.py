@@ -3,7 +3,6 @@ Module to handle the Metrics of the Radarr Service
 """
 
 import time
-import logging
 from dateutil.parser import parse
 
 import scraparr.metrics.radarr as radarr_metrics
@@ -16,6 +15,7 @@ class Module(ConnectorModule):
 
     def __init__(self, config):
         ConnectorModule.__init__(self, config, "Radarr")
+        self.url = f"{self.url}/api/{self.api_version}"
 
     def clear(self):
         """Clear the Radarr metrics"""
@@ -27,14 +27,14 @@ class Module(ConnectorModule):
     def get_movies(self):
         """Grab the Movies from the Radarr Endpoint"""
 
-        res = util.get(f"{self.url}/api/{self.api_version}/movie", self.api_key)
+        res = util.get(f"{self.url}/movie", self.api_key)
 
         if res == {}:
             UP.labels(self.alias, 'radarr').set(0)
         else:
             for movie in res:
                 movie_file = util.get(
-                    f"{self.url}/api/{self.api_version}/moviefile?movieId={movie['id']}",
+                    f"{self.url}/moviefile?movieId={movie['id']}",
                     self.api_key)
                 movie["movieFile"] = movie_file
 
@@ -153,12 +153,12 @@ class Module(ConnectorModule):
     def scrape(self):
         """Scrape the Radarr Service"""
         initial_time = time.time()
-        queue = util.get(f"{self.url}/api/{self.api_version}/queue/status", self.api_key)
-        status = util.get(f"{self.url}/api/{self.api_version}/system/status", self.api_key)
+        queue = util.get(f"{self.url}/queue/status", self.api_key)
+        status = util.get(f"{self.url}/system/status", self.api_key)
 
         data = self.get_movies()
         system = {
-            "root_folder": util.get_root_folder(self.url, self.api_version, self.api_key),
+            "root_folder": util.get_root_folder(self.url, self.api_key),
             "queue": queue,
             "status": status
         }
@@ -168,7 +168,6 @@ class Module(ConnectorModule):
         radarr_metrics.SCRAPE_DURATION.labels(self.alias).set(end_time - initial_time)
 
         if data == {} or system["status"] == {}:
-            logging.error("No Data found for Radarr, assuming Failure")
             return {}
 
         return {"data": data, "system": system}

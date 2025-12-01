@@ -198,7 +198,7 @@ class Module(ConnectorModule):
 
         data = self.get_artists()
         system = {
-            "root_folder": util.get_root_folder(self.url, self.api_version, self.api_key),
+            "root_folder": util.get_root_folder(self.url, self.api_key),
             "queue": util.get(f"{self.url}/api/{self.api_version}/queue/status", self.api_key),
             "status": util.get(f"{self.url}/api/{self.api_version}/system/status", self.api_key)
         }

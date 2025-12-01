@@ -4,7 +4,6 @@ Module to handle the Metrics of the Prowlarr Service
 
 import time
 import re
-import logging
 from dateutil.parser import parse
 
 from scraparr.connectors.module import ConnectorModule
@@ -34,6 +33,7 @@ class Module(ConnectorModule):
 
     def __init__(self, config):
         ConnectorModule.__init__(self, config, "prowlarr")
+        self.url = f"{self.url}/api/{self.api_version}"
 
     def clear(self):
         """Clear the Metrics of the Prowlarr Service"""
@@ -45,7 +45,7 @@ class Module(ConnectorModule):
         """Grab the Indexers from the Prowlarr Endpoint"""
 
         initial_time = time.time()
-        res = get(f"{self.url}/api/{self.api_version}/indexer", self.api_key)
+        res = get(f"{self.url}/indexer", self.api_key)
         end_time = time.time()
 
         if res == {}:
@@ -55,7 +55,7 @@ class Module(ConnectorModule):
             prowlarr_metrics.LAST_SCRAPE.labels(self.alias).set(end_time)
             prowlarr_metrics.SCRAPE_DURATION.labels(self.alias).set(end_time - initial_time)
 
-            status = get(f"{self.url}/api/{self.api_version}/indexerstatus", self.api_key)
+            status = get(f"{self.url}/indexerstatus", self.api_key)
 
             if status == {}:
                 UP.labels(self.alias, 'prowlarr').set(0)
@@ -69,7 +69,7 @@ class Module(ConnectorModule):
                 if indexer['id'] in stat_dict:
                     indexer['status'] = "disabled" if stat_dict[indexer['id']] else None
 
-            health = get(f"{self.url}/api/{self.api_version}/health", self.api_key)
+            health = get(f"{self.url}/health", self.api_key)
 
             if health == {}:
                 UP.labels(self.alias, 'prowlarr').set(0)
@@ -82,7 +82,7 @@ class Module(ConnectorModule):
     def get_applications(self):
         """Grab the Applications from the Prowlarr Endpoint"""
 
-        res = get(f"{self.url}/api/{self.api_version}/applications", self.api_key)
+        res = get(f"{self.url}/applications", self.api_key)
 
         if res == {}:
             UP.labels(self.alias, 'prowlarr').set(0)
@@ -165,7 +165,9 @@ class Module(ConnectorModule):
                     break
 
             if self.detailed:
-                print(f"Processing Indexer: {name} - {indexer['protocol']} - {indexer['privacy']}")
+                self.logger.debug(
+                    f"Processing Indexer: {name} - {indexer['protocol']} - {indexer['privacy']}"
+                )
                 (prowlarr_metrics.INDEXER_ENABLED
                     .labels(self.alias, indexer["protocol"], name)
                     .set(enabled)
@@ -215,10 +217,9 @@ class Module(ConnectorModule):
             'applications': self.get_applications()
         }
 
-        system = get(f"{self.url}/api/{self.api_version}/system/status", self.api_key)
+        system = get(f"{self.url}/system/status", self.api_key)
 
         if data['indexer'] == {} or data['applications'] == {} or system == {}:
-            logging.error("No Data found for Prowlarr, assuming Failure")
             return {}
 
         return {"data": data, "system": { "status": system}}

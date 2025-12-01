@@ -1,9 +1,9 @@
 """Module for handling connector configurations and data validation."""
-import abc
-import logging
-from abc import ABC
+from abc import ABC, abstractmethod
 
 from scraparr.connectors import Connectors
+from scraparr.connectors.util import get_logger
+
 
 class ConnectorModule(ABC): # pylint: disable=too-few-public-methods, too-many-instance-attributes
     """Base Class for Connector Modules"""
@@ -17,6 +17,7 @@ class ConnectorModule(ABC): # pylint: disable=too-few-public-methods, too-many-i
         self.detailed = config.get('detailed', False)
         self.interval = config.get('interval', 30)
         self.last_hash = None
+        self.logger = get_logger(f"connectors.{self.service}", self.alias)
 
     def validate_data(self, new_data):
         """Validate the Data"""
@@ -27,7 +28,7 @@ class ConnectorModule(ABC): # pylint: disable=too-few-public-methods, too-many-i
         if new_hash != self.last_hash:
             self.last_hash = new_hash
             return True
-        logging.info("No changes detected in %s for config %s", self.service, self.alias)
+        self.logger.info("No changes detected")
         return False
 
     def start(self):
@@ -37,16 +38,18 @@ class ConnectorModule(ABC): # pylint: disable=too-few-public-methods, too-many-i
             if self.validate_data(data):
                 self.clear()
                 self.update_metrics(data)
-                logging.info("%s metrics updated", self.service)
+                self.logger.info("metrics updated")
+        else:
+            self.logger.error("No data found, assuming failure")
 
-    @abc.abstractmethod
+    @abstractmethod
     def scrape(self):
         """Scrape the Service"""
 
-    @abc.abstractmethod
+    @abstractmethod
     def update_metrics(self, data):
         """Update the Metrics for the Service"""
 
-    @abc.abstractmethod
+    @abstractmethod
     def clear(self):
         """Clear the Metrics for the Service"""

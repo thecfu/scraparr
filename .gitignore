@@ -3,6 +3,8 @@
 *.secret.cnf
 *.secret.env
 
+src/scraparr/config/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
