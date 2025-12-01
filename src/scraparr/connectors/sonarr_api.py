@@ -15,21 +15,19 @@ class SonarrApi(ConnectorModule):
     def __init__(self, service, config, metrics):
         ConnectorModule.__init__(self, config, service)
         self.metrics = metrics
-
+        self.url = f"{self.url}/api/{self.api_version}"
 
     def get_series(self):
         """Grab the Series from the SonarrAPI Endpoint"""
 
         initial_time = time.time()
-        res = util.get(f"{self.url}/api/{self.api_version}/series", self.api_key)
+        res = util.get(f"{self.url}/series", self.api_key)
         end_time = time.time()
-        base_url = f"{self.url}/api/{self.api_version}/"
-
         if res == {}:
             UP.labels(self.alias, self.service).set(0)
         else:
             for series in res:
-                episodes = util.get(f"{base_url}episodefile?seriesId={series['id']}", self.api_key)
+                episodes = util.get(f"{self.url}/episodefile?seriesId={series['id']}", self.api_key)
                 series["episodes"] = episodes
 
             UP.labels(self.alias, self.service).set(1)
@@ -165,8 +163,8 @@ class SonarrApi(ConnectorModule):
     def scrape(self):
         """Scrape the SonarrAPI Service"""
 
-        queue = util.get(f"{self.url}/api/{self.api_version}/queue/status", self.api_key)
-        status = util.get(f"{self.url}/api/{self.api_version}/system/status", self.api_key)
+        queue = util.get(f"{self.url}/queue/status", self.api_key)
+        status = util.get(f"{self.url}/system/status", self.api_key)
 
         scrape_data = {
             "system": {
