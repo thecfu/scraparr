@@ -1,7 +1,6 @@
 """Module for handling connector configurations and data validation."""
-import abc
+from abc import ABC, abstractmethod
 import logging
-from abc import ABC
 
 from scraparr.connectors import Connectors
 
@@ -38,10 +37,10 @@ class ConnectorModule(ABC): # pylint: disable=too-few-public-methods, too-many-i
                 self.update_metrics(data)
                 logging.info("%s metrics updated", self.service)
 
-    @abc.abstractmethod
+    @abstractmethod
     def scrape(self):
         """Scrape the Service"""
 
-    @abc.abstractmethod
+    @abstractmethod
     def update_metrics(self, data):
         """Update the Metrics for the Service"""
