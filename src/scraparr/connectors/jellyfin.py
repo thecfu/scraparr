@@ -3,7 +3,6 @@ Module to handle the Metrics of the Jellyfin Service
 """
 
 import time
-import logging
 import requests
 import scraparr.metrics.jellyfin as jellyfin_metrics
 from scraparr.connectors.module import ConnectorModule
@@ -35,7 +34,7 @@ class Module(ConnectorModule):
             return res.json()['TotalRecordCount']
         except requests.exceptions.RequestException as e:
             UP.labels(self.alias, "jellyfin").set(0)
-            print(f"Request failed: {e}")
+            self.logger.debug(f"Request failed: {e}")
             return None
 
 
@@ -50,7 +49,7 @@ class Module(ConnectorModule):
             return genre_names
         except requests.exceptions.RequestException as e:
             UP.labels(self.alias, "jellyfin").set(0)
-            print(f"Request failed: {e}")
+            self.logger.debug(f"Request failed: {e}")
             return None
 
     def get_number_of_user(self):
@@ -63,7 +62,7 @@ class Module(ConnectorModule):
             return len(data)
         except requests.exceptions.RequestException as e:
             UP.labels(self.alias, "jellyfin").set(0)
-            print(f"Request failed: {e}")
+            self.logger.debug(f"Request failed: {e}")
             return None
 
     def get_number_of_movies(self):
@@ -76,7 +75,7 @@ class Module(ConnectorModule):
             return res.json()['TotalRecordCount']
         except requests.exceptions.RequestException as e:
             UP.labels(self.alias, "jellyfin").set(0)
-            print(f"Request failed: {e}")
+            self.logger.debug(f"Request failed: {e}")
             return None
 
     def get_number_of_series(self):
@@ -89,7 +88,7 @@ class Module(ConnectorModule):
             return res.json()['TotalRecordCount']
         except requests.exceptions.RequestException as e:
             UP.labels(self.alias, "jellyfin").set(0)
-            print(f"Request failed: {e}")
+            self.logger.debug(f"Request failed: {e}")
             return None
 
     def get_infos(self):
@@ -101,7 +100,7 @@ class Module(ConnectorModule):
             return res.json()
         except requests.exceptions.RequestException as e:
             UP.labels(self.alias, "jellyfin").set(0)
-            print(f"Request failed: {e}")
+            self.logger.debug(f"Request failed: {e}")
             return None
 
     def get_sessions(self):
@@ -114,7 +113,7 @@ class Module(ConnectorModule):
             return res.json()
         except requests.exceptions.RequestException as e:
             UP.labels(self.alias, "jellyfin").set(0)
-            print(f"Request failed: {e}")
+            self.logger.debug(f"Request failed: {e}")
             return None
 
     def update_sessions(self, sessions):
@@ -149,7 +148,6 @@ class Module(ConnectorModule):
                                    n_movies, n_series,
                                    genres, sessions,
                                    infos,)):
-            logging.error("No Data found for Jellyfin, assuming Failure")
             return None
 
         return{

@@ -3,7 +3,6 @@ Module to handle the Metrics of the Radarr Service
 """
 
 import time
-import logging
 from dateutil.parser import parse
 
 import scraparr.metrics.radarr as radarr_metrics
@@ -161,7 +160,6 @@ class Module(ConnectorModule):
         radarr_metrics.SCRAPE_DURATION.labels(self.alias).set(end_time - initial_time)
 
         if data == {} or system["status"] == {}:
-            logging.error("No Data found for Radarr, assuming Failure")
             return {}
 
         return {"data": data, "system": system}

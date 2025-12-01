@@ -3,7 +3,6 @@ Module to handle the Metrics of the Bazarr Service
 """
 
 import time
-import logging
 from dateutil.parser import parse
 
 from scraparr.connectors.module import ConnectorModule
@@ -27,8 +26,6 @@ class Module(ConnectorModule):
 
         if system and providers and data and wanted:
             return {"data": data, "system": system, "providers": providers, "wanted": wanted}
-
-        logging.error("No Data found for Bazarr %s, assuming Failure", self.alias)
         return {}
 
     def update_metrics(self, data):

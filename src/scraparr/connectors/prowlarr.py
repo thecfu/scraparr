@@ -4,7 +4,6 @@ Module to handle the Metrics of the Prowlarr Service
 
 import time
 import re
-import logging
 from dateutil.parser import parse
 
 from scraparr.connectors.module import ConnectorModule
@@ -159,7 +158,9 @@ class Module(ConnectorModule):
                     break
 
             if self.detailed:
-                print(f"Processing Indexer: {name} - {indexer['protocol']} - {indexer['privacy']}")
+                self.logger.debug(
+                    f"Processing Indexer: {name} - {indexer['protocol']} - {indexer['privacy']}"
+                )
                 (prowlarr_metrics.INDEXER_ENABLED
                     .labels(self.alias, indexer["protocol"], name)
                     .set(enabled)
@@ -212,7 +213,6 @@ class Module(ConnectorModule):
         system = get(f"{self.url}/api/{self.api_version}/system/status", self.api_key)
 
         if data['indexer'] == {} or data['applications'] == {} or system == {}:
-            logging.error("No Data found for Prowlarr, assuming Failure")
             return {}
 
         return {"data": data, "system": { "status": system}}

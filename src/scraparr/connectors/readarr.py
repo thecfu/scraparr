@@ -3,7 +3,6 @@ Module to handle the Metrics of the Readarr Service
 """
 
 import time
-import logging
 from dateutil.parser import parse
 
 from scraparr.connectors import util
@@ -149,7 +148,6 @@ class Module(ConnectorModule):
         }
 
         if scrape_data["data"]["books"] == {} or scrape_data["system"]["status"] == {}:
-            logging.error("No Data found for Readarr, assuming Failure")
             return {}
 
         return scrape_data

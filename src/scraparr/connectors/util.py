@@ -7,6 +7,37 @@ This module contains helper functions to avoid duplicate code.
 import logging
 import requests
 
+log_level = "info" # pylint: disable=invalid-name
+
+class ModuleAliasFormatter(logging.Formatter):
+    """Custom Formatter to add module_name and alias to log records"""
+    def format(self, record):
+        record.module_name = getattr(record, 'module_name', 'unknown')
+        record.alias = getattr(record, 'alias', 'none')
+        return super().format(record)
+
+class AliasAdapter(logging.LoggerAdapter):
+    """Logger Adapter to inject module_name and alias into log records"""
+    def process(self, msg, kwargs):
+        extra = kwargs.get('extra', {})
+        extra['module_name'] = extra.get('module_name', 'unknown')
+        extra['alias'] = extra.get('alias', 'none')
+        kwargs['extra'] = extra
+        return msg, kwargs
+
+def get_logger(module_name, alias):
+    """Get a Logger with Module Name and Alias"""
+    formatter = ModuleAliasFormatter(
+        '[%(asctime)s] [%(levelname)s] [%(module_name)s] [%(alias)s] %(message)s'
+    )
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+    logger = logging.getLogger(module_name)
+    level = getattr(logging, log_level.upper(), logging.INFO)
+    logger.setLevel(level)
+    if not logger.hasHandlers():
+        logger.addHandler(handler)
+    return AliasAdapter(logger, {'module_name': module_name, 'alias': alias})
 
 def get(api_url, api_key):
     """Get data from API and Logs errors"""

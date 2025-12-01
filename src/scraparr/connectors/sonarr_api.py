@@ -3,7 +3,6 @@ Module to handle the Metrics of the SonarrAPI
 """
 
 import time
-import logging
 from dateutil.parser import parse
 
 from scraparr.connectors import util
@@ -88,7 +87,7 @@ class SonarrApi(ConnectorModule):
             stats = serie.get("statistics", None)
 
             if stats is None:
-                logging.warning("No statistics found for %s", title)
+                self.logger.warning("No statistics found for %s", title)
                 continue
 
             util.increase_quality_count(quality_count, serie["episodes"], serie["rootFolderPath"])
@@ -179,7 +178,6 @@ class SonarrApi(ConnectorModule):
         }
 
         if scrape_data["data"] == {} or scrape_data["system"]["status"] == {}:
-            logging.error("No Data found for %s, assuming Failure", self.service)
             return {}
 
         return scrape_data
