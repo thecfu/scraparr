@@ -222,32 +222,39 @@ class Module(ConnectorModule):
             indexer_count = 0
 
             for indexer in indexers:
-                indexer_name = indexer.get('indexerName', f"Indexer_{indexer.get('indexerId', 'Unknown')}")
+                indexer_name = indexer.get('indexerName',
+                                           f"Indexer_{indexer.get('indexerId', 'Unknown')}")
                 grabs[indexer_name] = indexer.get('numberOfGrabs', 0)
                 grab_response_time = indexer.get('averageGrabResponseTime', 0)
 
                 self.logger.debug(f"Indexer: {indexer_name}, Grabs: {grabs[indexer_name]}")
 
                 # Einzelne Metriken
-                prowlarr_metrics.GRABS_BY_INDEXER.labels(self.alias, indexer_name).set(grabs[indexer_name])
-                prowlarr_metrics.GRAB_RESPONSE_TIME_BY_INDEXER.labels(self.alias, indexer_name).set(grab_response_time)
+                (prowlarr_metrics.GRABS_BY_INDEXER.labels(self.alias, indexer_name)
+                 .set(grabs[indexer_name]))
+                (prowlarr_metrics.GRAB_RESPONSE_TIME_BY_INDEXER.labels(self.alias, indexer_name)
+                 .set(grab_response_time))
 
                 total_grab_response_time += grab_response_time
                 indexer_count += 1
 
-        except Exception as e:
+        except (KeyError, TypeError) as e:
             self.logger.error("No Grab Data found for Prowlarr, assuming Failure", str(e))
             return {}
 
         total_grabs = sum(grabs.values())
-        avg_grab_response_time = total_grab_response_time / indexer_count if indexer_count > 0 else 0
+        avg_grab_response_time = 0
+        if indexer_count > 0:
+            avg_grab_response_time = total_grab_response_time / indexer_count
 
         self.logger.debug(f"Total Grabs: {total_grabs}")
         self.logger.debug(f"Average Grab Response Time: {avg_grab_response_time}ms")
 
         # Total Metriken
-        prowlarr_metrics.GRABS_BY_INDEXER_T.labels(self.alias).set(total_grabs)
-        prowlarr_metrics.GRAB_RESPONSE_TIME_BY_INDEXER_T.labels(self.alias).set(avg_grab_response_time)
+        (prowlarr_metrics.GRABS_BY_INDEXER_T.labels(self.alias)
+         .set(total_grabs))
+        (prowlarr_metrics.GRAB_RESPONSE_TIME_BY_INDEXER_T.labels(self.alias)
+         .set(avg_grab_response_time))
 
         return grabs
 
@@ -257,13 +264,16 @@ class Module(ConnectorModule):
         try:
             indexers = data.get('indexers', [])
             for indexer in indexers:
-                indexer_name = indexer.get('indexerName', f"Indexer_{indexer.get('indexerId', 'Unknown')}")
+                indexer_name = indexer.get('indexerName',
+                                           f"Indexer_{indexer.get('indexerId', 'Unknown')}")
                 failed_queries[indexer_name] = indexer.get('numberOfFailedQueries', 0)
-                self.logger.debug(f"Indexer: {indexer_name}, Failed Queries: {failed_queries[indexer_name]}")
+                self.logger.debug(f"Indexer: {indexer_name}, "
+                                  f"Failed Queries: {failed_queries[indexer_name]}")
 
-                prowlarr_metrics.FAILED_QUERIES_BY_INDEXER.labels(self.alias, indexer_name).set(failed_queries[indexer_name])
+                (prowlarr_metrics.FAILED_QUERIES_BY_INDEXER.labels(self.alias, indexer_name)
+                 .set(failed_queries[indexer_name]))
 
-        except Exception as e:
+        except (KeyError, TypeError) as e:
             self.logger.error(f"Error processing indexer failed queries: {e}")
             return {}
 
@@ -283,18 +293,21 @@ class Module(ConnectorModule):
             indexer_count = 0
 
             for indexer in indexers:
-                indexer_name = indexer.get('indexerName', f"Indexer_{indexer.get('indexerId', 'Unknown')}")
+                indexer_name = indexer.get('indexerName',
+                                           f"Indexer_{indexer.get('indexerId', 'Unknown')}")
                 queries[indexer_name] = indexer.get('numberOfQueries', 0)
                 response_time = indexer.get('averageResponseTime', 0)
 
                 # Per Indexer Metrics
-                prowlarr_metrics.QUERIES_BY_INDEXER.labels(self.alias, indexer_name).set(queries[indexer_name])
-                prowlarr_metrics.RESPONSE_TIME_BY_INDEXER.labels(self.alias, indexer_name).set(response_time)
+                (prowlarr_metrics.QUERIES_BY_INDEXER.labels(self.alias, indexer_name)
+                 .set(queries[indexer_name]))
+                (prowlarr_metrics.RESPONSE_TIME_BY_INDEXER.labels(self.alias, indexer_name)
+                 .set(response_time))
 
                 total_response_time += response_time
                 indexer_count += 1
 
-        except Exception as e:
+        except (KeyError, TypeError) as e:
             self.logger.error(f"Error processing indexer queries: {e}")
             return {}
 
@@ -318,11 +331,13 @@ class Module(ConnectorModule):
             for user_agent in user_agents:
                 user_agent_name = user_agent.get('userAgent', 'Unknown')
                 queries[user_agent_name] = user_agent.get('numberOfQueries', 0)
-                self.logger.debug(f"User Agent: {user_agent_name}, Queries: {queries[user_agent_name]}")
+                self.logger.debug(f"User Agent: {user_agent_name}, "
+                                  f"Queries: {queries[user_agent_name]}")
 
-                prowlarr_metrics.QUERIES_BY_USER_AGENT.labels(self.alias, user_agent_name).set(queries[user_agent_name])
+                (prowlarr_metrics.QUERIES_BY_USER_AGENT.labels(self.alias, user_agent_name)
+                 .set(queries[user_agent_name]))
 
-        except Exception as e:
+        except (KeyError, TypeError) as e:
             self.logger.error(f"Error processing user agent queries: {e}")
             return {}
 
@@ -343,9 +358,10 @@ class Module(ConnectorModule):
                 grabs[user_agent_name] = user_agent.get('numberOfGrabs', 0)
                 self.logger.debug(f"User Agent: {user_agent_name}, Grabs: {grabs[user_agent_name]}")
 
-                prowlarr_metrics.GRABS_BY_USER_AGENT.labels(self.alias, user_agent_name).set(grabs[user_agent_name])
+                (prowlarr_metrics.GRABS_BY_USER_AGENT.labels(self.alias, user_agent_name)
+                 .set(grabs[user_agent_name]))
 
-        except Exception as e:
+        except (KeyError, TypeError) as e:
             self.logger.error(f"Error processing user agent grabs: {e}")
             return {}
 
@@ -366,9 +382,10 @@ class Module(ConnectorModule):
                 queries[host_name] = host.get('numberOfQueries', 0)
                 self.logger.debug(f"Host: {host_name}, Queries: {queries[host_name]}")
 
-                prowlarr_metrics.QUERIES_BY_HOST.labels(self.alias, host_name).set(queries[host_name])
+                (prowlarr_metrics.QUERIES_BY_HOST.labels(self.alias, host_name)
+                 .set(queries[host_name]))
 
-        except Exception as e:
+        except (KeyError, TypeError) as e:
             self.logger.error(f"Error processing host queries: {e}")
             return {}
 
@@ -391,7 +408,7 @@ class Module(ConnectorModule):
 
                 prowlarr_metrics.GRABS_BY_HOST.labels(self.alias, host_name).set(grabs[host_name])
 
-        except Exception as e:
+        except (KeyError, TypeError) as e:
             self.logger.error(f"Error processing host grabs: {e}")
             return {}
 
