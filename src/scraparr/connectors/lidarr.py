@@ -16,6 +16,7 @@ class Module(ConnectorModule):
 
     def __init__(self, config):
         ConnectorModule.__init__(self, config, "Lidarr")
+        self.url = f"{self.url}/api/{self.api_version}"
 
     def clear(self):
         """Clear the Lidarr metrics"""
@@ -29,18 +30,14 @@ class Module(ConnectorModule):
         """Grab Artist information from the Lidarr endpoint"""
 
         initial_time = time.time()
-        res = util.get(f"{self.url}/api/{self.api_version}/artist", self.api_key)
+        res = self.get("/artist")
         end_time = time.time()
         if res == {}:
             UP.labels(self.alias, 'lidarr').set(0)
         else:
             for artist in res:
-                releases = util.get(
-                    f"{self.url}/api/{self.api_version}/album?artistId={artist["id"]}",
-                    self.api_key)
-                track_files = util.get(
-                    f"{self.url}/api/{self.api_version}/trackfile?artistId={artist["id"]}",
-                    self.api_key)
+                releases = self.get(f"/album?artistId={artist["id"]}")
+                track_files = self.get(f"/trackfile?artistId={artist["id"]}")
                 artist["releases"] = releases
                 artist["trackFiles"] = track_files
             UP.labels(self.alias, 'lidarr').set(1)
@@ -198,9 +195,9 @@ class Module(ConnectorModule):
 
         data = self.get_artists()
         system = {
-            "root_folder": util.get_root_folder(self.url, self.api_key),
-            "queue": util.get(f"{self.url}/api/{self.api_version}/queue/status", self.api_key),
-            "status": util.get(f"{self.url}/api/{self.api_version}/system/status", self.api_key)
+            "root_folder": self.get_root_folder(),
+            "queue": self.get("/queue/status"),
+            "status": self.get("/system/status")
         }
 
         if data == {} or system["status"] == {}:

@@ -5,7 +5,6 @@ Module to handle the Metrics of the Readarr Service
 import time
 from dateutil.parser import parse
 
-from scraparr.connectors import util
 from scraparr.connectors.module import ConnectorModule
 from scraparr.metrics.general import UP
 import scraparr.metrics.readarr as readarr_metrics
@@ -34,7 +33,7 @@ class Module(ConnectorModule):
         """Grab the Authors from the Readarr Endpoint"""
 
         initial_time = time.time()
-        res = util.get(f"{self.url}/author", self.api_key)
+        res = self.get("/author")
         end_time = time.time()
 
         if res == {}:
@@ -48,7 +47,7 @@ class Module(ConnectorModule):
     def get_books(self):
         """Grab the Books from the Readarr Endpoint"""
 
-        res = util.get(f"{self.url}/book", self.api_key)
+        res = self.get("/book")
 
         if res == {}:
             UP.labels(self.api_key, "readarr").set(0)
@@ -151,9 +150,9 @@ class Module(ConnectorModule):
 
         scrape_data = {
             "system": {
-                "root_folder": util.get_root_folder(self.url, self.api_key),
-                "queue": util.get(f"{self.url}/queue/status", self.api_key),
-                "status": util.get(f"{self.url}/system/status", self.api_key)
+                "root_folder": self.get_root_folder(),
+                "queue": self.get("/queue/status"),
+                "status": self.get("/system/status")
             },
             "data": {
                 "books": self.get_books(),

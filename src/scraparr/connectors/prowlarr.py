@@ -7,7 +7,6 @@ import re
 from dateutil.parser import parse
 
 from scraparr.connectors.module import ConnectorModule
-from scraparr.connectors.util import get
 from scraparr.metrics.general import UP
 import scraparr.metrics.prowlarr as prowlarr_metrics
 
@@ -43,7 +42,7 @@ class Module(ConnectorModule):
         """Grab the Indexers from the Prowlarr Endpoint"""
 
         initial_time = time.time()
-        res = get(f"{self.url}/indexer", self.api_key)
+        res = self.get("/indexer")
         end_time = time.time()
 
         if res == {}:
@@ -53,7 +52,7 @@ class Module(ConnectorModule):
             prowlarr_metrics.LAST_SCRAPE.labels(self.alias).set(end_time)
             prowlarr_metrics.SCRAPE_DURATION.labels(self.alias).set(end_time - initial_time)
 
-            status = get(f"{self.url}/indexerstatus", self.api_key)
+            status = self.get("/indexerstatus")
 
             if status == {}:
                 UP.labels(self.alias, 'prowlarr').set(0)
@@ -67,7 +66,7 @@ class Module(ConnectorModule):
                 if indexer['id'] in stat_dict:
                     indexer['status'] = "disabled" if stat_dict[indexer['id']] else None
 
-            health = get(f"{self.url}/health", self.api_key)
+            health = self.get("/health")
 
             if health == {}:
                 UP.labels(self.alias, 'prowlarr').set(0)
@@ -80,7 +79,7 @@ class Module(ConnectorModule):
     def get_applications(self):
         """Grab the Applications from the Prowlarr Endpoint"""
 
-        res = get(f"{self.url}/applications", self.api_key)
+        res = self.get("/applications")
 
         if res == {}:
             UP.labels(self.alias, 'prowlarr').set(0)
@@ -209,7 +208,7 @@ class Module(ConnectorModule):
     def get_indexerstats(self):
         """Grab the Indexerstats from the Prowlarr Endpoint"""
 
-        res = get(f"{self.url}/indexerstats", self.api_key)
+        res = self.get("/indexerstats")
 
         return res
 
@@ -422,7 +421,7 @@ class Module(ConnectorModule):
     def scrape(self):
         """Scrape the Prowlarr Service"""
 
-        system = get(f"{self.url}/system/status", self.api_key)
+        system = self.get("/system/status")
         data = {
            'indexer': self.get_indexers(),
            'applications': self.get_applications(),

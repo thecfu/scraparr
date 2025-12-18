@@ -4,7 +4,6 @@ import time
 from dateutil.parser import parse
 
 from scraparr.connectors.module import ConnectorModule
-from scraparr.connectors.util import get
 from scraparr.metrics.general import UP
 
 class Seerr(ConnectorModule):
@@ -28,7 +27,7 @@ class Seerr(ConnectorModule):
         """Scrape the Seerr Service"""
 
         initial_time = time.time()
-        users, requests, issues = self.get()
+        users, requests, issues = self.collect()
         end_time = time.time()
 
         self.metrics.LAST_SCRAPE.labels(self.alias).set(end_time)
@@ -72,11 +71,11 @@ class Seerr(ConnectorModule):
             media_id = 0
 
         if req["type"] == "movie":
-            media = get(f"{self.url}/movie/{media_id}", self.api_key)
+            media = self.get(f"/movie/{media_id}")
             seasons = 0
             title = media.get("title", media_id)
         else:
-            media = get(f"{self.url}/tv/{media_id}", self.api_key)
+            media = self.get(f"/tv/{media_id}")
             seasons = req.get("seasonCount", 0)
             title = media.get("title", media_id)
 
@@ -168,14 +167,14 @@ class Seerr(ConnectorModule):
 
     def fetch_paginated_results(self, endpoint):
         """Handles API pagination for endpoints like 'issue' or 'request'"""
-        res = get(f"{self.url}/{endpoint}?take=20", self.api_key)
+        res = self.get(f"/{endpoint}?take=20")
         if not res or "pageInfo" not in res:
             return {}
 
         total_pages = res["pageInfo"].get("pages", 1)
         for page in range(2, total_pages + 1):
             skip = 20 * page
-            more = get(f"{self.url}/{endpoint}?take=20&skip={skip}", self.api_key)
+            more = self.get(f"/{endpoint}?take=20&skip={skip}")
             if not more or "results" not in more:
                 self.logger.error("No new results found, but expected more. Endpoint: %s",
                               endpoint)
@@ -198,7 +197,7 @@ class Seerr(ConnectorModule):
             3: "Subtitle",
         }.get(issue_type, "Other")
 
-    def get(self):
+    def collect(self):
         """Function to get all the Data"""
 
         users = self.get_users()

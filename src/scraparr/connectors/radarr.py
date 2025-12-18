@@ -27,15 +27,13 @@ class Module(ConnectorModule):
     def get_movies(self):
         """Grab the Movies from the Radarr Endpoint"""
 
-        res = util.get(f"{self.url}/movie", self.api_key)
+        res = self.get("/movie")
 
         if res == {}:
             UP.labels(self.alias, 'radarr').set(0)
         else:
             for movie in res:
-                movie_file = util.get(
-                    f"{self.url}/moviefile?movieId={movie['id']}",
-                    self.api_key)
+                movie_file = self.get(f"/moviefile?movieId={movie['id']}")
                 movie["movieFile"] = movie_file
 
             UP.labels(self.alias, 'radarr').set(1)
@@ -153,12 +151,12 @@ class Module(ConnectorModule):
     def scrape(self):
         """Scrape the Radarr Service"""
         initial_time = time.time()
-        queue = util.get(f"{self.url}/queue/status", self.api_key)
-        status = util.get(f"{self.url}/system/status", self.api_key)
+        queue = self.get("/queue/status")
+        status = self.get("/system/status")
 
         data = self.get_movies()
         system = {
-            "root_folder": util.get_root_folder(self.url, self.api_key),
+            "root_folder": self.get_root_folder(),
             "queue": queue,
             "status": status
         }
