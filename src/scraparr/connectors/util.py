@@ -5,7 +5,6 @@ This module contains helper functions to avoid duplicate code.
 """
 
 import logging
-import requests
 
 log_level = "info" # pylint: disable=invalid-name
 
@@ -38,25 +37,6 @@ def get_logger(module_name, alias):
     if not logger.hasHandlers():
         logger.addHandler(handler)
     return AliasAdapter(logger, {'module_name': module_name, 'alias': alias})
-
-def get(api_url, api_key):
-    """Get data from API and Logs errors"""
-    try:
-        r = requests.get(api_url, headers={"X-Api-Key": api_key}, timeout=20)
-        if r.status_code == 200:
-            return r.json()
-        if r.status_code == 401:
-            logging.error("Unauthorized when trying to access %s: %s", api_url, r.status_code)
-        elif r.status_code == 404:
-            logging.error("Not Found, check API Version and Docs: %s, returned HTML %s",
-                          api_url, r.status_code)
-        else:
-            logging.error("Request for %s returned unexpected HTML Status Code: %s",
-                          api_url, r.status_code)
-    except requests.exceptions.RequestException as e:
-        logging.error("Request for %s failed with: %s", api_url, e)
-    return {}
-
 
 def update_status(status, root_folder, status_labels):
     """Update the Status"""
@@ -181,44 +161,3 @@ def update_media_metrics(media, alias):
             used_size[1].labels(alias, path).set(size)
 
     status_update(status_labels, alias)
-
-
-def get_root_folder(url, api_key):
-    """Get the Root Folder Data"""
-
-    def filter_data(folder, disks):
-        report = []
-        seen_paths = set()  # To keep track of added paths
-
-        for rootfolder in folder:
-            for disk in disks:
-                if disk["path"] == rootfolder["path"]:
-                    if disk["path"] not in seen_paths:
-                        report.append(disk)
-                        seen_paths.add(disk["path"])
-                    break
-            else:
-                for disk in disks:
-                    if rootfolder["path"].startswith(disk["path"]) and disk["path"] != '/':
-                        if disk["path"] not in seen_paths:
-                            report.append(disk)
-                            seen_paths.add(disk["path"])
-                        break
-                else:
-                    logging.warning("No diskspace data found for %s,"
-                                    " using only available Data", rootfolder["path"])
-                    report.append({
-                        "path": rootfolder["path"],
-                        "freeSpace": rootfolder["freeSpace"],
-                        "totalSpace": -1
-                    })
-                    seen_paths.add(rootfolder["path"])
-        return report
-
-    data = get(f"{url}/rootfolder", api_key)
-    if data:
-        diskspace_data = get(f"{url}/diskspace", api_key)
-        if diskspace_data:
-            return filter_data(data, diskspace_data)
-    logging.warning("No rootfolder data found")
-    return None

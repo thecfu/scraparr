@@ -6,7 +6,6 @@ import time
 from dateutil.parser import parse
 
 from scraparr.connectors.module import ConnectorModule
-from scraparr.connectors.util import get
 from scraparr.metrics.general import UP
 import scraparr.metrics.bazarr as bazarr_metrics
 
@@ -56,7 +55,7 @@ class Module(ConnectorModule):
         """Grab the System Data from the Bazarr Endpoint"""
 
         initial_time = time.time()
-        res = get(f"{self.url}/api/system/status", self.api_key)
+        res = self.get("/api/system/status")
         end_time = time.time()
 
         if res == {}:
@@ -71,7 +70,7 @@ class Module(ConnectorModule):
 
         bazarr_metrics.START_TIME.labels(self.alias).set(data['start_time'])
 
-        releases = get(f"{self.url}/api/system/releases", self.api_key)
+        releases = self.get("/api/system/releases")
 
         if releases != {}:
             for release in releases["data"]:
@@ -86,7 +85,7 @@ class Module(ConnectorModule):
         """Grab the Providers from the Bazarr Endpoint"""
 
         initial_time = time.time()
-        res = get(f"{self.url}/api/providers", self.api_key)
+        res = self.get("/api/providers")
         end_time = time.time()
 
         if res == {}:
@@ -101,16 +100,16 @@ class Module(ConnectorModule):
     def get_data(self):
         """Grab the Data from the Bazarr Endpoint"""
 
-        series = get(f"{self.url}/api/series", self.api_key)
-        movies = get(f"{self.url}/api/movies", self.api_key)
+        series = self.get("/api/series")
+        movies = self.get("api/movies")
 
         return {"series": series, "movies": movies}
 
     def get_wanted(self):
         """Grab the Wanted from the Bazarr Endpoint"""
 
-        movies = get(f"{self.url}/api/movies/wanted", self.api_key)
-        episodes = get(f"{self.url}/api/episodes/wanted", self.api_key)
+        movies = self.get("/api/movies/wanted")
+        episodes = self.get("/api/episodes/wanted")
 
         return {"movies": movies, "episodes": episodes}
 

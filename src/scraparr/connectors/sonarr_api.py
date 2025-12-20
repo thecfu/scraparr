@@ -31,13 +31,13 @@ class SonarrApi(ConnectorModule):
         """Grab the Series from the SonarrAPI Endpoint"""
 
         initial_time = time.time()
-        res = util.get(f"{self.url}/series", self.api_key)
+        res = self.get("/series")
         end_time = time.time()
         if res == {}:
             UP.labels(self.alias, self.service).set(0)
         else:
             for series in res:
-                episodes = util.get(f"{self.url}/episodefile?seriesId={series['id']}", self.api_key)
+                episodes = self.get(f"/episodefile?seriesId={series['id']}")
                 series["episodes"] = episodes
 
             UP.labels(self.alias, self.service).set(1)
@@ -173,12 +173,12 @@ class SonarrApi(ConnectorModule):
     def scrape(self):
         """Scrape the SonarrAPI Service"""
 
-        queue = util.get(f"{self.url}/queue/status", self.api_key)
-        status = util.get(f"{self.url}/system/status", self.api_key)
+        queue = self.get("/queue/status")
+        status = self.get("/system/status")
 
         scrape_data = {
             "system": {
-                "root_folder": util.get_root_folder(self.url, self.api_key),
+                "root_folder": self.get_root_folder(),
                 "queue": queue,
                 "status": status
             },
