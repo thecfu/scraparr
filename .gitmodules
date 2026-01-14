@@ -1,4 +1,0 @@
-[submodule "lib/client_python"]
-	path = lib/client_python
-	url = https://github.com/hazel-shen/client_python.git
-	branch = feature/remove-matching
