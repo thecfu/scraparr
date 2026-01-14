@@ -9,11 +9,6 @@ WORKDIR /scraparr
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy lib and install them
-COPY lib /lib
-
-RUN pip install /lib/client_python packaging
-
 # Make port 7100 available to the world outside this container
 EXPOSE 7100
 
