@@ -21,13 +21,27 @@ def get_movies(url, api_key, version, alias):
         UP.labels(alias, 'radarr').set(0)
     else:
         for movie in res:
-            movie_file = util.get(f"{url}/api/{version}/moviefile?movieId={movie['id']}", api_key)
-            movie["movieFile"] = movie_file
+            movie["movieFile"] = _normalize_movie_file(movie, url, api_key, version)
 
         UP.labels(alias, 'radarr').set(1)
         radarr_metrics.LAST_SCRAPE.labels(alias).set(end_time)
         radarr_metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
     return res
+
+
+def _normalize_movie_file(movie, url, api_key, version):
+    """Normalize movieFile to list format, using embedded data when possible."""
+    movie_file_count = movie.get('statistics', {}).get('movieFileCount', 0)
+
+    if movie_file_count == 0:
+        return []
+
+    if movie_file_count > 1:
+        return util.get(f"{url}/api/{version}/moviefile?movieId={movie['id']}", api_key)
+
+    embedded_file = movie.get('movieFile')
+    return [embedded_file] if embedded_file else []
+
 
 def analyse_movies(movies, detailed, alias):
     """Analyse the Movies and set the Correct Metrics"""
