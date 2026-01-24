@@ -21,8 +21,11 @@ def get_movies(url, api_key, version, alias):
         UP.labels(alias, 'radarr').set(0)
     else:
         for movie in res:
-            movie_file = util.get(f"{url}/api/{version}/moviefile?movieId={movie['id']}", api_key)
-            movie["movieFile"] = movie_file
+            movie_file = movie.get("movieFile")
+            if movie_file and isinstance(movie_file, dict):
+                movie["movieFile"] = [movie_file]
+            elif not movie_file:
+                movie["movieFile"] = []
 
         UP.labels(alias, 'radarr').set(1)
         radarr_metrics.LAST_SCRAPE.labels(alias).set(end_time)
