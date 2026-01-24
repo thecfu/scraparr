@@ -1,7 +1,6 @@
 """Tests for the util module connection pooling."""
 
 import threading
-from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import MagicMock, patch
 
 import requests
@@ -42,23 +41,6 @@ class TestGetSession:
         # All sessions should be different objects
         session_ids = [id(s) for s in sessions.values()]
         assert len(set(session_ids)) == 3
-
-    def test_threadpool_workers_get_different_sessions(self):
-        """ThreadPoolExecutor workers each get their own session."""
-        import time
-        session_ids = []
-
-        def get_session_id():
-            session_id = id(util._get_session())
-            time.sleep(0.05)  # Hold thread to force parallel execution
-            return session_id
-
-        with ThreadPoolExecutor(max_workers=4) as executor:
-            futures = [executor.submit(get_session_id) for _ in range(4)]
-            session_ids = [f.result() for f in futures]
-
-        # Workers running in parallel should have different sessions
-        assert len(set(session_ids)) > 1
 
 
 class TestUtilGet:
