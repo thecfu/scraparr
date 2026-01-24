@@ -4,10 +4,38 @@ Module to handle the Metrics of the SonarrAPI
 
 import time
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from dateutil.parser import parse
 
 from scraparr.connectors import util
 from scraparr.metrics.general import UP
+
+
+def _fetch_all_episode_files(series_list, base_url, api_key, max_workers=10):
+    """
+    Fetch episode files for all series in parallel using ThreadPoolExecutor.
+
+    Args:
+        series_list: List of series dictionaries from the /series endpoint
+        base_url: Base URL for API calls (e.g., "http://sonarr:8989/api/v3/")
+        api_key: API key for authentication
+        max_workers: Maximum number of concurrent API calls (default 10)
+
+    Returns:
+        Dict mapping series_id -> list of episode files
+    """
+    def fetch_episodes(series_id):
+        try:
+            episodes = util.get(f"{base_url}episodefile?seriesId={series_id}", api_key)
+            return series_id, episodes
+        except Exception as e:
+            logging.warning("Failed to fetch episode files for series %s: %s", series_id, e)
+            return series_id, []
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        results = executor.map(fetch_episodes, [s['id'] for s in series_list])
+        return dict(results)
+
 
 class SonarrApi:
     """Class to handle the SonarrAPI Metrics"""
@@ -32,9 +60,9 @@ class SonarrApi:
         if res == {}:
             UP.labels(self.alias, self.service).set(0)
         else:
+            episode_map = _fetch_all_episode_files(res, base_url, self.api_key)
             for series in res:
-                episodes = util.get(f"{base_url}episodefile?seriesId={series['id']}", self.api_key)
-                series["episodes"] = episodes
+                series["episodes"] = episode_map.get(series['id'], [])
 
             UP.labels(self.alias, self.service).set(1)
             self.metrics.LAST_SCRAPE.labels(self.alias).set(end_time)
