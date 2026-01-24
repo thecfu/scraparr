@@ -5,13 +5,25 @@ This module contains helper functions to avoid duplicate code.
 """
 
 import logging
+import threading
+
 import requests
+
+_thread_local = threading.local()
+
+
+def _get_session():
+    """Get or create a thread-local requests.Session for connection pooling."""
+    if not hasattr(_thread_local, 'session'):
+        _thread_local.session = requests.Session()
+    return _thread_local.session
 
 
 def get(api_url, api_key):
     """Get data from API and Logs errors"""
+    session = _get_session()
     try:
-        r = requests.get(api_url, headers={"X-Api-Key": api_key}, timeout=20)
+        r = session.get(api_url, headers={"X-Api-Key": api_key}, timeout=20)
         if r.status_code == 200:
             return r.json()
         if r.status_code == 401:
