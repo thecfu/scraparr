@@ -2,10 +2,53 @@
 
 import time
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from dateutil.parser import parse
 
 from scraparr.connectors.util import get
 from scraparr.metrics.general import UP
+
+
+def _fetch_all_titles(requests_list, api_url, api_key, max_workers=10):
+    """
+    Fetch titles for all requests in parallel using ThreadPoolExecutor.
+
+    Args:
+        requests_list: List of request/issue dictionaries containing media info
+        api_url: Base API URL (e.g., "http://seerr:5055/api/v1")
+        api_key: API key for authentication
+        max_workers: Maximum number of concurrent API calls (default 10)
+
+    Returns:
+        Dict mapping request_id -> (title, seasons)
+    """
+    def get_media_id(req):
+        """Extract media ID from request, trying tmdbId, imdbId, tvdbId in order."""
+        media = req.get("media", {})
+        return media.get("tmdbId") or media.get("imdbId") or media.get("tvdbId") or 0
+
+    def fetch_title(req):
+        req_id = req.get("id")
+        media_id = get_media_id(req)
+        req_type = req.get("type") or req.get("media", {}).get("mediaType")
+
+        try:
+            if req_type == "movie":
+                media = get(f"{api_url}/movie/{media_id}", api_key)
+                title = media.get("title", media_id) if media else media_id
+                seasons = 0
+            else:
+                media = get(f"{api_url}/tv/{media_id}", api_key)
+                title = media.get("title", media_id) if media else media_id
+                seasons = req.get("seasonCount", 0)
+            return req_id, (title, seasons)
+        except Exception as e:
+            logging.warning("Failed to fetch title for request %s: %s", req_id, e)
+            return req_id, (str(media_id), 0)
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        results = executor.map(fetch_title, requests_list)
+        return dict(results)
 
 class GetSeerr:
     """Class to handle the Metrics for jellyseerr and Overseerr"""
@@ -44,29 +87,6 @@ class GetSeerr:
 
         return users
 
-    def get_title(self, req):
-        """Grab the Title from the Seerr Endpoint"""
-
-        if req["media"]["tmdbId"]:
-            media_id = req["media"]["tmdbId"]
-        elif req["media"]["imdbId"]:
-            media_id = req["media"]["imdbId"]
-        elif req["media"]["tvdbId"]:
-            media_id = req["media"]["tvdbId"]
-        else:
-            media_id = 0
-
-        if req["type"] == "movie":
-            media = get(f"{self.api_url}/movie/{media_id}", self.api_key)
-            seasons = 0
-            title = media.get("title", media_id)
-        else:
-            media = get(f"{self.api_url}/tv/{media_id}", self.api_key)
-            seasons = req.get("seasonCount", 0)
-            title = media.get("title", media_id)
-
-        return [title, seasons]
-
     def get_requests(self):
         """Grab Requests from the Seerr Endpoint"""
 
@@ -89,16 +109,18 @@ class GetSeerr:
         self.metrics.LAST_SCRAPE.labels(alias).set(end_time)
         self.metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
 
+        # Fetch all titles in parallel
+        titles = _fetch_all_titles(res["results"], self.api_url, self.api_key)
+
         # Process the Requests
         for res_request in res["results"]:
+            title, seasons = titles.get(res_request["id"], ("Unknown", 0))
             request = {
                 "requested": parse(res_request["createdAt"]).timestamp(),
                 "type": res_request["type"],
                 "status": self.map_status(res_request),
+                "title": title,
             }
-
-            title, seasons = self.get_title(res_request)
-            request["title"] = title
             if seasons > 0:
                 request["seasons"] = seasons
 
@@ -153,16 +175,18 @@ class GetSeerr:
         self.metrics.LAST_SCRAPE.labels(alias).set(end_time)
         self.metrics.SCRAPE_DURATION.labels(alias).set(end_time - initial_time)
 
-        for res_issue in res["results"]:
-            res_issue["type"] = res_issue["media"]["mediaType"]
+        # Fetch all titles in parallel
+        titles = _fetch_all_titles(res["results"], self.api_url, self.api_key)
 
+        for res_issue in res["results"]:
+            title, _ = titles.get(res_issue["id"], ("Unknown", 0))
             issue = {
                 "created": parse(res_issue["createdAt"]).timestamp(),
                 "updated": parse(res_issue["updatedAt"]).timestamp(),
                 "status": self.map_issue_status(res_issue["status"]),
                 "type": self.map_issue_type(res_issue["issueType"]),
                 "mediaType": res_issue["media"]["mediaType"],
-                "title": self.get_title(res_issue)[0],
+                "title": title,
             }
             issues.append(issue)
 
