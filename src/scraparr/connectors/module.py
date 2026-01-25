@@ -1,10 +1,20 @@
 """Module for handling connector configurations and data validation."""
 from abc import ABC, abstractmethod
+import threading
 
 import requests
 
 from scraparr.connectors import Connectors
 from scraparr.connectors.util import get_logger
+
+_thread_local = threading.local()
+
+
+def _get_session():
+    """Get or create a thread-local requests.Session for connection pooling."""
+    if not hasattr(_thread_local, 'session'):
+        _thread_local.session = requests.Session()
+    return _thread_local.session
 
 
 class ConnectorModule(ABC): # pylint: disable=too-few-public-methods, too-many-instance-attributes
@@ -46,9 +56,10 @@ class ConnectorModule(ABC): # pylint: disable=too-few-public-methods, too-many-i
 
     def get(self, endpoint):
         """Get data from API and Logs errors"""
+        session = _get_session()
         api_url = self.url + (("/" + endpoint) if not endpoint.startswith("/") else endpoint)
         try:
-            r = requests.get(api_url, headers={"X-Api-Key": self.api_key}, timeout=20)
+            r = session.get(api_url, headers={"X-Api-Key": self.api_key}, timeout=20)
             if r.status_code == 200:
                 return r.json()
             if r.status_code == 401:
@@ -66,9 +77,10 @@ class ConnectorModule(ABC): # pylint: disable=too-few-public-methods, too-many-i
 
     def post(self, endpoint, data):
         """Post data to API and Logs errors"""
+        session = _get_session()
         api_url = self.url + ("/" + endpoint if not endpoint.startswith("/") else endpoint)
         try:
-            r = requests.post(api_url, headers={"X-Api-Key": self.api_key}, json=data, timeout=20)
+            r = session.post(api_url, headers={"X-Api-Key": self.api_key}, json=data, timeout=20)
             if r.status_code in (200, 201):
                 return r.json()
             if r.status_code == 401:

@@ -3,9 +3,11 @@ Module to handle the Metrics of the Jellyfin Service
 """
 
 import time
+
 import requests
+
 import scraparr.metrics.jellyfin as jellyfin_metrics
-from scraparr.connectors.module import ConnectorModule
+from scraparr.connectors.module import ConnectorModule, _get_session
 from scraparr.metrics.general import UP
 from scraparr.connectors import util
 
@@ -31,8 +33,9 @@ class Module(ConnectorModule):
 
     def get_number_of_devices(self):
         """Grab the Devices from the Jellyfin Endpoint"""
+        session = _get_session()
         try:
-            res = requests.get(f"{self.url}/Devices", headers=self.header, timeout=10)
+            res = session.get(f"{self.url}/Devices", headers=self.header, timeout=10)
             res.raise_for_status()  # Raise an error for bad responses (4xx, 5xx)
             UP.labels(self.alias, "jellyfin").set(1)
             return res.json()['TotalRecordCount']
@@ -44,8 +47,9 @@ class Module(ConnectorModule):
 
     def get_genres(self):
         """Grab the Genres from the Jellyfin Endpoint"""
+        session = _get_session()
         try:
-            res = requests.get(f"{self.url}/Genres", headers=self.header, timeout=10)
+            res = session.get(f"{self.url}/Genres", headers=self.header, timeout=10)
             res.raise_for_status()  # Raise an error for bad responses (4xx, 5xx)
             UP.labels(self.alias, "jellyfin").set(1)
             data = res.json()
@@ -58,8 +62,9 @@ class Module(ConnectorModule):
 
     def get_number_of_user(self):
         """Grab the Users from the Jellyfin Endpoint"""
+        session = _get_session()
         try:
-            res = requests.get(f"{self.url}/Users", headers=self.header, timeout=10)
+            res = session.get(f"{self.url}/Users", headers=self.header, timeout=10)
             res.raise_for_status()  # Raise an error for bad responses (4xx, 5xx)
             UP.labels(self.alias, "jellyfin").set(1)
             data = res.json()
@@ -71,9 +76,10 @@ class Module(ConnectorModule):
 
     def get_number_of_movies(self):
         """Grab the Movies from the Jellyfin Endpoint"""
+        session = _get_session()
         try:
-            res = requests.get(f"{self.url}/Items?{QUERY}&IncludeItemTypes=Movie",
-                               headers=self.header, timeout=10)
+            res = session.get(f"{self.url}/Items?{QUERY}&IncludeItemTypes=Movie",
+                              headers=self.header, timeout=10)
             res.raise_for_status()  # Raise an error for bad responses (4xx, 5xx)
             UP.labels(self.alias, "jellyfin").set(1)
             return res.json()['TotalRecordCount']
@@ -84,9 +90,10 @@ class Module(ConnectorModule):
 
     def get_number_of_series(self):
         """Grab the Series from the Jellyfin Endpoint"""
+        session = _get_session()
         try:
-            res = requests.get(f"{self.url}/Items?{QUERY}&IncludeItemTypes=Series",
-                               headers=self.header, timeout=10)
+            res = session.get(f"{self.url}/Items?{QUERY}&IncludeItemTypes=Series",
+                              headers=self.header, timeout=10)
             res.raise_for_status()  # Raise an error for bad responses (4xx, 5xx)
             UP.labels(self.alias, "jellyfin").set(1)
             return res.json()['TotalRecordCount']
@@ -97,8 +104,9 @@ class Module(ConnectorModule):
 
     def get_infos(self):
         """Grab the Info from the Jellyfin Endpoint"""
+        session = _get_session()
         try:
-            res = requests.get(f"{self.url}/System/Info", headers=self.header, timeout=10)
+            res = session.get(f"{self.url}/System/Info", headers=self.header, timeout=10)
             res.raise_for_status()  # Raise an error for bad responses (4xx, 5xx)
             UP.labels(self.alias, "jellyfin").set(1)
             return res.json()
@@ -109,9 +117,10 @@ class Module(ConnectorModule):
 
     def get_sessions(self):
         """Grab the Sessions from the Jellyfin Endpoint"""
+        session = _get_session()
         try:
-            res = requests.get(f"{self.url}/Sessions?activeWithinSeconds={self.within}",
-                               headers=self.header, timeout=10)
+            res = session.get(f"{self.url}/Sessions?activeWithinSeconds={self.within}",
+                              headers=self.header, timeout=10)
             res.raise_for_status()  # Raise an error for bad responses (4xx, 5xx)
             UP.labels(self.alias, "jellyfin").set(1)
             return res.json()
