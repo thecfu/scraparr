@@ -15,6 +15,7 @@ class GetSeerr:
         self.api_key = config['api_key']
         self.alias = config['alias']
         self.service = config.get('service', 'seerr')
+        self.detailed = config.get('detailed', False)
         self.metrics = metrics
 
     def get_users(self):
@@ -97,7 +98,12 @@ class GetSeerr:
                 "status": self.map_status(res_request),
             }
 
-            title, seasons = self.get_title(res_request)
+            if self.detailed:
+                title, seasons = self.get_title(res_request)
+            else:
+                title = ""
+                seasons = res_request.get("seasonCount", 0)
+
             request["title"] = title
             if seasons > 0:
                 request["seasons"] = seasons
@@ -162,7 +168,7 @@ class GetSeerr:
                 "status": self.map_issue_status(res_issue["status"]),
                 "type": self.map_issue_type(res_issue["issueType"]),
                 "mediaType": res_issue["media"]["mediaType"],
-                "title": self.get_title(res_issue)[0],
+                "title": self.get_title(res_issue)[0] if self.detailed else "",
             }
             issues.append(issue)
 
