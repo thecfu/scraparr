@@ -8,15 +8,15 @@ from scraparr.connectors.sonarr_api import SonarrApi
 class TestEpisodeQualityStatsConfig:
     """Test that episode_quality_stats config is handled correctly."""
 
-    def test_config_missing_defaults_to_false(self, mock_metrics):
-        """When episode_quality_stats is not in config, it should default to False."""
+    def test_config_missing_defaults_to_true(self, mock_metrics):
+        """When episode_quality_stats is not in config, it should default to True."""
         config = {
             "url": "http://localhost:8989",
             "api_key": "test-key",
             "api_version": "v3",
         }
         api = SonarrApi("sonarr", config, mock_metrics)
-        assert api.episode_quality_stats is False
+        assert api.episode_quality_stats is True
 
     def test_config_explicit_false(self, mock_metrics):
         """When episode_quality_stats is explicitly False."""
@@ -85,10 +85,10 @@ class TestGetSeriesEpisodeFileFetching:
 
     @patch("scraparr.connectors.sonarr_api.UP")
     @patch.object(SonarrApi, "get")
-    def test_no_episodefile_calls_when_config_missing(
-        self, mock_get, mock_up, mock_metrics, sample_series_data
+    def test_episodefile_calls_when_config_missing(
+        self, mock_get, mock_up, mock_metrics, sample_series_data, sample_episodefile_data
     ):
-        """When episode_quality_stats is missing from config, no /episodefile calls."""
+        """When episode_quality_stats is missing from config, /episodefile calls should be made (default True)."""
         config = {
             "url": "http://localhost:8989",
             "api_key": "test-key",
@@ -96,16 +96,31 @@ class TestGetSeriesEpisodeFileFetching:
         }
         api = SonarrApi("sonarr", config, mock_metrics)
 
-        mock_get.return_value = sample_series_data.copy()
+        def mock_get_side_effect(endpoint):
+            if endpoint == "/series":
+                return sample_series_data.copy()
+            elif endpoint.startswith("/episodefile?seriesId="):
+                series_id = int(endpoint.split("=")[1])
+                return sample_episodefile_data.get(series_id, [])
+            return {}
+
+        mock_get.side_effect = mock_get_side_effect
 
         result = api.get_series()
 
-        # Should only call /series once
-        mock_get.assert_called_once_with("/series")
+        # Should call /series + /episodefile for each series (default is True)
+        assert mock_get.call_count == 3  # 1 series + 2 episodefile calls
 
-        # All series should have empty episodes list
-        for series in result:
-            assert series["episodes"] == []
+        # Verify episodefile calls were made
+        calls = mock_get.call_args_list
+        assert call("/series") in calls
+        assert call("/episodefile?seriesId=1") in calls
+        assert call("/episodefile?seriesId=2") in calls
+
+        # Series should have episode data populated
+        series_by_id = {s["id"]: s for s in result}
+        assert len(series_by_id[1]["episodes"]) == 3
+        assert len(series_by_id[2]["episodes"]) == 2
 
     @patch("scraparr.connectors.sonarr_api.UP")
     @patch.object(SonarrApi, "get")

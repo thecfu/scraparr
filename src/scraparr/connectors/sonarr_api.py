@@ -3,7 +3,8 @@ Module to handle the Metrics of the SonarrAPI
 """
 
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import logging
+from concurrent.futures import ThreadPoolExecutor
 from dateutil.parser import parse
 
 from scraparr.connectors import util
@@ -28,6 +29,29 @@ class SonarrApi(ConnectorModule):
         self.metrics.SERIES_DOWNLOAD_PERCENTAGE.remove_by_labels({"alias": self.alias})
         self.metrics.SERIES_MONITORED.remove_by_labels({"alias": self.alias})
 
+    def _fetch_all_episode_files(self, series_list, max_workers=10):
+        """
+        Fetch episode files for all series in parallel using ThreadPoolExecutor.
+
+        Args:
+            series_list: List of series dictionaries from the /series endpoint
+            max_workers: Maximum number of concurrent API calls (default 10)
+
+        Returns:
+            Dict mapping series_id -> list of episode files
+        """
+        def fetch_episodes(series_id):
+            try:
+                episodes = self.get(f"/episodefile?seriesId={series_id}")
+                return series_id, episodes
+            except Exception as e:
+                logging.warning("Failed to fetch episode files for series %s: %s", series_id, e)
+                return series_id, []
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            results = executor.map(fetch_episodes, [s['id'] for s in series_list])
+            return dict(results)
+
     def get_series(self):
         """Grab the Series from the SonarrAPI Endpoint"""
 
@@ -37,14 +61,9 @@ class SonarrApi(ConnectorModule):
             UP.labels(self.alias, self.service).set(0)
         else:
             if self.episode_quality_stats:
-                with ThreadPoolExecutor(max_workers=10) as executor:
-                    futures = {
-                        executor.submit(self.get, f"/episodefile?seriesId={s['id']}"): s
-                        for s in res
-                    }
-                    for future in as_completed(futures):
-                        series = futures[future]
-                        series["episodes"] = future.result()
+                episode_map = self._fetch_all_episode_files(res)
+                for series in res:
+                    series["episodes"] = episode_map.get(series['id'], [])
             else:
                 for series in res:
                     series["episodes"] = []
