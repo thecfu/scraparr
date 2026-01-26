@@ -2,6 +2,8 @@
 
 from unittest.mock import patch, MagicMock
 
+import requests
+
 from scraparr.connectors.sonarr_api import SonarrApi
 
 
@@ -90,7 +92,7 @@ class TestFetchAllEpisodeFiles:
         """One failed request doesn't prevent other series from being fetched."""
         def side_effect(url):
             if 'seriesId=2' in url:
-                raise ConnectionError("Network error")
+                raise requests.exceptions.ConnectionError("Network error")
             return [{'id': 100}]
 
         mock_get.side_effect = side_effect

@@ -3,8 +3,9 @@ Module to handle the Metrics of the SonarrAPI
 """
 
 import time
-import logging
 from concurrent.futures import ThreadPoolExecutor
+
+import requests
 from dateutil.parser import parse
 
 from scraparr.connectors import util
@@ -44,8 +45,8 @@ class SonarrApi(ConnectorModule):
             try:
                 episodes = self.get(f"/episodefile?seriesId={series_id}")
                 return series_id, episodes
-            except Exception as e:
-                logging.warning("Failed to fetch episode files for series %s: %s", series_id, e)
+            except (requests.exceptions.RequestException, ValueError) as e:
+                self.logger.warning("Failed to fetch episode files for series %s: %s", series_id, e)
                 return series_id, []
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
