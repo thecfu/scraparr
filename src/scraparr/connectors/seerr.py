@@ -1,7 +1,10 @@
 """Module to handle the Metrics of the Seerr Services"""
 
 import time
+import logging
+from concurrent.futures import ThreadPoolExecutor
 from dateutil.parser import parse
+from requests.exceptions import RequestException
 
 from scraparr.connectors.module import ConnectorModule
 from scraparr.metrics.general import UP
@@ -21,7 +24,6 @@ class Seerr(ConnectorModule):
         self.metrics.ISSUE_TITLE.remove_by_labels({"alias": self.alias})
         self.metrics.ISSUE_CREATED.remove_by_labels({"alias": self.alias})
         self.metrics.ISSUE_UPDATED.remove_by_labels({"alias": self.alias})
-        self.metrics.ISSUE_TITLE.remove_by_labels({"alias": self.alias})
 
     def scrape(self):
         """Scrape the Seerr Service"""
@@ -58,28 +60,59 @@ class Seerr(ConnectorModule):
 
         return users
 
-    def get_title(self, req):
-        """Grab the Title from the Seerr Endpoint"""
+    def _fetch_all_titles(self, requests_list, max_workers=10):
+        """
+        Fetch titles for all requests in parallel using ThreadPoolExecutor,
+        with deduplication to avoid redundant API calls.
 
-        if req["media"]["tmdbId"]:
-            media_id = req["media"]["tmdbId"]
-        elif req["media"]["imdbId"]:
-            media_id = req["media"]["imdbId"]
-        elif req["media"]["tvdbId"]:
-            media_id = req["media"]["tvdbId"]
-        else:
-            media_id = 0
+        Args:
+            requests_list: List of request/issue dictionaries containing media info
+            max_workers: Maximum number of concurrent API calls (default 10)
 
-        if req["type"] == "movie":
-            media = self.get(f"/movie/{media_id}")
-            seasons = 0
-            title = media.get("title", media_id)
-        else:
-            media = self.get(f"/tv/{media_id}")
-            seasons = req.get("seasonCount", 0)
-            title = media.get("title", media_id)
+        Returns:
+            Dict mapping request_id -> (title, seasons)
+        """
+        def get_media_info(req):
+            """Extract (type, media_id) from request."""
+            media = req.get("media", {})
+            m_id = media.get("tmdbId") or media.get("imdbId") or media.get("tvdbId")
+            m_type = req.get("type") or media.get("mediaType")
+            return m_type, m_id
 
-        return [title, seasons]
+        def fetch_title(media_info):
+            m_type, m_id = media_info
+            if not m_id:
+                return (m_type, m_id), ""
+
+            try:
+                endpoint = f"/movie/{m_id}" if m_type == "movie" else f"/tv/{m_id}"
+                media = self.get(endpoint)
+                title = media.get("title", str(m_id)) if media else str(m_id)
+                return (m_type, m_id), title
+            except (RequestException, ValueError) as e:
+                logging.warning("Failed to fetch title for %s %s: %s", m_type, m_id, e)
+                return (m_type, m_id), str(m_id)
+
+        # 1. Identify unique media items to fetch
+        unique_media = {get_media_info(req) for req in requests_list}
+        unique_media.discard((None, None))
+        # Filter out cases where m_id is None or 0
+        unique_media = {m for m in unique_media if m[1]}
+
+        # 2. Fetch unique titles in parallel
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            fetched_titles = dict(executor.map(fetch_title, unique_media))
+
+        # 3. Map back to request IDs
+        results = {}
+        for req in requests_list:
+            req_id = req.get("id")
+            m_type, m_id = get_media_info(req)
+            title = fetched_titles.get((m_type, m_id), str(m_id) if m_id else "")
+            seasons = req.get("seasonCount", 0) if m_type != "movie" else 0
+            results[req_id] = (title, seasons)
+
+        return results
 
     def get_requests(self):
         """Grab Requests from the Seerr Endpoint"""
@@ -92,19 +125,24 @@ class Seerr(ConnectorModule):
             UP.labels(self.alias, self.service).set(0)
             return []
         UP.labels(self.alias, self.service).set(1)
-        if len(res["results"]) == 0:
-            return [{}]  # Return a single empty dict to indicate a successful scrape
+        if not res["results"]:
+            return []
+
+        # Fetch all titles in parallel (only when detailed=True)
+        if self.detailed:
+            titles = self._fetch_all_titles(res["results"])
+        else:
+            titles = {}
 
         # Process the Requests
         for res_request in res["results"]:
+            title, seasons = titles.get(res_request["id"], ("", res_request.get("seasonCount", 0)))
             request = {
                 "requested": parse(res_request["createdAt"]).timestamp(),
                 "type": res_request["type"],
                 "status": self.map_status(res_request),
+                "title": title,
             }
-
-            title, seasons = self.get_title(res_request)
-            request["title"] = title
             if seasons > 0:
                 request["seasons"] = seasons
 
@@ -147,19 +185,24 @@ class Seerr(ConnectorModule):
             UP.labels(self.alias, self.service).set(0)
             return []
         UP.labels(self.alias, self.service).set(1)
-        if len(res["results"]) == 0:
-            return [{}] # Return a single empty dict to indicate a successful scrape
+        if not res["results"]:
+            return []
+
+        # Fetch all titles in parallel (only when detailed=True)
+        if self.detailed:
+            titles = self._fetch_all_titles(res["results"])
+        else:
+            titles = {}
 
         for res_issue in res["results"]:
-            res_issue["type"] = res_issue["media"]["mediaType"]
-
+            title, _ = titles.get(res_issue["id"], ("", 0))
             issue = {
                 "created": parse(res_issue["createdAt"]).timestamp(),
                 "updated": parse(res_issue["updatedAt"]).timestamp(),
                 "status": self.map_issue_status(res_issue["status"]),
                 "type": self.map_issue_type(res_issue["issueType"]),
                 "mediaType": res_issue["media"]["mediaType"],
-                "title": self.get_title(res_issue)[0],
+                "title": title,
             }
             issues.append(issue)
 
@@ -167,14 +210,14 @@ class Seerr(ConnectorModule):
 
     def fetch_paginated_results(self, endpoint):
         """Handles API pagination for endpoints like 'issue' or 'request'"""
-        res = self.get(f"/{endpoint}?take=20")
+        res = self.get(f"/{endpoint}?take=100")
         if not res or "pageInfo" not in res:
             return {}
 
         total_pages = res["pageInfo"].get("pages", 1)
         for page in range(2, total_pages + 1):
-            skip = 20 * page
-            more = self.get(f"/{endpoint}?take=20&skip={skip}")
+            skip = 100 * (page - 1)
+            more = self.get(f"/{endpoint}?take=100&skip={skip}")
             if not more or "results" not in more:
                 self.logger.error("No new results found, but expected more. Endpoint: %s",
                               endpoint)
@@ -286,11 +329,11 @@ class Seerr(ConnectorModule):
         issues = data["issues"]
 
         self.update_users(users)
-        if requests[0] != {}:
+        if requests:
             self.update_requests(requests)
         else:
             self.metrics.REQUEST_COUNT.labels(self.alias).set(0)
-        if issues[0] != {}:
+        if issues:
             self.update_issues(issues)
         else:
             self.metrics.ISSUE_COUNT.labels(self.alias).set(0)

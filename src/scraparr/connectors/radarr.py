@@ -24,6 +24,19 @@ class Module(ConnectorModule):
         radarr_metrics.MOVIE_MONITORED.remove_by_labels({"alias": self.alias})
         radarr_metrics.MOVIE_MISSING.remove_by_labels({"alias": self.alias})
 
+    def _normalize_movie_file(self, movie):
+        """Normalize movieFile to list format, using embedded data when possible."""
+        movie_file_count = movie.get('statistics', {}).get('movieFileCount', 0)
+
+        if movie_file_count == 0:
+            return []
+
+        if movie_file_count > 1:
+            return self.get(f"/moviefile?movieId={movie['id']}")
+
+        embedded_file = movie.get('movieFile')
+        return [embedded_file] if embedded_file else []
+
     def get_movies(self):
         """Grab the Movies from the Radarr Endpoint"""
 
@@ -33,8 +46,7 @@ class Module(ConnectorModule):
             UP.labels(self.alias, 'radarr').set(0)
         else:
             for movie in res:
-                movie_file = self.get(f"/moviefile?movieId={movie['id']}")
-                movie["movieFile"] = movie_file
+                movie["movieFile"] = self._normalize_movie_file(movie)
 
             UP.labels(self.alias, 'radarr').set(1)
         return res
