@@ -161,6 +161,31 @@ If you want to verify your code before pushing to prevent the Pipeline to fail. 
 docker compose --file compose-dev.yaml up --build
 ```
 
+### Local Development with Just and uv
+
+For local development outside Docker, you can use [just](https://github.com/casey/just) and [uv](https://github.com/astral-sh/uv) to run common tasks:
+
+```bash
+# Install just and uv (if not already installed)
+# macOS: brew install just uv
+# Linux: see https://github.com/casey/just and https://github.com/astral-sh/uv
+
+# Install dev dependencies
+just dev-install
+
+# Run all checks (lint + tests)
+just check
+
+# Run only linting
+just lint
+
+# Run only tests (with coverage)
+just test
+
+# Run tests without coverage (faster)
+just test-quick
+```
+
 ## 🚀 Stay Connected
 * [Discord](https://discord.gg/z54hWyGcam)
 
