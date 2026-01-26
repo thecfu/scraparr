@@ -21,6 +21,7 @@ from scraparr.connectors import util
 from scraparr.middleware import Middleware
 import scraparr.connectors
 from scraparr.parser import parse_env_config
+from scraparr.config_loader import load_yaml_config, MissingEnvVarError
 
 from scraparr.const import ACTIVE_CONNECTORS, BEAUTIFUL_CONNECTORS
 
@@ -31,8 +32,7 @@ CONFIG_FILE_LOCATION = "/scraparr/config/config.yaml"
 config_file = None
 
 try:
-    with open(CONFIG_FILE_LOCATION, 'r', encoding='utf-8') as yaml_file:
-        config_file = yaml.safe_load(yaml_file)
+    config_file = load_yaml_config(CONFIG_FILE_LOCATION)
 except FileNotFoundError:
     logging.error(
     	"Configuration file not found: %s, will try to load from environment variables",
@@ -49,6 +49,9 @@ except PermissionError:
     sys.exit(1)
 except yaml.YAMLError as exc:
     logging.error("Error parsing YAML file: %s", exc)
+    sys.exit(1)
+except MissingEnvVarError as exc:
+    logging.error("Missing required environment variable in config: %s", exc)
     sys.exit(1)
 
 if not config_file:
