@@ -22,5 +22,5 @@ BEAUTIFUL_CONNECTORS = ", ".join(ACTIVE_CONNECTORS[:-1]) + " or " + ACTIVE_CONNE
 # Optional ENV variables for connectors
 OPTIONAL_FIELDS = [
     'alias', 'api_version', 'interval',
-    'detailed', 'within',
+    'detailed', 'within', 'episode_quality_stats',
 ]

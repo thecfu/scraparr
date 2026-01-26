@@ -18,6 +18,7 @@ class SonarrApi(ConnectorModule):
     def __init__(self, service, config, metrics):
         ConnectorModule.__init__(self, config, service)
         self.metrics = metrics
+        self.episode_quality_stats = config.get('episode_quality_stats', True)
         self.url = f"{self.url}/api/{self.api_version}"
 
     def clear(self):

@@ -1,4 +1,8 @@
-"""Shared fixtures for tests."""
+"""
+Shared pytest fixtures for tests.
+
+Currently contains Sonarr-specific fixtures; add other connector fixtures here as needed.
+"""
 
 import pytest
 from unittest.mock import MagicMock, patch
