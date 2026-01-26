@@ -87,3 +87,11 @@ jellyfin:
   # interval: 30 # Optional to set a different Interval in Seconds
   # within: 30 # Optional to set a timeframe in seconds to search for sessions (default: 300)
   # detailed: true # Get Data per User
+
+kavita:
+  url: http://kavita:5000
+  api_key: key
+  # alias: kavita # Optional to Differentiate between multiple Services
+  # interval: 30 # Optional to set a different Interval in Seconds
+  # detailed: true # Get Data per Library
+
