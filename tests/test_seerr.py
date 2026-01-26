@@ -1,6 +1,7 @@
 """Tests for the parallel title fetching in seerr connector."""
 
 from unittest.mock import patch, MagicMock
+from requests.exceptions import RequestException
 
 from scraparr.connectors.seerr import Seerr
 
@@ -145,7 +146,7 @@ class TestFetchAllTitles:
         """One failed request doesn't prevent other titles from being fetched."""
         def side_effect(url):
             if '/movie/200' in url:
-                raise ConnectionError("Network error")
+                raise RequestException("Network error")
             return {'title': 'Success Title'}
 
         mock_get.side_effect = side_effect

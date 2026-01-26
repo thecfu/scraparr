@@ -4,6 +4,7 @@ import time
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from dateutil.parser import parse
+from requests.exceptions import RequestException
 
 from scraparr.connectors.module import ConnectorModule
 from scraparr.metrics.general import UP
@@ -88,7 +89,7 @@ class Seerr(ConnectorModule):
                 media = self.get(endpoint)
                 title = media.get("title", str(m_id)) if media else str(m_id)
                 return (m_type, m_id), title
-            except Exception as e:
+            except (RequestException, ValueError) as e:
                 logging.warning("Failed to fetch title for %s %s: %s", m_type, m_id, e)
                 return (m_type, m_id), str(m_id)
 
