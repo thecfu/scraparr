@@ -3,6 +3,7 @@ Module to handle the Metrics of the SonarrAPI
 """
 
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dateutil.parser import parse
 
 from scraparr.connectors import util
@@ -32,14 +33,23 @@ class SonarrApi(ConnectorModule):
 
         initial_time = time.time()
         res = self.get("/series")
-        end_time = time.time()
         if res == {}:
             UP.labels(self.alias, self.service).set(0)
         else:
-            for series in res:
-                episodes = self.get(f"/episodefile?seriesId={series['id']}")
-                series["episodes"] = episodes
+            if self.episode_quality_stats:
+                with ThreadPoolExecutor(max_workers=10) as executor:
+                    futures = {
+                        executor.submit(self.get, f"/episodefile?seriesId={s['id']}"): s
+                        for s in res
+                    }
+                    for future in as_completed(futures):
+                        series = futures[future]
+                        series["episodes"] = future.result()
+            else:
+                for series in res:
+                    series["episodes"] = []
 
+            end_time = time.time()
             UP.labels(self.alias, self.service).set(1)
             self.metrics.LAST_SCRAPE.labels(self.alias).set(end_time)
             self.metrics.SCRAPE_DURATION.labels(self.alias).set(end_time - initial_time)
@@ -98,9 +108,9 @@ class SonarrApi(ConnectorModule):
                 self.logger.warning("No statistics found for %s", title)
                 continue
 
-            util.increase_quality_count(quality_count, serie["episodes"], serie["rootFolderPath"])
-
             root_folder = serie["rootFolderPath"]
+
+            util.increase_quality_count(quality_count, serie["episodes"], root_folder)
 
             util.update_count(
                 [stats["sizeOnDisk"], used_size],

@@ -17,6 +17,7 @@ class ConnectorModule(ABC): # pylint: disable=too-few-public-methods, too-many-i
         self.api_version = config.get('api_version')
         self.service = service
         self.detailed = config.get('detailed', False)
+        self.episode_quality_stats = config.get('episode_quality_stats', False)
         self.interval = config.get('interval', 30)
         self.last_hash = None
         self.logger = get_logger(f"connectors.{self.service}", self.alias)
