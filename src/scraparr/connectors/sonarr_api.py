@@ -3,6 +3,9 @@ Module to handle the Metrics of the SonarrAPI
 """
 
 import time
+from concurrent.futures import ThreadPoolExecutor
+
+import requests
 from dateutil.parser import parse
 
 from scraparr.connectors import util
@@ -27,6 +30,29 @@ class SonarrApi(ConnectorModule):
         self.metrics.SERIES_DOWNLOAD_PERCENTAGE.remove_by_labels({"alias": self.alias})
         self.metrics.SERIES_MONITORED.remove_by_labels({"alias": self.alias})
 
+    def _fetch_all_episode_files(self, series_list, max_workers=10):
+        """
+        Fetch episode files for all series in parallel using ThreadPoolExecutor.
+
+        Args:
+            series_list: List of series dictionaries from the /series endpoint
+            max_workers: Maximum number of concurrent API calls (default 10)
+
+        Returns:
+            Dict mapping series_id -> list of episode files
+        """
+        def fetch_episodes(series_id):
+            try:
+                episodes = self.get(f"/episodefile?seriesId={series_id}")
+                return series_id, episodes
+            except (requests.exceptions.RequestException, ValueError) as e:
+                self.logger.warning("Failed to fetch episode files for series %s: %s", series_id, e)
+                return series_id, []
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            results = executor.map(fetch_episodes, [s['id'] for s in series_list])
+            return dict(results)
+
     def get_series(self):
         """Grab the Series from the SonarrAPI Endpoint"""
 
@@ -36,9 +62,9 @@ class SonarrApi(ConnectorModule):
         if res == {}:
             UP.labels(self.alias, self.service).set(0)
         else:
+            episode_map = self._fetch_all_episode_files(res)
             for series in res:
-                episodes = self.get(f"/episodefile?seriesId={series['id']}")
-                series["episodes"] = episodes
+                series["episodes"] = episode_map.get(series['id'], [])
 
             UP.labels(self.alias, self.service).set(1)
             self.metrics.LAST_SCRAPE.labels(self.alias).set(end_time)
