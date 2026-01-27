@@ -18,6 +18,7 @@ class SonarrApi(ConnectorModule):
     def __init__(self, service, config, metrics):
         ConnectorModule.__init__(self, config, service)
         self.metrics = metrics
+        self.episode_quality_stats = config.get('episode_quality_stats', True)
         self.url = f"{self.url}/api/{self.api_version}"
 
     def clear(self):
@@ -58,14 +59,18 @@ class SonarrApi(ConnectorModule):
 
         initial_time = time.time()
         res = self.get("/series")
-        end_time = time.time()
         if res == {}:
             UP.labels(self.alias, self.service).set(0)
         else:
-            episode_map = self._fetch_all_episode_files(res)
-            for series in res:
-                series["episodes"] = episode_map.get(series['id'], [])
+            if self.episode_quality_stats:
+                episode_map = self._fetch_all_episode_files(res)
+                for series in res:
+                    series["episodes"] = episode_map.get(series['id'], [])
+            else:
+                for series in res:
+                    series["episodes"] = []
 
+            end_time = time.time()
             UP.labels(self.alias, self.service).set(1)
             self.metrics.LAST_SCRAPE.labels(self.alias).set(end_time)
             self.metrics.SCRAPE_DURATION.labels(self.alias).set(end_time - initial_time)
@@ -124,9 +129,9 @@ class SonarrApi(ConnectorModule):
                 self.logger.warning("No statistics found for %s", title)
                 continue
 
-            util.increase_quality_count(quality_count, serie["episodes"], serie["rootFolderPath"])
-
             root_folder = serie["rootFolderPath"]
+
+            util.increase_quality_count(quality_count, serie["episodes"], root_folder)
 
             util.update_count(
                 [stats["sizeOnDisk"], used_size],

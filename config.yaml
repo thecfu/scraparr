@@ -47,6 +47,7 @@ sonarr:
   # api_version: v3 # Optional to use a different API Version
   # interval: 30 # Optional to set a different Interval in Seconds
   # detailed: true  # Get Data per Series
+  # episode_quality_stats: true  # Fetch episode quality metrics (N extra API calls, disable for performance)
 
 radarr:
   url: http://radarr:7878
@@ -99,6 +100,7 @@ whisparr:
   # alias: whisparr # Optional to Differentiate between multiple Services
   # interval: 30 # Optional to set a different Interval in Seconds
   # detailed: true  # Get Data per Performer/Scene
+  # episode_quality_stats: true  # Fetch episode quality metrics (N extra API calls, disable for performance)
 
 lidarr:
   url: http://lidarr:8096
