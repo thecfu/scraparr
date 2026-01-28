@@ -11,13 +11,10 @@ from typing import Any, List
 
 import yaml
 
+from scraparr.const import BOOL_FIELDS, INT_FIELDS
+
 # Matches ${VAR_NAME} or ${VAR_NAME:-default}
 ENV_VAR_PATTERN = re.compile(r'\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}')
-
-# Fields that should be integers
-INT_FIELDS = {'interval', 'within', 'port', 'workers'}
-# Fields that should be booleans
-BOOL_FIELDS = {'detailed'}
 
 
 class MissingEnvVarError(Exception):
@@ -195,3 +192,29 @@ def deep_merge(base: dict, override: dict) -> dict:
             result[key] = override_value
 
     return result
+
+
+def validate_service_config(service: str, config) -> list:
+    """Validate service config has required fields (url and api_key).
+
+    Args:
+        service: Service name (e.g., 'sonarr')
+        config: Service config - dict for single instance, list for multi-instance, or None
+
+    Returns:
+        List of error messages (empty if valid)
+    """
+    errors = []
+    if config is None:
+        return errors
+
+    configs = [config] if isinstance(config, dict) else config
+    for i, cfg in enumerate(configs):
+        if not isinstance(cfg, dict):
+            continue
+        alias = cfg.get('alias', f'instance {i}')
+        if not cfg.get('url'):
+            errors.append(f"{service} ({alias}): missing 'url'")
+        if not cfg.get('api_key'):
+            errors.append(f"{service} ({alias}): missing 'api_key'")
+    return errors

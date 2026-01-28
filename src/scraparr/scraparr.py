@@ -23,7 +23,8 @@ from scraparr.middleware import Middleware
 import scraparr.connectors
 from scraparr.parser import parse_env_config
 from scraparr.config_loader import (
-    load_yaml_config_safe, deep_merge, coerce_config_types, MissingEnvVarError
+    load_yaml_config_safe, deep_merge, coerce_config_types, MissingEnvVarError,
+    validate_service_config
 )
 
 from scraparr.const import ACTIVE_CONNECTORS, BEAUTIFUL_CONNECTORS
@@ -43,6 +44,16 @@ try:
     env_config = parse_env_config()
     # Merge: YAML (base) <- environment variables (includes .env values)
     config_file = coerce_config_types(deep_merge(yaml_config, env_config))
+
+    # Validate required fields in merged config
+    validation_errors = []
+    for service in ACTIVE_CONNECTORS:
+        if service in config_file:
+            validation_errors.extend(validate_service_config(service, config_file[service]))
+    if validation_errors:
+        for error in validation_errors:
+            logging.error("Invalid config: %s", error)
+        sys.exit(1)
 except PermissionError:
     logging.error("Permission denied to read the configuration file: %s", CONFIG_FILE_LOCATION)
     sys.exit(1)

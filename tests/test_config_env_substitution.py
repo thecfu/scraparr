@@ -333,3 +333,62 @@ class TestMultiInstanceAliasEnvVars:
         result = deep_merge({}, env_config)
         assert isinstance(result['sonarr'], list)
         assert len(result['sonarr']) == 2
+
+
+class TestServiceConfigValidation:
+    """Test post-merge validation of required fields."""
+
+    def test_valid_config_no_errors(self):
+        """Complete config with url and api_key returns no errors."""
+        from scraparr.config_loader import validate_service_config
+        config = {'url': 'http://sonarr:8989', 'api_key': 'test-key'}
+        errors = validate_service_config('sonarr', config)
+        assert errors == []
+
+    def test_missing_url_returns_error(self):
+        """Config missing url returns error."""
+        from scraparr.config_loader import validate_service_config
+        config = {'api_key': 'test-key'}
+        errors = validate_service_config('sonarr', config)
+        assert len(errors) == 1
+        assert "missing 'url'" in errors[0]
+
+    def test_missing_api_key_returns_error(self):
+        """Config missing api_key returns error."""
+        from scraparr.config_loader import validate_service_config
+        config = {'url': 'http://sonarr:8989'}
+        errors = validate_service_config('sonarr', config)
+        assert len(errors) == 1
+        assert "missing 'api_key'" in errors[0]
+
+    def test_missing_both_returns_two_errors(self):
+        """Config missing both url and api_key returns two errors."""
+        from scraparr.config_loader import validate_service_config
+        config = {'alias': 'test'}
+        errors = validate_service_config('sonarr', config)
+        assert len(errors) == 2
+
+    def test_none_config_returns_no_errors(self):
+        """None config (service not configured) returns no errors."""
+        from scraparr.config_loader import validate_service_config
+        errors = validate_service_config('sonarr', None)
+        assert errors == []
+
+    def test_multi_instance_list_validates_each(self):
+        """Multi-instance config (list) validates each instance."""
+        from scraparr.config_loader import validate_service_config
+        config = [
+            {'url': 'http://prod:8989', 'api_key': 'key1', 'alias': 'prod'},
+            {'url': 'http://dev:8989', 'alias': 'dev'},  # missing api_key
+        ]
+        errors = validate_service_config('sonarr', config)
+        assert len(errors) == 1
+        assert 'dev' in errors[0]
+        assert "missing 'api_key'" in errors[0]
+
+    def test_error_includes_alias(self):
+        """Error message includes the alias for identification."""
+        from scraparr.config_loader import validate_service_config
+        config = {'alias': 'production', 'url': 'http://sonarr:8989'}
+        errors = validate_service_config('sonarr', config)
+        assert 'production' in errors[0]

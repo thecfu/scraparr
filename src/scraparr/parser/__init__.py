@@ -4,10 +4,7 @@ import os
 from typing import Any, Optional, Dict, Mapping
 from dotenv import dotenv_values
 
-from scraparr.const import ACTIVE_CONNECTORS
-
-# All known service field names (used to distinguish SONARR_URL from SONARR_PROD_URL)
-SERVICE_FIELDS = {'url', 'api_key', 'alias', 'api_version', 'interval', 'detailed', 'within'}
+from scraparr.const import ACTIVE_CONNECTORS, SERVICE_FIELDS
 
 
 def _parse_service_field(env_key: str, prefix: str) -> Optional[tuple]:
