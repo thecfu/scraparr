@@ -5,6 +5,7 @@ from prometheus_client import Gauge
 # General Metrics
 LAST_SCRAPE = Gauge("kavita_last_scrape", "Last time the Kavita Service was scraped", ["alias"])
 SCRAPE_DURATION = Gauge("kavita_scrape_duration", "Duration of the last Kavita scrape", ["alias"])
+API_KEY_EXPIRATION = Gauge("kavita_api_key_expiration", "Unix timestamp when API key expires, 0 if no expiration", ["alias"])
 
 # Version Info
 VERSION = Gauge("kavita_version", "Kavita version", ["alias", "version"])

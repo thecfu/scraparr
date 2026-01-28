@@ -65,19 +65,64 @@ class Module(ConnectorModule):  # pylint: disable=too-many-instance-attributes
 
     def __init__(self, config):
         ConnectorModule.__init__(self, config, "kavita")
+        # Use legacy JWT authentication if legacy_auth=true, otherwise use x-api-key header
+        self.legacy_auth = config.get('legacy_auth', False)
+        self.api_key_expires_at = None
+        # JWT authentication fields (only used when legacy_auth=true)
         self.jwt = None
         self.refresh_token = None
         self.expires_at = None
 
     def _get_auth_header(self):
         """Get the authorization header for API requests"""
-        if self.expires_at is None or time.time() >= self.expires_at - 60:
-            if not self._generate_jwt():
-                return None
-        return {"Authorization": f"Bearer {self.jwt}"}
+        # Use JWT authentication if legacy_auth is enabled
+        if self.legacy_auth:
+            if self.expires_at is None or time.time() >= self.expires_at - 60:
+                if not self._generate_jwt():
+                    return None
+            return {"Authorization": f"Bearer {self.jwt}"}
+
+        # Default: use x-api-key header (Auth Key method)
+        return {"x-api-key": self.api_key}
+
+    def _check_api_key_expiration(self):
+        """Check if the API key has an expiration date. Null implies no expiration."""
+        if self.legacy_auth:
+            return None
+
+        try:
+            session = _get_session()
+            api_url = f"{self.url}/api/plugin/authkey-expires"
+            res = session.get(
+                api_url, headers={"x-api-key": self.api_key}, timeout=20
+            )
+            if res.status_code == 200:
+                expiration = res.json()
+                self.api_key_expires_at = expiration  # None if no expiration
+                if expiration:
+                    self.logger.info("API key expires at: %s", expiration)
+                    # Parse ISO datetime and convert to unix timestamp
+                    from datetime import datetime
+                    try:
+                        exp_dt = datetime.fromisoformat(
+                            expiration.replace("Z", "+00:00"))
+                        kavita_metrics.API_KEY_EXPIRATION.labels(
+                            self.alias).set(exp_dt.timestamp())
+                    except (ValueError, TypeError):
+                        kavita_metrics.API_KEY_EXPIRATION.labels(self.alias).set(0)
+                else:
+                    self.logger.debug("API key has no expiration")
+                    kavita_metrics.API_KEY_EXPIRATION.labels(self.alias).set(0)
+                return expiration
+            self.logger.warning(
+                "Failed to check API key expiration: %s", res.status_code
+            )
+        except (RequestException, ValueError) as e:
+            self.logger.debug("Error checking API key expiration: %s", e)
+        return None
 
     def _generate_jwt(self):
-        """Generate JWT Token for Kavita API Authentication"""
+        """Generate JWT Token for Kavita API Authentication (legacy fallback method)"""
         try:
             session = _get_session()
             auth_url = (f"{self.url}/api/Plugin/authenticate"
@@ -128,6 +173,7 @@ class Module(ConnectorModule):  # pylint: disable=too-many-instance-attributes
         kavita_metrics.FILE_EXTENSION_COUNT.remove_by_labels(alias_filter)
         kavita_metrics.FILE_EXTENSION_SIZE.remove_by_labels(alias_filter)
         kavita_metrics.VERSION.remove_by_labels(alias_filter)
+        kavita_metrics.API_KEY_EXPIRATION.remove_by_labels(alias_filter)
         # Detailed metrics
         kavita_metrics.LIBRARY_TOTAL_PAGES.remove_by_labels(alias_filter)
         kavita_metrics.LIBRARY_TOTAL_WORD_COUNT.remove_by_labels(alias_filter)
@@ -260,9 +306,13 @@ class Module(ConnectorModule):  # pylint: disable=too-many-instance-attributes
         """Scrape the Kavita Service with session pooling and parallel requests"""
         initial_time = time.time()
 
-        if not self._generate_jwt():
-            UP.labels(self.alias, 'kavita').set(0)
-            return None
+        # Use JWT if legacy_auth enabled, otherwise check API key expiration
+        if self.legacy_auth:
+            if not self._generate_jwt():
+                UP.labels(self.alias, 'kavita').set(0)
+                return None
+        else:
+            self._check_api_key_expiration()
 
         UP.labels(self.alias, 'kavita').set(1)
 
