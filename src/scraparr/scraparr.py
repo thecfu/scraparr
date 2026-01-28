@@ -47,9 +47,9 @@ try:
 
     # Validate required fields in merged config
     validation_errors = []
-    for service in ACTIVE_CONNECTORS:
-        if service in config_file:
-            validation_errors.extend(validate_service_config(service, config_file[service]))
+    for svc in ACTIVE_CONNECTORS:
+        if svc in config_file:
+            validation_errors.extend(validate_service_config(svc, config_file[svc]))
     if validation_errors:
         for error in validation_errors:
             logging.error("Invalid config: %s", error)
