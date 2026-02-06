@@ -8,6 +8,7 @@ import concurrent.futures
 
 from binascii import Error as BinasciiError
 from requests.exceptions import RequestException
+from datetime import datetime
 
 from scraparr.connectors.module import ConnectorModule, _get_session
 from scraparr.metrics.general import UP
@@ -102,7 +103,6 @@ class Module(ConnectorModule):  # pylint: disable=too-many-instance-attributes
                 if expiration:
                     self.logger.info("API key expires at: %s", expiration)
                     # Parse ISO datetime and convert to unix timestamp
-                    from datetime import datetime
                     try:
                         exp_dt = datetime.fromisoformat(
                             expiration.replace("Z", "+00:00"))
