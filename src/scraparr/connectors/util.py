@@ -6,7 +6,7 @@ This module contains helper functions to avoid duplicate code.
 
 import logging
 
-log_level = "info" # pylint: disable=invalid-name
+log_level = "debug" # pylint: disable=invalid-name
 
 class ModuleAliasFormatter(logging.Formatter):
     """Custom Formatter to add module_name and alias to log records"""
@@ -18,22 +18,23 @@ class ModuleAliasFormatter(logging.Formatter):
 class AliasAdapter(logging.LoggerAdapter):
     """Logger Adapter to inject module_name and alias into log records"""
     def process(self, msg, kwargs):
-        extra = kwargs.get('extra', {})
-        extra['module_name'] = extra.get('module_name', 'unknown')
-        extra['alias'] = extra.get('alias', 'none')
+        extra = dict(self.extra)
+        extra.update(kwargs.get('extra', {}))
+
         kwargs['extra'] = extra
         return msg, kwargs
 
 def get_logger(module_name, alias):
     """Get a Logger with Module Name and Alias"""
     formatter = ModuleAliasFormatter(
-        '[%(asctime)s] [%(levelname)s] [%(module_name)s] [%(alias)s] %(message)s'
+        "[%(asctime)s] [%(levelname)s] [%(module_name)s] [%(alias)s] %(message)s"
     )
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
     logger = logging.getLogger(module_name)
     level = getattr(logging, log_level.upper(), logging.INFO)
     logger.setLevel(level)
+    logger.propagate = False
     if not logger.hasHandlers():
         logger.addHandler(handler)
     return AliasAdapter(logger, {'module_name': module_name, 'alias': alias})
