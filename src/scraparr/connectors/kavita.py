@@ -5,10 +5,10 @@ import base64
 import json
 import time
 import concurrent.futures
+from datetime import datetime
 
 from binascii import Error as BinasciiError
 from requests.exceptions import RequestException
-from datetime import datetime
 
 from scraparr.connectors.module import ConnectorModule, _get_session
 from scraparr.metrics.general import UP
