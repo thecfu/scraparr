@@ -99,9 +99,12 @@ class Module(ConnectorModule):  # pylint: disable=too-many-instance-attributes
             )
             if res.status_code == 200:
                 expiration = res.json()
-                self.api_key_expires_at = expiration  # None if no expiration
                 if expiration:
-                    self.logger.info("API key expires at: %s", expiration)
+                    expiration = expiration.get("expiresAt")
+                    if not expiration:
+                        raise RequestException("API key expiration endpoint missing 'expiresAt' field")
+                    self.api_key_expires_at = expiration  # None if no expiration
+                    self.logger.debug("API key expires at: %s", expiration)
                     # Parse ISO datetime and convert to unix timestamp
                     try:
                         exp_dt = datetime.fromisoformat(
@@ -111,6 +114,7 @@ class Module(ConnectorModule):  # pylint: disable=too-many-instance-attributes
                     except (ValueError, TypeError):
                         kavita_metrics.API_KEY_EXPIRATION.labels(self.alias).set(0)
                 else:
+                    self.api_key_expires_at = None
                     self.logger.debug("API key has no expiration")
                     kavita_metrics.API_KEY_EXPIRATION.labels(self.alias).set(0)
                 return expiration
@@ -118,6 +122,7 @@ class Module(ConnectorModule):  # pylint: disable=too-many-instance-attributes
                 "Failed to check API key expiration: %s", res.status_code
             )
         except (RequestException, ValueError) as e:
+            self.api_key_expires_at = None
             self.logger.debug("Error checking API key expiration: %s", e)
         return None
 
@@ -306,6 +311,8 @@ class Module(ConnectorModule):  # pylint: disable=too-many-instance-attributes
         """Scrape the Kavita Service with session pooling and parallel requests"""
         initial_time = time.time()
 
+        self.logger.debug("Scraping Kavita Service")
+
         # Use JWT if legacy_auth enabled, otherwise check API key expiration
         if self.legacy_auth:
             if not self._generate_jwt():
@@ -330,6 +337,7 @@ class Module(ConnectorModule):  # pylint: disable=too-many-instance-attributes
         kavita_metrics.LAST_SCRAPE.labels(self.alias).set(end_time)
         kavita_metrics.SCRAPE_DURATION.labels(self.alias).set(end_time - initial_time)
 
+        self.logger.debug("Scrape completed in %.2f seconds", end_time - initial_time)
         return {
             "server_info": server_info,
             "server_stats": server_stats,
@@ -416,15 +424,14 @@ class Module(ConnectorModule):  # pylint: disable=too-many-instance-attributes
 
     def _update_file_metrics(self, file_breakdown):
         """Update file extension metrics"""
-        for breakdown_item in file_breakdown:
-            for ext_item in breakdown_item.get("fileBreakdown", []):
-                extension = ext_item.get("extension", "unknown")
-                count = ext_item.get("totalFiles", 0)
-                size = ext_item.get("totalSize", 0)
-                kavita_metrics.FILE_EXTENSION_COUNT.labels(
-                    self.alias, extension).set(count)
-                kavita_metrics.FILE_EXTENSION_SIZE.labels(
-                    self.alias, extension).set(size)
+        for ext_item in file_breakdown.get("fileBreakdown", []):
+            extension = ext_item.get("extension", "unknown")
+            count = ext_item.get("totalFiles", 0)
+            size = ext_item.get("totalSize", 0)
+            kavita_metrics.FILE_EXTENSION_COUNT.labels(
+                self.alias, extension).set(count)
+            kavita_metrics.FILE_EXTENSION_SIZE.labels(
+                self.alias, extension).set(size)
 
     def update_metrics(self, data):
         """Update the Metrics for the Kavita Service"""
