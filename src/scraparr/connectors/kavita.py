@@ -102,7 +102,9 @@ class Module(ConnectorModule):  # pylint: disable=too-many-instance-attributes
                 if expiration:
                     expiration = expiration.get("expiresAt")
                     if not expiration:
-                        raise RequestException("API key expiration endpoint missing 'expiresAt' field")
+                        raise RequestException(
+                            "API key expiration endpoint missing 'expiresAt' field"
+                        )
                     self.api_key_expires_at = expiration  # None if no expiration
                     self.logger.debug("API key expires at: %s", expiration)
                     # Parse ISO datetime and convert to unix timestamp
