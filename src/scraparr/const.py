@@ -24,4 +24,5 @@ BEAUTIFUL_CONNECTORS = ", ".join(ACTIVE_CONNECTORS[:-1]) + " or " + ACTIVE_CONNE
 OPTIONAL_FIELDS = [
     'alias', 'api_version', 'interval',
     'detailed', 'within', 'legacy_auth',
+    'episode_quality_stats',
 ]
