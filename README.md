@@ -92,8 +92,9 @@ A Unraid Template is available in the Repo of jordan-dalby: https://github.com/j
 Scraparr can be configured either by using a [config.yaml](config.yaml) file or by setting environment variables.  
 For environment variables, please refer to the [sample.env](sample.env) file. You can set them directly as environment options or create an `.env` file and import it using your container host.
 
-> [!IMPORTANT]
-> The environment variables don't support the configuration of Multiple Instances to use them you need to switch to the config
+> [!TIP]
+> Environment variables now support multiple instances using alias-based naming.
+> See [sample.env](sample.env) for examples.
 
 Make sure the configuration specifies the URLs and API keys for the *arr services you want to monitor.
 
@@ -127,6 +128,22 @@ sonarr:
     api_key: key
     alias: sonarr2
 ```
+
+#### Multiple Instances via Environment Variables
+
+You can also configure multiple instances using environment variables with alias-based naming:
+
+```bash
+# Main Sonarr instance
+SONARR_MAIN_URL=http://sonarr:8989
+SONARR_MAIN_API_KEY=main-key
+
+# Secondary Sonarr instance
+SONARR_SECONDARY_URL=http://sonarr2:8989
+SONARR_SECONDARY_API_KEY=secondary-key
+```
+
+The alias (e.g., `MAIN`, `SECONDARY`) becomes the instance identifier in metrics.
 
 ## Usage
 
