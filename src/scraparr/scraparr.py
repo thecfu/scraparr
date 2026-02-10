@@ -15,34 +15,44 @@ import logging
 from wsgiref.simple_server import make_server
 
 import yaml
+from dotenv import load_dotenv
 from prometheus_client import make_wsgi_app
 
 from scraparr.connectors import util
 from scraparr.middleware import Middleware
 import scraparr.connectors
 from scraparr.parser import parse_env_config
-from scraparr.config_loader import load_yaml_config, MissingEnvVarError
+from scraparr.config_loader import (
+    load_yaml_config_safe, deep_merge, coerce_config_types, MissingEnvVarError,
+    validate_service_config
+)
 
 from scraparr.const import ACTIVE_CONNECTORS, BEAUTIFUL_CONNECTORS
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Load .env file into os.environ (if present) before parsing config
+# This allows ${VAR} in YAML to reference .env values
+load_dotenv()
 
 CONFIG_FILE_LOCATION = "/scraparr/config/config.yaml"
 
 config_file = None
 
 try:
-    config_file = load_yaml_config(CONFIG_FILE_LOCATION)
-except FileNotFoundError:
-    logging.error(
-    	"Configuration file not found: %s, will try to load from environment variables",
-    	CONFIG_FILE_LOCATION
-    )
+    yaml_config = load_yaml_config_safe(CONFIG_FILE_LOCATION)
+    env_config = parse_env_config()
+    # Merge: YAML (base) <- environment variables (includes .env values)
+    config_file = coerce_config_types(deep_merge(yaml_config, env_config))
 
-    config_file = parse_env_config()
-
-    if not config_file:
-        logging.error("No configuration found in environment variables.")
+    # Validate required fields in merged config
+    validation_errors = []
+    for svc in ACTIVE_CONNECTORS:
+        if svc in config_file:
+            validation_errors.extend(validate_service_config(svc, config_file[svc]))
+    if validation_errors:
+        for error in validation_errors:
+            logging.error("Invalid config: %s", error)
         sys.exit(1)
 except PermissionError:
     logging.error("Permission denied to read the configuration file: %s", CONFIG_FILE_LOCATION)
@@ -53,18 +63,21 @@ except yaml.YAMLError as exc:
 except MissingEnvVarError as exc:
     logging.error("Missing required environment variable in config: %s", exc)
     sys.exit(1)
+except ValueError as exc:
+    logging.error("Invalid config value: %s", exc)
+    sys.exit(1)
 
 if not config_file:
     logging.error("Configuration is empty. Please provide a valid configuration.")
     sys.exit(1)
 
-GENERAL = config_file.get('GENERAL', {})
+GENERAL = config_file.get('general', {})
 PATH = GENERAL.get('path', "/metrics")
 ADDRESS = GENERAL.get('address', "0.0.0.0")
 PORT = int(GENERAL.get('port', 7100))
 WORKERS = GENERAL.get('workers', 5)
 
-AUTH = config_file.get('AUTH', {})
+AUTH = config_file.get('auth', {})
 USERNAME = AUTH.get('username', None)
 PASSWORD = AUTH.get('password', None)
 BEARER_TOKEN = AUTH.get('token', None)
