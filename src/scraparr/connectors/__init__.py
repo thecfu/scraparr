@@ -10,15 +10,14 @@ import logging
 import concurrent.futures
 
 from scraparr.const import API_VERSIONS
-from scraparr.metrics.clear import clear
-
 
 class Connectors:
     """Class to initialize Variables that are used to Identify the Connectors
     and log the last Scrape"""
-    def __init__(self):
+    def __init__(self, workers):
         self.connectors = {}
         self.last_scrape = {}
+        self.workers = workers
 
     def add_connector(self, service, configs):
         """Function to add a Connector on successful load into the List of Connectors"""
@@ -30,12 +29,8 @@ class Connectors:
                 for config in configs:
                     if config.get('api_version') is None:
                         config['api_version'] = API_VERSIONS[service]
-                    connector_entry = {
-                        "function": importer,
-                        "config": config
-                    }
-                    self.connectors[service].append(connector_entry)
-                    self.last_scrape[service] = [None] * len(configs)
+                    connector = importer.Module(config)
+                    self.connectors[service].append(connector)
         else:
             logging.error("Couldn't import Connector")
 
@@ -53,45 +48,31 @@ class Connectors:
         """Function to get the Hash of the Data"""
         return hashlib.md5(json.dumps(data, sort_keys=True).encode('utf-8')).hexdigest()
 
-    def scrape_service(self, service, config_index):
-        """Function to Scrape the Service and Update the Metrics"""
-        config = self.connectors[service][config_index]["config"]
-        alias = config.get('alias', service)
-        scrape_data = self.connectors[service][config_index]["function"].scrape(config)
-        if scrape_data:
-            new_hash = self.get_hash(scrape_data)
-            if new_hash != self.last_scrape[service][config_index]:
-                self.last_scrape[service][config_index] = new_hash
-                func = self.connectors[service][config_index]["function"]
-                func.update_metrics(
-                    scrape_data,
-                    config.get('detailed', False),
-                    alias
-                )
-                logging.info("%s metrics updated for config %s", service, alias)
-            else:
-                logging.info("No changes detected in %s for config %s", service, alias)
-        else:
-            logging.error("%s scrape failed for config %s", service, alias)
-
     def scrape(self):
-        """Function to Scrape all the Services"""
+        """Run all connectors in a threaded scheduler loop"""
+        next_run = []
+        for service, conns in self.connectors.items():
+            for i, conn in enumerate(conns):
+                next_run.append([service, i, conn, time.time(), None])
 
-        running = True
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.workers) as executor:
+            while True:
+                now = time.time()
+                for run in next_run:
+                    service, i, connector, run_at, future = run
+                    if future is not None and future.done():
+                        # Update next run time after completion
+                        run[3] = now + connector.interval
+                        run[4] = None
+                    if future is None and now >= run_at:
+                        run[4] = executor.submit(self._scrape_connector, service, connector)
+                sleep_time = min(max(run[3] - now, 0) for run in next_run)
+                time.sleep(sleep_time)
 
-        def scrape_with_interval(service, config_index, interval):
-            while running:
-                self.scrape_service(service, config_index)
-                time.sleep(interval)
-
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = []
-            for service, configs in self.connectors.items():
-                for config_index, config in enumerate(configs):
-                    interval = config["config"].get('interval', 30)
-                    futures.append(executor.submit(
-                        scrape_with_interval,
-                        service,
-                        config_index,
-                        interval
-                    ))
+    @staticmethod
+    def _scrape_connector(service, connector):
+        logging.debug("Scraping %s config %s", service, connector)
+        try:
+            connector.start()
+        except Exception as e: # pylint: disable=broad-except
+            logging.error("[%s] scrape failed: %s", service, e)

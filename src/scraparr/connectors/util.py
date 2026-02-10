@@ -5,27 +5,39 @@ This module contains helper functions to avoid duplicate code.
 """
 
 import logging
-import requests
 
+log_level = "debug" # pylint: disable=invalid-name
 
-def get(api_url, api_key):
-    """Get data from API and Logs errors"""
-    try:
-        r = requests.get(api_url, headers={"X-Api-Key": api_key}, timeout=20)
-        if r.status_code == 200:
-            return r.json()
-        if r.status_code == 401:
-            logging.error("Unauthorized when trying to access %s: %s", api_url, r.status_code)
-        elif r.status_code == 404:
-            logging.error("Not Found, check API Version and Docs: %s, returned HTML %s",
-                          api_url, r.status_code)
-        else:
-            logging.error("Request for %s returned unexpected HTML Status Code: %s",
-                          api_url, r.status_code)
-    except requests.exceptions.RequestException as e:
-        logging.error("Request for %s failed with: %s", api_url, e)
-    return {}
+class ModuleAliasFormatter(logging.Formatter):
+    """Custom Formatter to add module_name and alias to log records"""
+    def format(self, record):
+        record.module_name = getattr(record, 'module_name', 'unknown')
+        record.alias = getattr(record, 'alias', 'none')
+        return super().format(record)
 
+class AliasAdapter(logging.LoggerAdapter):
+    """Logger Adapter to inject module_name and alias into log records"""
+    def process(self, msg, kwargs):
+        extra = dict(self.extra)
+        extra.update(kwargs.get('extra', {}))
+
+        kwargs['extra'] = extra
+        return msg, kwargs
+
+def get_logger(module_name, alias):
+    """Get a Logger with Module Name and Alias"""
+    formatter = ModuleAliasFormatter(
+        "[%(asctime)s] [%(levelname)s] [%(module_name)s] [%(alias)s] %(message)s"
+    )
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+    logger = logging.getLogger(module_name)
+    level = getattr(logging, log_level.upper(), logging.INFO)
+    logger.setLevel(level)
+    logger.propagate = False
+    if not logger.hasHandlers():
+        logger.addHandler(handler)
+    return AliasAdapter(logger, {'module_name': module_name, 'alias': alias})
 
 def update_status(status, root_folder, status_labels):
     """Update the Status"""
@@ -43,6 +55,18 @@ def update_genre_count(genres, genre_count, root_folder):
             genre_count[genre][root_folder] = 0
         genre_count[genre]["total"] += 1
         genre_count[genre][root_folder] += 1
+
+
+def update_type_count(releases, type_count, root_folder):
+    """Update the Release Type count for Lidarr"""
+    for release in releases:
+        release_type = release["albumType"]
+        if release_type not in type_count:
+            type_count[release_type] = {"total": 0, root_folder: 0}
+        elif root_folder not in type_count[release_type]:
+            type_count[release_type][root_folder] = 0
+        type_count[release_type]["total"] += 1
+        type_count[release_type][root_folder] += 1
 
 
 def increase_quality_count(quality_count, files, path):
@@ -138,44 +162,3 @@ def update_media_metrics(media, alias):
             used_size[1].labels(alias, path).set(size)
 
     status_update(status_labels, alias)
-
-
-def get_root_folder(url, api_version, api_key):
-    """Get the Root Folder Data"""
-
-    def filter_data(folder, disks):
-        report = []
-        seen_paths = set()  # To keep track of added paths
-
-        for rootfolder in folder:
-            for disk in disks:
-                if disk["path"] == rootfolder["path"]:
-                    if not disk["path"] in seen_paths:
-                        report.append(disk)
-                        seen_paths.add(disk["path"])
-                    break
-            else:
-                for disk in disks:
-                    if rootfolder["path"].startswith(disk["path"]) and disk["path"] != '/':
-                        if not disk["path"] in seen_paths:
-                            report.append(disk)
-                            seen_paths.add(disk["path"])
-                        break
-                else:
-                    logging.warning("No diskspace data found for %s,"
-                                    " using only available Data", rootfolder["path"])
-                    report.append({
-                        "path": rootfolder["path"],
-                        "freeSpace": rootfolder["freeSpace"],
-                        "totalSpace": -1
-                    })
-                    seen_paths.add(rootfolder["path"])
-        return report
-
-    data = get(f"{url}/api/{api_version}/rootfolder", api_key)
-    if data:
-        diskspace_data = get(f"{url}/api/{api_version}/diskspace", api_key)
-        if diskspace_data:
-            return filter_data(data, diskspace_data)
-    logging.warning("No rootfolder data found")
-    return None

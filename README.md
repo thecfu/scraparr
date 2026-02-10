@@ -92,8 +92,9 @@ A Unraid Template is available in the Repo of jordan-dalby: https://github.com/j
 Scraparr can be configured either by using a [config.yaml](config.yaml) file or by setting environment variables.  
 For environment variables, please refer to the [sample.env](sample.env) file. You can set them directly as environment options or create an `.env` file and import it using your container host.
 
-> [!IMPORTANT]
-> The environment variables don't support the configuration of Multiple Instances to use them you need to switch to the config
+> [!TIP]
+> Environment variables now support multiple instances using alias-based naming.
+> See [sample.env](sample.env) for examples.
 
 Make sure the configuration specifies the URLs and API keys for the *arr services you want to monitor.
 
@@ -128,6 +129,22 @@ sonarr:
     alias: sonarr2
 ```
 
+#### Multiple Instances via Environment Variables
+
+You can also configure multiple instances using environment variables with alias-based naming:
+
+```bash
+# Main Sonarr instance
+SONARR_MAIN_URL=http://sonarr:8989
+SONARR_MAIN_API_KEY=main-key
+
+# Secondary Sonarr instance
+SONARR_SECONDARY_URL=http://sonarr2:8989
+SONARR_SECONDARY_API_KEY=secondary-key
+```
+
+The alias (e.g., `MAIN`, `SECONDARY`) becomes the instance identifier in metrics.
+
 ## Usage
 
 Once the service is running, it will expose metrics at http://localhost:7100/metrics (default port). You can configure Prometheus to scrape these metrics by adding the following job to your Prometheus configuration:
@@ -159,6 +176,31 @@ If you want to verify your code before pushing to prevent the Pipeline to fail. 
 ```bash
 # remove the build arg if not needed
 docker compose --file compose-dev.yaml up --build
+```
+
+### Local Development with Just and uv
+
+For local development outside Docker, you can use [just](https://github.com/casey/just) and [uv](https://github.com/astral-sh/uv) to run common tasks:
+
+```bash
+# Install just and uv (if not already installed)
+# macOS: brew install just uv
+# Linux: see https://github.com/casey/just and https://github.com/astral-sh/uv
+
+# Install dev dependencies
+just dev-install
+
+# Run all checks (lint + tests)
+just check
+
+# Run only linting
+just lint
+
+# Run only tests (with coverage)
+just test
+
+# Run tests without coverage (faster)
+just test-quick
 ```
 
 ## 🚀 Stay Connected

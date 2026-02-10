@@ -3,39 +3,74 @@ Module to handle the Metrics of the SonarrAPI
 """
 
 import time
-import logging
+from concurrent.futures import ThreadPoolExecutor
+
+import requests
 from dateutil.parser import parse
 
 from scraparr.connectors import util
+from scraparr.connectors.module import ConnectorModule
 from scraparr.metrics.general import UP
 
-class SonarrApi:
+class SonarrApi(ConnectorModule):
     """Class to handle the SonarrAPI Metrics"""
 
     def __init__(self, service, config, metrics):
-        self.service = service
-        self.url = config.get('url')
-        self.api_key = config.get('api_key')
-        self.api_version = config.get('api_version')
-        self.alias = config.get('alias', 'sonarr')
+        ConnectorModule.__init__(self, config, service)
         self.metrics = metrics
-        self.detailed = config.get('detailed', False)
+        self.episode_quality_stats = config.get('episode_quality_stats', True)
+        self.url = f"{self.url}/api/{self.api_version}"
+
+    def clear(self):
+        """Clear the metrics"""
+
+        self.metrics.SERIES_EPISODE_COUNT.remove_by_labels({"alias": self.alias})
+        self.metrics.SERIES_MISSING_EPISODE_COUNT.remove_by_labels({"alias": self.alias})
+        self.metrics.SERIES_COUNT.remove_by_labels({"alias": self.alias})
+        self.metrics.SERIES_DISK_SIZE.remove_by_labels({"alias": self.alias})
+        self.metrics.SERIES_DOWNLOAD_PERCENTAGE.remove_by_labels({"alias": self.alias})
+        self.metrics.SERIES_MONITORED.remove_by_labels({"alias": self.alias})
+
+    def _fetch_all_episode_files(self, series_list, max_workers=10):
+        """
+        Fetch episode files for all series in parallel using ThreadPoolExecutor.
+
+        Args:
+            series_list: List of series dictionaries from the /series endpoint
+            max_workers: Maximum number of concurrent API calls (default 10)
+
+        Returns:
+            Dict mapping series_id -> list of episode files
+        """
+        def fetch_episodes(series_id):
+            try:
+                episodes = self.get(f"/episodefile?seriesId={series_id}")
+                return series_id, episodes
+            except (requests.exceptions.RequestException, ValueError) as e:
+                self.logger.warning("Failed to fetch episode files for series %s: %s", series_id, e)
+                return series_id, []
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            results = executor.map(fetch_episodes, [s['id'] for s in series_list])
+            return dict(results)
 
     def get_series(self):
         """Grab the Series from the SonarrAPI Endpoint"""
 
         initial_time = time.time()
-        res = util.get(f"{self.url}/api/{self.api_version}/series", self.api_key)
-        end_time = time.time()
-        base_url = f"{self.url}/api/{self.api_version}/"
-
+        res = self.get("/series")
         if res == {}:
             UP.labels(self.alias, self.service).set(0)
         else:
-            for series in res:
-                episodes = util.get(f"{base_url}episodefile?seriesId={series['id']}", self.api_key)
-                series["episodes"] = episodes
+            if self.episode_quality_stats:
+                episode_map = self._fetch_all_episode_files(res)
+                for series in res:
+                    series["episodes"] = episode_map.get(series['id'], [])
+            else:
+                for series in res:
+                    series["episodes"] = []
 
+            end_time = time.time()
             UP.labels(self.alias, self.service).set(1)
             self.metrics.LAST_SCRAPE.labels(self.alias).set(end_time)
             self.metrics.SCRAPE_DURATION.labels(self.alias).set(end_time - initial_time)
@@ -91,12 +126,12 @@ class SonarrApi:
             stats = serie.get("statistics", None)
 
             if stats is None:
-                logging.warning("No statistics found for %s", title)
+                self.logger.warning("No statistics found for %s", title)
                 continue
 
-            util.increase_quality_count(quality_count, serie["episodes"], serie["rootFolderPath"])
-
             root_folder = serie["rootFolderPath"]
+
+            util.increase_quality_count(quality_count, serie["episodes"], root_folder)
 
             util.update_count(
                 [stats["sizeOnDisk"], used_size],
@@ -169,12 +204,12 @@ class SonarrApi:
     def scrape(self):
         """Scrape the SonarrAPI Service"""
 
-        queue = util.get(f"{self.url}/api/{self.api_version}/queue/status", self.api_key)
-        status = util.get(f"{self.url}/api/{self.api_version}/system/status", self.api_key)
+        queue = self.get("/queue/status")
+        status = self.get("/system/status")
 
         scrape_data = {
             "system": {
-                "root_folder": util.get_root_folder(self.url, self.api_version, self.api_key),
+                "root_folder": self.get_root_folder(),
                 "queue": queue,
                 "status": status
             },
@@ -182,7 +217,6 @@ class SonarrApi:
         }
 
         if scrape_data["data"] == {} or scrape_data["system"]["status"] == {}:
-            logging.error("No Data found for Sonarr, assuming Failure")
             return {}
 
         return scrape_data
