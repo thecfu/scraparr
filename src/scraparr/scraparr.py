@@ -71,13 +71,13 @@ if not config_file:
     logging.error("Configuration is empty. Please provide a valid configuration.")
     sys.exit(1)
 
-GENERAL = config_file.get('general', {})
+GENERAL = config_file.get('general') or {}
 PATH = GENERAL.get('path', "/metrics")
 ADDRESS = GENERAL.get('address', "0.0.0.0")
 PORT = int(GENERAL.get('port', 7100))
 WORKERS = GENERAL.get('workers', 5)
 
-AUTH = config_file.get('auth', {})
+AUTH = config_file.get('auth') or {}
 USERNAME = AUTH.get('username', None)
 PASSWORD = AUTH.get('password', None)
 BEARER_TOKEN = AUTH.get('token', None)
