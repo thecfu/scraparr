@@ -117,16 +117,19 @@ class Module(ConnectorModule):  # pylint: disable=too-many-instance-attributes
                         kavita_metrics.API_KEY_EXPIRATION.labels(self.alias).set(0)
                 else:
                     if self.api_key_expires_at is not None:
-                        kavita_metrics.API_KEY_EXPIRATION.labels(self.alias).set(self.api_key_expires_at)
+                        (kavita_metrics.API_KEY_EXPIRATION.labels(self.alias)
+                         .set(self.api_key_expires_at))
                     else:
                         kavita_metrics.API_KEY_EXPIRATION.labels(self.alias).set(0)
                     self.api_key_expires_at = None
                     self.logger.debug("API key has no expiration")
                 return expiration
-            elif res.status_code == 401:
-                self.logger.error("Unauthorized when checking API key expiration: %s", res.status_code)
+            if res.status_code == 401:
+                self.logger.error("Unauthorized when checking API key expiration: %s",
+                                  res.status_code)
                 if self.api_key_expires_at is not None:
-                    kavita_metrics.API_KEY_EXPIRATION.labels(self.alias).set(self.api_key_expires_at)
+                    (kavita_metrics.API_KEY_EXPIRATION.labels(self.alias)
+                     .set(self.api_key_expires_at))
                 else:
                     kavita_metrics.API_KEY_EXPIRATION.labels(self.alias).set(0)
                 return None
