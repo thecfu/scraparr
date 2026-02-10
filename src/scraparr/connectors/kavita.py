@@ -116,10 +116,20 @@ class Module(ConnectorModule):  # pylint: disable=too-many-instance-attributes
                     except (ValueError, TypeError):
                         kavita_metrics.API_KEY_EXPIRATION.labels(self.alias).set(0)
                 else:
+                    if self.api_key_expires_at is not None:
+                        kavita_metrics.API_KEY_EXPIRATION.labels(self.alias).set(self.api_key_expires_at)
+                    else:
+                        kavita_metrics.API_KEY_EXPIRATION.labels(self.alias).set(0)
                     self.api_key_expires_at = None
                     self.logger.debug("API key has no expiration")
-                    kavita_metrics.API_KEY_EXPIRATION.labels(self.alias).set(0)
                 return expiration
+            elif res.status_code == 401:
+                self.logger.error("Unauthorized when checking API key expiration: %s", res.status_code)
+                if self.api_key_expires_at is not None:
+                    kavita_metrics.API_KEY_EXPIRATION.labels(self.alias).set(self.api_key_expires_at)
+                else:
+                    kavita_metrics.API_KEY_EXPIRATION.labels(self.alias).set(0)
+                return None
             self.logger.warning(
                 "Failed to check API key expiration: %s", res.status_code
             )
@@ -321,7 +331,8 @@ class Module(ConnectorModule):  # pylint: disable=too-many-instance-attributes
                 UP.labels(self.alias, 'kavita').set(0)
                 return None
         else:
-            self._check_api_key_expiration()
+            if self._check_api_key_expiration() is None:
+                return None
 
         UP.labels(self.alias, 'kavita').set(1)
 
@@ -329,11 +340,22 @@ class Module(ConnectorModule):  # pylint: disable=too-many-instance-attributes
         server_stats = self.get_server_stats()
         libraries = self.get_libraries()
 
+        if server_info is None:
+            self.logger.error("Failed to retrieve server info")
+        if server_stats is None:
+            self.logger.error("Failed to retrieve server stats")
+        if libraries is None:
+            self.logger.error("Failed to retrieve libraries")
+
         if any(x is None for x in (server_info, server_stats, libraries)):
             UP.labels(self.alias, 'kavita').set(0)
             return None
 
         library_data = self._fetch_library_data(libraries)
+
+        if library_data is None:
+            self.logger.error("Failed to retrieve library data")
+            return None
 
         end_time = time.time()
         kavita_metrics.LAST_SCRAPE.labels(self.alias).set(end_time)
