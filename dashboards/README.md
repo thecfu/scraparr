@@ -16,3 +16,5 @@ https://grafana.com/grafana/dashboards/22934
 ![Dashboard 1 Readarr](/.github/assets/grafana_dashboard1_readarr.png)
 ### Jellyseerr & Overseerr
 ![Dashboard 1 Jellyseerr & Overseerr](/.github/assets/grafana_dashboard1_seerr.png)
+### Kavita
+![Dashboard 1 Kavita](/.github/assets/grafana_dashboard1_kavita.png)
