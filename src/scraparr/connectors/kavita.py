@@ -132,14 +132,14 @@ class Module(ConnectorModule):  # pylint: disable=too-many-instance-attributes
                      .set(self.api_key_expires_at))
                 else:
                     kavita_metrics.API_KEY_EXPIRATION.labels(self.alias).set(0)
-                return None
+                return -1
             self.logger.warning(
                 "Failed to check API key expiration: %s", res.status_code
             )
         except (RequestException, ValueError) as e:
             self.api_key_expires_at = None
             self.logger.debug("Error checking API key expiration: %s", e)
-        return None
+        return -1
 
     def _generate_jwt(self):
         """Generate JWT Token for Kavita API Authentication (legacy fallback method)"""
@@ -334,7 +334,7 @@ class Module(ConnectorModule):  # pylint: disable=too-many-instance-attributes
                 UP.labels(self.alias, 'kavita').set(0)
                 return None
         else:
-            if self._check_api_key_expiration() is None:
+            if self._check_api_key_expiration() == -1:
                 return None
 
         UP.labels(self.alias, 'kavita').set(1)
