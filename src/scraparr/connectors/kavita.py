@@ -100,13 +100,16 @@ class Module(ConnectorModule):  # pylint: disable=too-many-instance-attributes
             if res.status_code == 200:
                 expiration = res.json()
                 if expiration:
-                    expiration = expiration.get("expiresAt")
-                    if not expiration:
+                    if "expiresAt" not in expiration:
                         raise RequestException(
                             "API key expiration endpoint missing 'expiresAt' field"
                         )
+                    expiration = expiration.get("expiresAt")
                     self.api_key_expires_at = expiration  # None if no expiration
                     self.logger.debug("API key expires at: %s", expiration)
+                    if self.api_key_expires_at is None:
+                        kavita_metrics.API_KEY_EXPIRATION.labels(self.alias).set(-1)
+                        return None
                     # Parse ISO datetime and convert to unix timestamp
                     try:
                         exp_dt = datetime.fromisoformat(
@@ -114,15 +117,14 @@ class Module(ConnectorModule):  # pylint: disable=too-many-instance-attributes
                         kavita_metrics.API_KEY_EXPIRATION.labels(
                             self.alias).set(exp_dt.timestamp())
                     except (ValueError, TypeError):
-                        kavita_metrics.API_KEY_EXPIRATION.labels(self.alias).set(0)
+                        self.logger.error(
+                            "Failed to parse API key expiration datetime: %s", expiration
+                        )
+                        return -1
                 else:
-                    if self.api_key_expires_at is not None:
-                        (kavita_metrics.API_KEY_EXPIRATION.labels(self.alias)
-                         .set(self.api_key_expires_at))
-                    else:
-                        kavita_metrics.API_KEY_EXPIRATION.labels(self.alias).set(0)
-                    self.api_key_expires_at = None
-                    self.logger.debug("API key has no expiration")
+                    raise RequestException(
+                        "API key expiration endpoint returned empty response"
+                    )
                 return expiration
             if res.status_code == 401:
                 self.logger.error("Unauthorized when checking API key expiration: %s",
@@ -133,12 +135,12 @@ class Module(ConnectorModule):  # pylint: disable=too-many-instance-attributes
                 else:
                     kavita_metrics.API_KEY_EXPIRATION.labels(self.alias).set(0)
                 return -1
-            self.logger.warning(
+            self.logger.error(
                 "Failed to check API key expiration: %s", res.status_code
             )
         except (RequestException, ValueError) as e:
             self.api_key_expires_at = None
-            self.logger.debug("Error checking API key expiration: %s", e)
+            self.logger.error("Error checking API key expiration: %s", e)
         return -1
 
     def _generate_jwt(self):
