@@ -37,11 +37,11 @@ class Module(ConnectorModule):
         end_time = time.time()
 
         if res == {}:
-            UP.labels(self.api_key, 'readarr').set(0)
+            UP.labels(self.alias, 'readarr').set(0)
         else:
-            UP.labels(self.api_key, 'readarr').set(1)
-            readarr_metrics.LAST_SCRAPE.labels(self.api_key).set(end_time)
-            readarr_metrics.SCRAPE_DURATION.labels(self.api_key).set(end_time - initial_time)
+            UP.labels(self.alias, 'readarr').set(1)
+            readarr_metrics.LAST_SCRAPE.labels(self.alias).set(end_time)
+            readarr_metrics.SCRAPE_DURATION.labels(self.alias).set(end_time - initial_time)
         return res
 
     def get_books(self):
@@ -50,27 +50,27 @@ class Module(ConnectorModule):
         res = self.get("/book")
 
         if res == {}:
-            UP.labels(self.api_key, "readarr").set(0)
+            UP.labels(self.alias, "readarr").set(0)
         else:
-            UP.labels(self.api_key, "readarr").set(0)
+            UP.labels(self.alias, "readarr").set(0)
         return res
 
     def update_system_data(self, data):
         """Update the System Data Metrics"""
         for disk in data['root_folder']:
-            (readarr_metrics.FREE_DISK_SIZE.labels(self.api_key, disk["path"])
+            (readarr_metrics.FREE_DISK_SIZE.labels(self.alias, disk["path"])
              .set(disk["freeSpace"]))
-            (readarr_metrics.AVAILABLE_DISK_SIZE.labels(self.api_key, disk["path"])
+            (readarr_metrics.AVAILABLE_DISK_SIZE.labels(self.alias, disk["path"])
              .set(disk["totalSpace"]))
 
-        readarr_metrics.QUEUE_COUNT.labels(self.api_key).set(data["queue"]["totalCount"])
-        readarr_metrics.QUEUE_ERROR.labels(self.api_key).set(data["queue"]["errors"])
-        readarr_metrics.QUEUE_WARNING.labels(self.api_key).set(data["queue"]["warnings"])
+        readarr_metrics.QUEUE_COUNT.labels(self.alias).set(data["queue"]["totalCount"])
+        readarr_metrics.QUEUE_ERROR.labels(self.alias).set(data["queue"]["errors"])
+        readarr_metrics.QUEUE_WARNING.labels(self.alias).set(data["queue"]["warnings"])
 
         start_time = parse(data["status"]["startTime"]).timestamp()
         build_time = parse(data["status"]["buildTime"]).timestamp()
-        readarr_metrics.START_TIME.labels(self.api_key).set(start_time)
-        readarr_metrics.BUILD_TIME.labels(self.api_key).set(build_time)
+        readarr_metrics.START_TIME.labels(self.alias).set(start_time)
+        readarr_metrics.BUILD_TIME.labels(self.alias).set(build_time)
 
     def analyse_authors(self, authors):
         """Analyse the Authors from the Readarr Endpoint"""
@@ -88,22 +88,22 @@ class Module(ConnectorModule):
             if self.detailed:
                 if author.get("statistics", None) is not None:
                     (readarr_metrics.AUTHOR_DISK_SIZE
-                     .labels(self.api_key, author["sortName"])
+                     .labels(self.alias, author["sortName"])
                      .set(author["statistics"]["sizeOnDisk"])
                      )
                     (readarr_metrics.AUTHOR_BOOK_COUNT
-                     .labels(self.api_key, author["sortName"])
+                     .labels(self.alias, author["sortName"])
                      .set(author["statistics"]["bookCount"])
                     )
                     (readarr_metrics.AUTHOR_RATING
-                     .labels(self.api_key, author["sortName"])
+                     .labels(self.alias, author["sortName"])
                      .set(author["ratings"]["value"])
                      )
 
         for status, count in authors_status.items():
-            readarr_metrics.AUTHOR_STATUS.labels(self.api_key, status).set(count)
+            readarr_metrics.AUTHOR_STATUS.labels(self.alias, status).set(count)
         overall_rating = sum(author_rating) / len(author_rating)
-        readarr_metrics.AUTHOR_RATING_TOTAL.labels(self.api_key).set(overall_rating)
+        readarr_metrics.AUTHOR_RATING_TOTAL.labels(self.alias).set(overall_rating)
 
 
     def analyse_books(self, books):
@@ -127,23 +127,23 @@ class Module(ConnectorModule):
             if self.detailed:
                 if book.get("statistics", None) is not None:
                     (readarr_metrics.BOOK_DISK_SIZE
-                     .labels(self.api_key, book["title"])
+                     .labels(self.alias, book["title"])
                       .set(book["statistics"]["sizeOnDisk"])
                     )
                     (readarr_metrics.BOOK_PERCENTAGE
-                     .labels(self.api_key, book["title"])
+                     .labels(self.alias, book["title"])
                      .set(book["statistics"]["percentOfBooks"])
                     )
                     (readarr_metrics.BOOK_RATING
-                     .labels(self.api_key, book["title"])
+                     .labels(self.alias, book["title"])
                       .set(book["ratings"]["value"])
                     )
 
         overall_rating = sum(book_rating) / len(book_rating)
-        readarr_metrics.BOOK_RATING_TOTAL.labels(self.api_key).set(overall_rating)
-        readarr_metrics.BOOK_DISK_SIZE_TOTAL.labels(self.api_key).set(sum(book_disk_size))
+        readarr_metrics.BOOK_RATING_TOTAL.labels(self.alias).set(overall_rating)
+        readarr_metrics.BOOK_DISK_SIZE_TOTAL.labels(self.alias).set(sum(book_disk_size))
         for genre, genre_count in book_genres.items():
-            readarr_metrics.BOOK_GENRES.labels(self.api_key, genre).set(genre_count)
+            readarr_metrics.BOOK_GENRES.labels(self.alias, genre).set(genre_count)
 
     def scrape(self):
         """Scrape the Readarr Service"""
