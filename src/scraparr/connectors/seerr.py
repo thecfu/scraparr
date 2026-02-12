@@ -35,7 +35,7 @@ class Seerr(ConnectorModule):
         self.metrics.LAST_SCRAPE.labels(self.alias).set(end_time)
         self.metrics.SCRAPE_DURATION.labels(self.alias).set(end_time - initial_time)
 
-        if not users or not requests or not issues:
+        if users is None or requests is None or issues is None:
             return {}
 
         return {"users": users, "requests": requests, "issues": issues}
@@ -49,7 +49,7 @@ class Seerr(ConnectorModule):
 
         if not res or "results" not in res:
             UP.labels(self.alias, self.service).set(0)
-            return []
+            return None
 
         UP.labels(self.alias, self.service).set(1)
 
@@ -123,10 +123,10 @@ class Seerr(ConnectorModule):
 
         if not res or "results" not in res:
             UP.labels(self.alias, self.service).set(0)
-            return []
+            return None
         UP.labels(self.alias, self.service).set(1)
         if not res["results"]:
-            return []
+            return None
 
         # Fetch all titles in parallel (only when detailed=True)
         if self.detailed:
@@ -183,10 +183,10 @@ class Seerr(ConnectorModule):
 
         if not res or "results" not in res:
             UP.labels(self.alias, self.service).set(0)
-            return []
+            return None
         UP.labels(self.alias, self.service).set(1)
         if not res["results"]:
-            return []
+            return None
 
         # Fetch all titles in parallel (only when detailed=True)
         if self.detailed:
