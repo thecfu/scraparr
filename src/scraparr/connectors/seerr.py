@@ -35,8 +35,6 @@ class Seerr(ConnectorModule):
         self.metrics.LAST_SCRAPE.labels(self.alias).set(end_time)
         self.metrics.SCRAPE_DURATION.labels(self.alias).set(end_time - initial_time)
 
-        print(users, requests, issues)
-
         if users is None or requests is None or issues is None:
             return {}
 
