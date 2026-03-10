@@ -9,6 +9,7 @@
 # Supported syntax:
 #   ${VAR_NAME}           - Required env var (fails if not set)
 #   ${VAR_NAME:-default}  - Optional env var with fallback default
+#   ${VAR_NAME} + VAR_NAME_FILE - Reads from file path in VAR_NAME_FILE (Docker secrets)
 #
 # Examples:
 #   api_key: ${SONARR_API_KEY}
@@ -17,6 +18,7 @@
 # Docker Compose usage:
 #   environment:
 #     - SONARR_API_KEY=your-secret-key
+#     - SONARR_API_KEY_FILE=/run/secrets/sonarr_api_key
 #   Or use env_file:
 #     env_file:
 #       - .env  # Contains SONARR_API_KEY=xxx
