@@ -1,0 +1,114 @@
+name: Docker Build and Push (Shared)
+
+on:
+  workflow_call:
+    inputs:
+      registry_image:
+        description: 'Full GHCR image path (e.g. ghcr.io/owner/repo)'
+        required: true
+        type: string
+      dockerhub_image:
+        description: 'Docker Hub image name; leave empty to skip Docker Hub'
+        required: false
+        type: string
+        default: ''
+      tags:
+        description: 'docker/metadata-action tag patterns'
+        required: false
+        type: string
+        default: ''
+      flavor:
+        description: 'docker/metadata-action flavor string'
+        required: false
+        type: string
+        default: ''
+      check_latest_tag:
+        description: 'Query GitHub Releases API to set latest=true/false flavor'
+        required: false
+        type: boolean
+        default: false
+      generate_attestation:
+        description: 'Generate artifact attestation after push'
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      DOCKERHUB_TOKEN:
+        required: false
+    outputs:
+      digest:
+        description: 'Image digest'
+        value: ${{ jobs.build.outputs.digest }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login to Docker Hub
+        if: inputs.dockerhub_image != ''
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Check Latest Tag
+        if: inputs.check_latest_tag
+        id: latest_tag
+        run: |
+          LATEST_TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+          if [[ "$LATEST_TAG" == "${{ github.ref_name }}" ]]; then
+            echo "flavor=latest=true" >> $GITHUB_OUTPUT
+          else
+            echo "flavor=latest=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ inputs.registry_image }}
+            ${{ inputs.dockerhub_image }}
+          flavor: ${{ inputs.check_latest_tag && steps.latest_tag.outputs.flavor || inputs.flavor }}
+          tags: ${{ inputs.tags }}
+
+      - name: Build and push Docker image
+        id: push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Generate artifact attestation
+        if: inputs.generate_attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ inputs.registry_image }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
