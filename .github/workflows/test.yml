@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - '**.py'
+      - 'uv.lock'
       - 'pyproject.toml'
       - '**/requirements.txt'
       - 'tests/**'
