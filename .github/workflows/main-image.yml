@@ -15,8 +15,11 @@ jobs:
   lint:
     uses: ./.github/workflows/lint.yml
 
+  test:
+    uses: ./.github/workflows/test.yml
+
   build-and-push-image:
-    needs: lint
+    needs: [lint, test]
     uses: ./.github/workflows/docker-build.yml
     with:
       registry_image: ghcr.io/${{ github.repository }}
