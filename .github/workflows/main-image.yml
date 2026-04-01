@@ -11,6 +11,12 @@ on:
       - 'pyproject.toml'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+
 jobs:
   lint:
     uses: ./.github/workflows/lint.yml

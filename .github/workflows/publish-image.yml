@@ -4,6 +4,12 @@ on:
   release:
     types: [released]
 
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+
 jobs:
   lint:
     uses: ./.github/workflows/lint.yml
