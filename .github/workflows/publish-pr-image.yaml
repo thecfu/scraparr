@@ -9,6 +9,13 @@ on:
       - 'pyproject.toml'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+  pull-requests: write
+
 jobs:
   build-and-push-image:
     uses: ./.github/workflows/docker-build.yml
@@ -16,3 +23,16 @@ jobs:
       registry_image: ghcr.io/thecfu/scraparr-dev
       tags: type=raw,value=pr${{ github.event.pull_request.number }}
     secrets: inherit
+
+  comment:
+    needs: build-and-push-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment PR image availability
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          message: |
+            Docker image for this PR is available:
+            ```
+            docker pull ghcr.io/thecfu/scraparr-dev:pr${{ github.event.pull_request.number }}
+            ```
