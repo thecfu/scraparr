@@ -31,6 +31,7 @@ jobs:
       - name: Comment PR image availability
         uses: marocchino/sticky-pull-request-comment@v2
         with:
+          GITHUB_TOKEN: ${{ secrets.ORVEX_PR_TOKEN }}
           message: |
             Docker image for this PR is available:
             ```
