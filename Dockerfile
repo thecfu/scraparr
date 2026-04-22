@@ -1,18 +1,13 @@
-FROM python:3.14-alpine
+FROM ghcr.io/astral-sh/uv:python3.14-alpine
 
-# Copy the current directory contents into the container at /app
-COPY src /
+WORKDIR /app
 
-# Set the working directory
-WORKDIR /scraparr
+COPY pyproject.toml uv.lock ./
+COPY src/ src/
 
-# Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+RUN uv sync --frozen --no-dev
 
 # Make port 7100 available to the world outside this container
 EXPOSE 7100
 
-WORKDIR /
-
-# Define Entry point
-ENTRYPOINT ["python", "-um", "scraparr.scraparr"]
+ENTRYPOINT ["uv", "run", "--no-sync", "python", "-um", "scraparr.scraparr"]

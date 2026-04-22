@@ -6,8 +6,8 @@ services:
     ports:
       - "7100:7100"
     volumes:
-      - ./src/scraparr:/scraparr
-      - ./config.secret.yaml:/scraparr/config/config.yaml
+      - ./src/scraparr:/app/src/scraparr
+      - ./config.secret.yaml:/app/src/scraparr/config/config.yaml
     #env_file:
     #  - ./dev.secret.env
   scraparr1:
@@ -23,4 +23,4 @@ services:
     #    context: .
     #    dockerfile: Dockerfile-pylint
     volumes:
-      - ./src/scraparr:/scraparr
+      - ./src/scraparr:/app/src/scraparr

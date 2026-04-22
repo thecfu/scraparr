@@ -9,6 +9,7 @@ Contributors: TheGameProfi
 License: GPL-3.0
 """
 
+import os
 import sys
 import threading
 import logging
@@ -35,7 +36,18 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # This allows ${VAR} in YAML to reference .env values
 load_dotenv()
 
-CONFIG_FILE_LOCATION = "/scraparr/config/config.yaml"
+_CONFIG_PATHS = [
+    "/app/src/scraparr/config/config.yaml",
+    "/scraparr/config/config.yaml",
+]
+
+CONFIG_FILE_LOCATION = next((p for p in _CONFIG_PATHS if os.path.exists(p)), _CONFIG_PATHS[0])
+
+if CONFIG_FILE_LOCATION == _CONFIG_PATHS[1]:
+    logging.warning(
+        "Config at '%s' is deprecated. Please move your config to '%s'.",
+        _CONFIG_PATHS[1], _CONFIG_PATHS[0]
+    )
 
 config_file = None
 
