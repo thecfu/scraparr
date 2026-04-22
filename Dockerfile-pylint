@@ -1,10 +1,30 @@
-FROM ghcr.io/astral-sh/uv:python3.14-alpine
+FROM ghcr.io/astral-sh/uv:python3.14-alpine AS builder
+
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=0
 
 WORKDIR /app
 
-COPY pyproject.toml uv.lock ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    --mount=type=bind,source=README.md,target=README.md \
+    --mount=type=bind,source=src/scraparr/requirements.txt,target=src/scraparr/requirements.txt \
+    uv sync --locked --no-install-project
+
 COPY src/ src/
 
-RUN uv sync --frozen
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked
 
-ENTRYPOINT ["uv", "run", "--no-sync", "pylint", "--recursive=y", "src/scraparr"]
+
+FROM python:3.14-alpine
+
+COPY --from=builder /app /app
+
+ENV PATH="/app/.venv/bin:$PATH"
+
+WORKDIR /app
+
+ENTRYPOINT ["pylint", "--recursive=y", "src/scraparr"]
