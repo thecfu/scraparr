@@ -1,18 +1,32 @@
+FROM ghcr.io/astral-sh/uv:python3.14-alpine AS builder
+
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_NO_DEV=1 UV_PYTHON_DOWNLOADS=0
+
+WORKDIR /app
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    --mount=type=bind,source=README.md,target=README.md \
+    --mount=type=bind,source=src/scraparr/requirements.txt,target=src/scraparr/requirements.txt \
+    uv sync --locked --no-install-project
+
+COPY src/ src/
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked
+
+
 FROM python:3.14-alpine
 
-# Copy the current directory contents into the container at /app
-COPY src /
+COPY --from=builder /app /app
 
-# Set the working directory
-WORKDIR /scraparr
+ENV PATH="/app/.venv/bin:$PATH"
 
-# Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+WORKDIR /app
 
-# Make port 7100 available to the world outside this container
 EXPOSE 7100
 
-WORKDIR /
-
-# Define Entry point
 ENTRYPOINT ["python", "-um", "scraparr.scraparr"]
