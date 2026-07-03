@@ -8,6 +8,7 @@ from requests.exceptions import RequestException
 
 from scraparr.connectors.module import ConnectorModule
 from scraparr.metrics.general import UP
+import scraparr.metrics.seerr as seerr_metrics
 
 class Seerr(ConnectorModule):
     """Class to handle the Metrics for jellyseerr and Overseerr"""
@@ -337,3 +338,10 @@ class Seerr(ConnectorModule):
             self.update_issues(issues)
         else:
             self.metrics.ISSUE_COUNT.labels(self.alias).set(0)
+
+
+class Module(Seerr):
+    """Class to handle the Seerr Metrics"""
+
+    def __init__(self, config):
+        Seerr.__init__(self, config, seerr_metrics, "seerr")
