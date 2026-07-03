@@ -32,6 +32,8 @@ general:
   # port: 7100 # Optional
   # Exporter Metrics Path
   # path: /metrics # Optional
+  # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  # log_level: INFO # Optional
 
 auth:
   # Basic Auth

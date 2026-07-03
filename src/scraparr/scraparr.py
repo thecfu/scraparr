@@ -13,7 +13,7 @@ import os
 import sys
 import threading
 import logging
-from wsgiref.simple_server import make_server
+from wsgiref.simple_server import make_server, WSGIRequestHandler
 
 import yaml
 from dotenv import load_dotenv
@@ -30,7 +30,16 @@ from scraparr.config_loader import (
 
 from scraparr.const import ACTIVE_CONNECTORS, BEAUTIFUL_CONNECTORS
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+LOG_FORMAT = '[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s'
+logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
+
+
+class QuietWSGIRequestHandler(WSGIRequestHandler):
+    """Routes wsgiref access logs through Python logging instead of stderr."""
+    _access_logger = logging.getLogger("wsgiref")
+
+    def log_message(self, format, *args): # pylint: disable=redefined-builtin
+        self._access_logger.debug(format, *args)
 
 # Load .env file into os.environ (if present) before parsing config
 # This allows ${VAR} in YAML to reference .env values
@@ -103,7 +112,13 @@ def main():
         logging.error("No configuration found for %s", BEAUTIFUL_CONNECTORS)
         sys.exit(1)
 
-    util.log_level = GENERAL.get('log_level', 'INFO').upper()
+    configured_level = GENERAL.get('log_level', 'INFO').upper()
+    log_level = getattr(logging, configured_level, None)
+    if log_level is None:
+        logging.warning("Invalid log level '%s', defaulting to INFO", configured_level)
+        log_level = logging.INFO
+    logging.getLogger().setLevel(log_level)
+    util.log_level = configured_level
 
     connectors = scraparr.connectors.Connectors(WORKERS)
 
@@ -115,7 +130,7 @@ def main():
                 config = config_file[service]
             connectors.add_connector(service, config)
 
-    httpd = make_server(ADDRESS, PORT, app)
+    httpd = make_server(ADDRESS, PORT, app, handler_class=QuietWSGIRequestHandler)
 
     def run_server():
         """Starts the WSGI server"""
