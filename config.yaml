@@ -34,6 +34,8 @@ general:
   # port: 7100 # Optional
   # Exporter Metrics Path
   # path: /metrics # Optional
+  # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  # log_level: INFO # Optional
 
 auth:
   # Basic Auth
@@ -82,17 +84,10 @@ readarr:
   # interval: 30 # Optional to set a different Interval in Seconds
   # detailed: true  # Get Data per Book
 
-jellyseerr:
-  url: http://jellyseerr:5055
-  api_key: key  # Or use: ${JELLYSEERR_API_KEY}
-  # alias: jellyseerr # Optional to Differentiate between multiple Services
-  # interval: 30 # Optional to set a different Interval in Seconds
-  # detailed: true  # Get Data per Request/Issue
-
-overseerr:
-  url: http://overseerr:5055
-  api_key: key  # Or use: ${OVERSEERR_API_KEY}
-  # alias: overseerr # Optional to Differentiate between multiple Services
+seerr:
+  url: http://seerr:5055
+  api_key: key  # Or use: ${SEERR_API_KEY}
+  # alias: seerr # Optional to Differentiate between multiple Services
   # interval: 30 # Optional to set a different Interval in Seconds
   # detailed: true  # Get Data per Request/Issue
 

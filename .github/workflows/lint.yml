@@ -1,44 +1,25 @@
-name: Test
+name: Lint (Shared)
 
 on:
-  pull_request:
-    paths:
-      - '**.py'
-      - 'uv.lock'
-      - 'pyproject.toml'
-      - '**/requirements.txt'
-      - 'tests/**'
-  workflow_dispatch:
   workflow_call:
 
-permissions:
-  contents: read
-
 jobs:
-  test:
-    name: Test (Python ${{ matrix.python-version }})
+  lint:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     strategy:
-      fail-fast: false
       matrix:
         python-version: ["3.12", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@v6
-
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
-
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-
       - name: Install dependencies
         run: uv sync --dev
-
-      - name: Run tests with coverage
-        run: |
-          uv run pytest tests/ \
-            --cov=scraparr \
-            --cov-report=term-missing \
-            -v
+      - name: Analysing the code with pylint
+        run: uv run pylint --recursive=y src/scraparr

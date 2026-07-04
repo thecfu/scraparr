@@ -9,10 +9,11 @@ Contributors: TheGameProfi
 License: GPL-3.0
 """
 
+import os
 import sys
 import threading
 import logging
-from wsgiref.simple_server import make_server
+from wsgiref.simple_server import make_server, WSGIRequestHandler
 
 import yaml
 from dotenv import load_dotenv
@@ -29,13 +30,33 @@ from scraparr.config_loader import (
 
 from scraparr.const import ACTIVE_CONNECTORS, BEAUTIFUL_CONNECTORS
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+LOG_FORMAT = '[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s'
+logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
+
+
+class QuietWSGIRequestHandler(WSGIRequestHandler):
+    """Routes wsgiref access logs through Python logging instead of stderr."""
+    _access_logger = logging.getLogger("wsgiref")
+
+    def log_message(self, format, *args): # pylint: disable=redefined-builtin
+        self._access_logger.debug(format, *args)
 
 # Load .env file into os.environ (if present) before parsing config
 # This allows ${VAR} in YAML to reference .env values
 load_dotenv()
 
-CONFIG_FILE_LOCATION = "/scraparr/config/config.yaml"
+_CONFIG_PATHS = [
+    "/app/src/scraparr/config/config.yaml",
+    "/scraparr/config/config.yaml",
+]
+
+CONFIG_FILE_LOCATION = next((p for p in _CONFIG_PATHS if os.path.exists(p)), _CONFIG_PATHS[0])
+
+if CONFIG_FILE_LOCATION == _CONFIG_PATHS[1]:
+    logging.warning(
+        "Config at '%s' is deprecated. Please move your config to '%s'.",
+        _CONFIG_PATHS[1], _CONFIG_PATHS[0]
+    )
 
 config_file = None
 
@@ -91,7 +112,13 @@ def main():
         logging.error("No configuration found for %s", BEAUTIFUL_CONNECTORS)
         sys.exit(1)
 
-    util.log_level = GENERAL.get('log_level', 'INFO').upper()
+    configured_level = GENERAL.get('log_level', 'INFO').upper()
+    log_level = getattr(logging, configured_level, None)
+    if log_level is None:
+        logging.warning("Invalid log level '%s', defaulting to INFO", configured_level)
+        log_level = logging.INFO
+    logging.getLogger().setLevel(log_level)
+    util.log_level = configured_level
 
     connectors = scraparr.connectors.Connectors(WORKERS)
 
@@ -103,7 +130,7 @@ def main():
                 config = config_file[service]
             connectors.add_connector(service, config)
 
-    httpd = make_server(ADDRESS, PORT, app)
+    httpd = make_server(ADDRESS, PORT, app, handler_class=QuietWSGIRequestHandler)
 
     def run_server():
         """Starts the WSGI server"""
