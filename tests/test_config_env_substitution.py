@@ -33,25 +33,16 @@ class TestSubstituteEnvVars:
             assert result == {"url": "http://localhost:8989/api"}
 
 
-    def test_file_value_when_env_missing(self):
-        """Use VAR_FILE contents when VAR is not set."""
+    def test_file_suffix_not_used_for_yaml_substitution(self):
+        """YAML ${VAR} substitution only reads VAR, not VAR_FILE."""
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
             f.write('file-secret\n')
             f.flush()
             with patch.dict(os.environ, {"API_KEY_FILE": f.name}, clear=True):
-                result = substitute_env_vars({"api_key": "${API_KEY}"})
+                with pytest.raises(MissingEnvVarError) as exc_info:
+                    substitute_env_vars({"api_key": "${API_KEY}"})
             os.unlink(f.name)
-        assert result == {"api_key": "file-secret"}
-
-    def test_env_takes_precedence_over_file(self):
-        """VAR takes precedence over VAR_FILE."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
-            f.write('file-secret\n')
-            f.flush()
-            with patch.dict(os.environ, {"API_KEY": "env-secret", "API_KEY_FILE": f.name}, clear=True):
-                result = substitute_env_vars({"api_key": "${API_KEY}"})
-            os.unlink(f.name)
-        assert result == {"api_key": "env-secret"}
+        assert exc_info.value.var_name == "API_KEY"
 
     def test_default_value_when_missing(self):
         """Use default when env var not set."""

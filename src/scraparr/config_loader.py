@@ -56,11 +56,6 @@ def _substitute_string(value: str, config_path: str) -> str:
         if env_value is not None:
             return env_value
 
-        env_file = os.environ.get(f"{var_name}_FILE")
-        if env_file is not None:
-            with open(env_file, 'r', encoding='utf-8') as f:
-                return f.read().rstrip('\r\n')
-
         if default_value is not None:
             logging.debug("Env var '%s' not set, using default (config: %s)", var_name, config_path)
             return default_value
