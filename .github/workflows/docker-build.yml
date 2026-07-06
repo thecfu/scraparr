@@ -32,6 +32,11 @@ on:
         required: false
         type: boolean
         default: false
+      environment:
+        description: 'GitHub environment to run the build job under (for protection rules)'
+        required: false
+        type: string
+        default: ''
     secrets:
       DOCKERHUB_TOKEN:
         required: false
@@ -43,6 +48,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
     permissions:
       contents: read
       packages: write
