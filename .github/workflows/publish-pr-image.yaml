@@ -22,11 +22,13 @@ jobs:
     with:
       registry_image: ghcr.io/thecfu/scraparr-dev
       tags: type=raw,value=pr${{ github.event.pull_request.number }}
+      environment: pr-image
     secrets: inherit
 
   comment:
     needs: build-and-push-image
     runs-on: ubuntu-latest
+    environment: pr-image
     steps:
       - name: Comment PR image availability
         uses: marocchino/sticky-pull-request-comment@v2
