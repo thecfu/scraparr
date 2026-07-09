@@ -7,6 +7,20 @@ from dotenv import dotenv_values
 from scraparr.const import ACTIVE_CONNECTORS, SERVICE_FIELDS
 
 
+def _get_env_value(env: Mapping[str, str], key: str) -> Optional[str]:
+    """Get a value from ENV_KEY or ENV_KEY_FILE (Docker secrets pattern)."""
+    value = env.get(key)
+    if value is not None:
+        return value
+
+    file_path = env.get(f"{key}_FILE")
+    if file_path is None:
+        return None
+
+    with open(file_path, 'r', encoding='utf-8') as f:
+        return f.read().rstrip('\r\n')
+
+
 def _parse_service_field(env_key: str, prefix: str) -> Optional[tuple]:
     """Parse env var to extract field name and optional alias.
 
@@ -38,7 +52,12 @@ def _parse_service_field(env_key: str, prefix: str) -> Optional[tuple]:
 
 def _parse_mapping(env: Mapping[str, str], mapping: Dict[str, str]) -> Optional[Dict[str, str]]:
     """Parse env vars using a mapping of ENV_KEY -> config_key."""
-    return {k: env[p] for p, k in mapping.items() if p in env} or None
+    parsed = {}
+    for env_key, config_key in mapping.items():
+        value = _get_env_value(env, env_key)
+        if value is not None:
+            parsed[config_key] = value
+    return parsed or None
 
 
 def _build_config(env: Mapping[str, str]) -> Dict[str, Optional[Any]]:
@@ -63,12 +82,15 @@ def _build_config(env: Mapping[str, str]) -> Dict[str, Optional[Any]]:
         multi_config: Dict[str, Dict[str, Any]] = {}  # alias -> fields
 
         for env_key in env:
-            parsed = _parse_service_field(env_key, prefix)
+            base_env_key = env_key[:-5] if env_key.endswith('_FILE') else env_key
+            parsed = _parse_service_field(base_env_key, prefix)
             if parsed is None:
                 continue
 
             field, alias = parsed
-            value = env[env_key]  # Keep as string - type coercion after merge
+            value = _get_env_value(env, base_env_key)
+            if value is None:
+                continue
 
             if alias is None:
                 single_config[field] = value

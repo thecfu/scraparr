@@ -21,6 +21,10 @@
 #     env_file:
 #       - .env  # Contains SONARR_API_KEY=xxx
 #
+# Docker secrets via *_FILE are supported when configuring Scraparr directly
+# with environment variables, e.g. SONARR_API_KEY_FILE=/run/secrets/sonarr_api_key.
+# They are not used by ${VAR_NAME} substitution in this YAML file.
+#
 # Kubernetes usage:
 #   Mount secrets as environment variables using envFrom/secretRef
 #

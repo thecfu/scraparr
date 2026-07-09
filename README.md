@@ -145,6 +145,24 @@ SONARR_SECONDARY_API_KEY=secondary-key
 
 The alias (e.g., `MAIN`, `SECONDARY`) becomes the instance identifier in metrics.
 
+#### Docker secrets via Environment Variables
+
+For Docker secrets, set the matching `_FILE` environment variable to the mounted secret path. Scraparr will read the file contents and use that value as the environment override.
+
+```yaml
+services:
+  scraparr:
+    environment:
+      SONARR_URL: http://sonarr:8989
+      SONARR_API_KEY_FILE: /run/secrets/sonarr_api_key
+    secrets:
+      - sonarr_api_key
+
+secrets:
+  sonarr_api_key:
+    file: ./secrets/sonarr_api_key
+```
+
 ## Usage
 
 Once the service is running, it will expose metrics at http://localhost:7100/metrics (default port). You can configure Prometheus to scrape these metrics by adding the following job to your Prometheus configuration:

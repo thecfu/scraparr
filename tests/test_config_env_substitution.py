@@ -32,6 +32,18 @@ class TestSubstituteEnvVars:
             result = substitute_env_vars({"url": "http://${HOST}:${PORT}/api"})
             assert result == {"url": "http://localhost:8989/api"}
 
+
+    def test_file_suffix_not_used_for_yaml_substitution(self):
+        """YAML ${VAR} substitution only reads VAR, not VAR_FILE."""
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+            f.write('file-secret\n')
+            f.flush()
+            with patch.dict(os.environ, {"API_KEY_FILE": f.name}, clear=True):
+                with pytest.raises(MissingEnvVarError) as exc_info:
+                    substitute_env_vars({"api_key": "${API_KEY}"})
+            os.unlink(f.name)
+        assert exc_info.value.var_name == "API_KEY"
+
     def test_default_value_when_missing(self):
         """Use default when env var not set."""
         with patch.dict(os.environ, {}, clear=True):
@@ -216,6 +228,30 @@ class TestEnvVarParsing:
             {'AUTH_USERNAME': 'username', 'AUTH_TOKEN': 'token'}
         )
         assert auth == {'username': 'admin', 'token': 'secret'}
+
+    def test_parse_service_file_env_var(self):
+        """Parse SONARR_API_KEY_FILE by reading the pointed file."""
+        from scraparr.parser import parse_env_config
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+            f.write('secret-from-file\n')
+            f.flush()
+            with patch.dict(os.environ, {'SONARR_API_KEY_FILE': f.name}, clear=True):
+                env_config = parse_env_config()
+            os.unlink(f.name)
+
+        assert env_config['sonarr'] == {'api_key': 'secret-from-file'}
+
+    def test_parse_general_file_env_var(self):
+        """Parse GENERAL_*_FILE by reading the pointed file."""
+        from scraparr.parser import parse_env_config
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+            f.write('9090\n')
+            f.flush()
+            with patch.dict(os.environ, {'GENERAL_PORT_FILE': f.name}, clear=True):
+                env_config = parse_env_config()
+            os.unlink(f.name)
+
+        assert env_config['general'] == {'port': '9090'}
 
 
 class TestConfigMergeIntegration:
