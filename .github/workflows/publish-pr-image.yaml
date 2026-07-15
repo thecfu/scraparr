@@ -22,7 +22,7 @@ jobs:
     with:
       registry_image: ghcr.io/thecfu/scraparr-dev
       tags: type=raw,value=pr${{ github.event.pull_request.number }}
-      environment: pr-image
+      environment: ${{ github.event.pull_request.head.repo.fork == true && 'pr-image' || '' }}
     secrets: inherit
 
   comment:
