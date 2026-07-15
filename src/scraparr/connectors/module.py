@@ -29,6 +29,7 @@ class ConnectorModule(ABC): # pylint: disable=too-few-public-methods, too-many-i
         self.detailed = config.get('detailed', False)
         self.interval = config.get('interval', 30)
         self.last_hash = None
+        self.exclude = set(config.get('exclude', []))
         self.logger = get_logger(f"connectors.{self.service}", self.alias)
 
     def validate_data(self, new_data):
