@@ -80,7 +80,7 @@ class Module(ConnectorModule):
         quality_count = {}
         genre_count = {}
 
-        radarr_metrics.MOVIE_COUNT_T.labels(self.alias).set(len(movies))
+        movie_count = 0
 
         used_size = {"total": 0}
 
@@ -99,10 +99,15 @@ class Module(ConnectorModule):
         }
 
         for movie in movies:
+            root_folder = movie["rootFolderPath"]
+            if root_folder in self.exclude:
+                self.logger.debug("Excluding %s (rootFolderPath: %s)",
+                                  movie["title"], root_folder)
+                continue
+            movie_count += 1
+
             title = movie["title"].lower().replace(" ", "-")
             title = ''.join(e for e in title if e.isalnum() or e == "-")
-
-            root_folder = movie["rootFolderPath"]
 
             util.increase_quality_count(quality_count, movie["movieFile"], root_folder)
 
@@ -133,6 +138,8 @@ class Module(ConnectorModule):
                 self.detailed, radarr_metrics.MOVIE_MISSING],
                 self.alias
             )
+
+        radarr_metrics.MOVIE_COUNT_T.labels(self.alias).set(movie_count)
 
         util.update_media_metrics(
             [[quality_count, radarr_metrics.QUALITY_MOVIE_COUNT,

@@ -102,3 +102,59 @@ class TestSonarrApiExclude:
         # show-b should never appear in detailed metric calls
         for call in metrics.SERIES_EPISODE_COUNT.labels.call_args_list:
             assert "show-b" not in call[0], "Excluded series should not appear in detailed metrics"
+
+
+def make_radarr_movie(title, root_folder, monitored=True, status="released",
+                      genres=None, has_file=True):
+    """Helper to build a fake movie dict matching the Radarr API shape."""
+    return {
+        "title": title,
+        "rootFolderPath": root_folder,
+        "monitored": monitored,
+        "hasFile": has_file,
+        "status": status,
+        "genres": genres or [],
+        "movieFile": [],
+        "statistics": {
+            "movieFileCount": 1 if has_file else 0,
+            "sizeOnDisk": 2000,
+        },
+    }
+
+
+class TestRadarrExclude:
+    """Tests for Radarr.analyse_movies exclude filtering."""
+
+    def _make_module(self, exclude=None):
+        config = {
+            "url": "http://localhost:7878",
+            "api_key": "key",
+            "api_version": "v3",
+            "exclude": exclude or [],
+        }
+        from scraparr.connectors.radarr import Module
+        with patch("scraparr.metrics.radarr") as metrics:
+            module = Module(config)
+        return module
+
+    def test_excluded_movie_not_counted(self):
+        module = self._make_module(exclude=["/data/test"])
+        movies = [
+            make_radarr_movie("Movie A", "/data/media"),
+            make_radarr_movie("Movie B", "/data/test"),
+        ]
+        import scraparr.metrics.radarr as radarr_metrics
+        with patch.object(radarr_metrics, "MOVIE_COUNT_T") as mock_count:
+            module.analyse_movies(movies)
+            mock_count.labels.return_value.set.assert_called_with(1)
+
+    def test_no_exclude_counts_all(self):
+        module = self._make_module(exclude=[])
+        movies = [
+            make_radarr_movie("Movie A", "/data/media"),
+            make_radarr_movie("Movie B", "/data/test"),
+        ]
+        import scraparr.metrics.radarr as radarr_metrics
+        with patch.object(radarr_metrics, "MOVIE_COUNT_T") as mock_count:
+            module.analyse_movies(movies)
+            mock_count.labels.return_value.set.assert_called_with(2)
