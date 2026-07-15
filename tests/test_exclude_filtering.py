@@ -211,3 +211,55 @@ class TestLidarrExclude:
         with patch.object(lidarr_metrics, "ARTIST_COUNT_T") as mock_count:
             module.analyse_artists(artists)
             mock_count.labels.return_value.set.assert_called_with(2)
+
+
+def make_readarr_author(name, root_folder, status="continuing", rating=4.0):
+    """Helper to build a fake author dict matching the Readarr API shape."""
+    return {
+        "sortName": name,
+        "rootFolderPath": root_folder,
+        "status": status,
+        "ratings": {"value": rating},
+        "statistics": {
+            "bookCount": 3,
+            "sizeOnDisk": 500,
+        },
+    }
+
+
+class TestReadarrExclude:
+    """Tests for Readarr.analyse_authors exclude filtering."""
+
+    def _make_module(self, exclude=None):
+        config = {
+            "url": "http://localhost:8787",
+            "api_key": "key",
+            "api_version": "v1",
+            "exclude": exclude or [],
+        }
+        from scraparr.connectors.readarr import Module
+        return Module(config)
+
+    def test_excluded_author_skipped(self):
+        module = self._make_module(exclude=["/data/test"])
+        authors = [
+            make_readarr_author("Author A", "/data/media", rating=4.0),
+            make_readarr_author("Author B", "/data/test", rating=2.0),
+        ]
+        import scraparr.metrics.readarr as readarr_metrics
+        with patch.object(readarr_metrics, "AUTHOR_RATING_TOTAL") as mock_rating:
+            module.analyse_authors(authors)
+            # Only Author A's rating (4.0) should be used
+            mock_rating.labels.return_value.set.assert_called_with(4.0)
+
+    def test_no_exclude_includes_all_authors(self):
+        module = self._make_module(exclude=[])
+        authors = [
+            make_readarr_author("Author A", "/data/media", rating=4.0),
+            make_readarr_author("Author B", "/data/test", rating=2.0),
+        ]
+        import scraparr.metrics.readarr as readarr_metrics
+        with patch.object(readarr_metrics, "AUTHOR_RATING_TOTAL") as mock_rating:
+            module.analyse_authors(authors)
+            # Average of both: (4.0 + 2.0) / 2 = 3.0
+            mock_rating.labels.return_value.set.assert_called_with(3.0)
