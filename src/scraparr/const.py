@@ -28,5 +28,5 @@ BOOL_FIELDS = {'detailed', 'episode_quality_stats'}
 SERVICE_FIELDS = {
     'url', 'api_key', 'alias', 'api_version',
     'interval', 'detailed', 'within', 'episode_quality_stats',
-    'legacy_auth',
+    'legacy_auth', 'exclude',
 }

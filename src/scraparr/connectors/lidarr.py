@@ -45,7 +45,7 @@ class Module(ConnectorModule):
             lidarr_metrics.SCRAPE_DURATION.labels(self.alias).set(end_time - initial_time)
         return res
 
-    # pylint: disable=too-many-locals, too-many-statements
+    # pylint: disable=too-many-locals, too-many-statements, too-many-branches
     def analyse_artists(self, artists):
         """Analyse Artists and set the correct metrics"""
 
@@ -63,7 +63,7 @@ class Module(ConnectorModule):
         quality_count = {}
         type_count = {}
 
-        lidarr_metrics.ARTIST_COUNT_T.labels(self.alias).set(len(artists))
+        artist_count = 0
 
         used_size = {"total": 0}
 
@@ -93,14 +93,19 @@ class Module(ConnectorModule):
         }
 
         for artist in artists:
+            root_folder = artist["rootFolderPath"]
+            if root_folder in self.exclude:
+                self.logger.debug("Excluding %s (rootFolderPath: %s)",
+                                  artist["cleanName"], root_folder)
+                continue
+            artist_count += 1
+
             name = artist["cleanName"]
             stats = artist.get("statistics", None)
 
             if stats is None:
                 logging.warning("No statistics found for %s", name)
                 continue
-
-            root_folder = artist["rootFolderPath"]
 
             release_counter["path"]["monitored"]["paths"].setdefault(root_folder, 0)
             release_counter["path"]["unmonitored"]["paths"].setdefault(root_folder, 0)
@@ -153,6 +158,8 @@ class Module(ConnectorModule):
             else:
                 counter["total"]["unmonitored"][0] += 1
                 counter["path"]["unmonitored"]["paths"][root_folder] += 1
+
+        lidarr_metrics.ARTIST_COUNT_T.labels(self.alias).set(artist_count)
 
         (lidarr_metrics.MONITORED_RELEASE_T.labels(self.alias)
          .set(release_counter["total"]["monitored"]))

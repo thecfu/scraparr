@@ -79,6 +79,12 @@ class Module(ConnectorModule):
         author_rating = []
 
         for author in authors:
+            root_folder = author.get("rootFolderPath", "")
+            if root_folder in self.exclude:
+                self.logger.debug("Excluding author %s (rootFolderPath: %s)",
+                                  author.get("sortName", "unknown"), root_folder)
+                continue
+
             status = author.get("status", "Unknown")
             authors_status[status] = author.get(status, 0) + 1
 
