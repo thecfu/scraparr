@@ -289,8 +289,11 @@ class Module(ConnectorModule):  # pylint: disable=too-many-instance-attributes
         """Fetch series data for all libraries"""
         library_data = {}
         for library in libraries:
-            lib_id = library["id"]
             lib_name = library.get("name", "unknown")
+            lib_id = library["id"]
+            if lib_name in self.exclude or str(lib_id) in self.exclude:
+                self.logger.debug("Excluding library %s (id: %s)", lib_name, lib_id)
+                continue
             series_list = self.get_series_for_library(lib_id)
 
             library_data[lib_id] = {
@@ -411,6 +414,8 @@ class Module(ConnectorModule):  # pylint: disable=too-many-instance-attributes
         for library in libraries:
             lib_name = library.get("name", "unknown")
             lib_id = library.get("id")
+            if lib_name in self.exclude or str(lib_id) in self.exclude:
+                continue
             lib_type = LIBRARY_TYPES.get(library.get("type", 0), "Unknown")
 
             folder_watching = 1 if library.get("folderWatching", False) else 0

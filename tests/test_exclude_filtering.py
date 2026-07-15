@@ -263,3 +263,81 @@ class TestReadarrExclude:
             module.analyse_authors(authors)
             # Average of both: (4.0 + 2.0) / 2 = 3.0
             mock_rating.labels.return_value.set.assert_called_with(3.0)
+
+
+def make_kavita_library(lib_id, name, lib_type=0):
+    """Helper to build a fake Kavita library dict."""
+    return {
+        "id": lib_id,
+        "name": name,
+        "type": lib_type,
+        "folderWatching": True,
+        "allowScrobbling": False,
+    }
+
+
+class TestKavitaExclude:
+    """Tests for Kavita exclude filtering."""
+
+    def _make_module(self, exclude=None):
+        config = {
+            "url": "http://localhost:5000",
+            "api_key": "key",
+            "exclude": exclude or [],
+        }
+        from scraparr.connectors.kavita import Module
+        return Module(config)
+
+    def test_fetch_library_data_skips_excluded_by_name(self):
+        module = self._make_module(exclude=["Manga Archive"])
+        libraries = [
+            make_kavita_library(1, "Comics"),
+            make_kavita_library(2, "Manga Archive"),
+        ]
+        with patch.object(module, "get_series_for_library") as mock_get:
+            mock_get.return_value = []
+            result = module._fetch_library_data(libraries)
+            # Only library 1 should have been fetched
+            assert 1 in result
+            assert 2 not in result
+            mock_get.assert_called_once_with(1)
+
+    def test_fetch_library_data_skips_excluded_by_id(self):
+        module = self._make_module(exclude=["2"])
+        libraries = [
+            make_kavita_library(1, "Comics"),
+            make_kavita_library(2, "Manga Archive"),
+        ]
+        with patch.object(module, "get_series_for_library") as mock_get:
+            mock_get.return_value = []
+            result = module._fetch_library_data(libraries)
+            assert 1 in result
+            assert 2 not in result
+
+    def test_fetch_library_data_no_exclude(self):
+        module = self._make_module(exclude=[])
+        libraries = [
+            make_kavita_library(1, "Comics"),
+            make_kavita_library(2, "Manga Archive"),
+        ]
+        with patch.object(module, "get_series_for_library") as mock_get:
+            mock_get.return_value = []
+            result = module._fetch_library_data(libraries)
+            assert 1 in result
+            assert 2 in result
+            assert mock_get.call_count == 2
+
+    def test_update_library_metrics_skips_excluded(self):
+        module = self._make_module(exclude=["Manga Archive"])
+        libraries = [
+            make_kavita_library(1, "Comics"),
+            make_kavita_library(2, "Manga Archive"),
+        ]
+        library_data = {1: {"name": "Comics", "series": [], "series_count": 0}}
+        import scraparr.metrics.kavita as kavita_metrics
+        with patch.object(kavita_metrics, "LIBRARY_SERIES_COUNT") as mock_count:
+            module._update_library_metrics(libraries, library_data)
+            # Only Comics should have metrics set
+            label_calls = [c[0] for c in mock_count.labels.call_args_list]
+            for call_args in label_calls:
+                assert "Manga Archive" not in call_args
