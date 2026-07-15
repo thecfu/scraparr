@@ -158,3 +158,56 @@ class TestRadarrExclude:
         with patch.object(radarr_metrics, "MOVIE_COUNT_T") as mock_count:
             module.analyse_movies(movies)
             mock_count.labels.return_value.set.assert_called_with(2)
+
+
+def make_lidarr_artist(name, root_folder, monitored=True, status="continuing"):
+    """Helper to build a fake artist dict matching the Lidarr API shape."""
+    return {
+        "cleanName": name,
+        "rootFolderPath": root_folder,
+        "monitored": monitored,
+        "status": status,
+        "releases": [],
+        "trackFiles": [],
+        "statistics": {
+            "albumCount": 5,
+            "trackCount": 50,
+            "sizeOnDisk": 3000,
+        },
+    }
+
+
+class TestLidarrExclude:
+    """Tests for Lidarr.analyse_artists exclude filtering."""
+
+    def _make_module(self, exclude=None):
+        config = {
+            "url": "http://localhost:8686",
+            "api_key": "key",
+            "api_version": "v1",
+            "exclude": exclude or [],
+        }
+        from scraparr.connectors.lidarr import Module
+        return Module(config)
+
+    def test_excluded_artist_not_counted(self):
+        module = self._make_module(exclude=["/data/test"])
+        artists = [
+            make_lidarr_artist("artist-a", "/data/media"),
+            make_lidarr_artist("artist-b", "/data/test"),
+        ]
+        import scraparr.metrics.lidarr as lidarr_metrics
+        with patch.object(lidarr_metrics, "ARTIST_COUNT_T") as mock_count:
+            module.analyse_artists(artists)
+            mock_count.labels.return_value.set.assert_called_with(1)
+
+    def test_no_exclude_counts_all(self):
+        module = self._make_module(exclude=[])
+        artists = [
+            make_lidarr_artist("artist-a", "/data/media"),
+            make_lidarr_artist("artist-b", "/data/test"),
+        ]
+        import scraparr.metrics.lidarr as lidarr_metrics
+        with patch.object(lidarr_metrics, "ARTIST_COUNT_T") as mock_count:
+            module.analyse_artists(artists)
+            mock_count.labels.return_value.set.assert_called_with(2)
