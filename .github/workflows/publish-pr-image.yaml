@@ -28,7 +28,6 @@ jobs:
   comment:
     needs: build-and-push-image
     runs-on: ubuntu-latest
-    environment: pr-image
     steps:
       - name: Comment PR image availability
         uses: marocchino/sticky-pull-request-comment@v2
