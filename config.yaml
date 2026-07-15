@@ -54,6 +54,8 @@ sonarr:
   # interval: 30 # Optional to set a different Interval in Seconds
   # detailed: true  # Get Data per Series
   # episode_quality_stats: true  # Fetch episode quality metrics (N extra API calls, disable for performance)
+  # exclude: # Optional list of rootFolderPaths to exclude from metrics
+  #   - /data/test
 
 radarr:
   url: http://radarr:7878
@@ -123,4 +125,6 @@ kavita:
   # alias: kavita # Optional to Differentiate between multiple Services
   # interval: 30 # Optional to set a different Interval in Seconds
   # detailed: true # Get Data per Library
+  # exclude: # Optional list of library names or IDs to exclude from metrics
+  #   - Test Library
 
