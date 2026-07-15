@@ -22,6 +22,16 @@ def test_exclude_parsed_as_set():
     assert connector.exclude == {"/data/test", "/mnt/archive"}
 
 
+def test_exclude_coerces_integers_to_strings():
+    config = {
+        "url": "http://localhost",
+        "api_key": "key",
+        "exclude": [5, "/data/test"],
+    }
+    connector = FakeConnector(config)
+    assert connector.exclude == {"5", "/data/test"}
+
+
 def test_exclude_defaults_to_empty_set():
     config = {"url": "http://localhost", "api_key": "key"}
     connector = FakeConnector(config)
