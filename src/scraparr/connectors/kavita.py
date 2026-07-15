@@ -409,13 +409,14 @@ class Module(ConnectorModule):  # pylint: disable=too-many-instance-attributes
 
     def _update_library_metrics(self, libraries, library_data):
         """Update library-related metrics"""
-        kavita_metrics.LIBRARY_COUNT.labels(self.alias).set(len(libraries))
+        library_count = 0
 
         for library in libraries:
             lib_name = library.get("name", "unknown")
             lib_id = library.get("id")
             if lib_name in self.exclude or str(lib_id) in self.exclude:
                 continue
+            library_count += 1
             lib_type = LIBRARY_TYPES.get(library.get("type", 0), "Unknown")
 
             folder_watching = 1 if library.get("folderWatching", False) else 0
@@ -437,6 +438,8 @@ class Module(ConnectorModule):  # pylint: disable=too-many-instance-attributes
                 if lib_info["series"]:
                     self._update_library_detailed_metrics(
                         lib_name, lib_info["series"])
+
+        kavita_metrics.LIBRARY_COUNT.labels(self.alias).set(library_count)
 
     def _update_status_metrics(self, publication_status, manga_formats):
         """Update publication status and manga format metrics"""

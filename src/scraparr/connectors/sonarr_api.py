@@ -122,19 +122,19 @@ class SonarrApi(ConnectorModule):
         }
 
         for serie in series:
-            title = serie["titleSlug"]
-            stats = serie.get("statistics", None)
-
-            if stats is None:
-                self.logger.warning("No statistics found for %s", title)
-                continue
-
             root_folder = serie["rootFolderPath"]
             if root_folder in self.exclude:
                 self.logger.debug("Excluding %s (rootFolderPath: %s)",
                                   serie["titleSlug"], root_folder)
                 continue
             series_count += 1
+
+            title = serie["titleSlug"]
+            stats = serie.get("statistics", None)
+
+            if stats is None:
+                self.logger.warning("No statistics found for %s", title)
+                continue
 
             util.increase_quality_count(quality_count, serie["episodes"], root_folder)
 
