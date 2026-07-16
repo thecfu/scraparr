@@ -181,3 +181,33 @@ class TestSabnzbdScrape:
         with patch('scraparr.connectors.sabnzbd.UP') as mock_up:
             self.module.scrape()
             mock_up.labels.return_value.set.assert_called_with(0)
+
+    @patch.object(Module, 'get')
+    def test_scrape_sets_last_scrape_on_success(self, mock_get):
+        mock_get.side_effect = [
+            self.QUEUE_RESP, self.HISTORY_RESP,
+            self.SERVER_STATS_RESP, self.FAILED_RESP,
+        ]
+        with patch('scraparr.connectors.sabnzbd.sabnzbd_metrics.LAST_SCRAPE') as mock_last_scrape:
+            self.module.scrape()
+            mock_last_scrape.labels.assert_called_with('test_sabnzbd')
+            mock_last_scrape.labels.return_value.set.assert_called_once()
+            # Verify that the set call was made with a numeric value
+            call_args = mock_last_scrape.labels.return_value.set.call_args
+            assert call_args is not None
+            assert isinstance(call_args[0][0], (int, float))
+
+    @patch.object(Module, 'get')
+    def test_scrape_sets_scrape_duration_on_success(self, mock_get):
+        mock_get.side_effect = [
+            self.QUEUE_RESP, self.HISTORY_RESP,
+            self.SERVER_STATS_RESP, self.FAILED_RESP,
+        ]
+        with patch('scraparr.connectors.sabnzbd.sabnzbd_metrics.SCRAPE_DURATION') as mock_duration:
+            self.module.scrape()
+            mock_duration.labels.assert_called_with('test_sabnzbd')
+            mock_duration.labels.return_value.set.assert_called_once()
+            # Verify that the set call was made with a value >= 0
+            call_args = mock_duration.labels.return_value.set.call_args
+            assert call_args is not None
+            assert call_args[0][0] >= 0
