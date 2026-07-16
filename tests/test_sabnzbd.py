@@ -211,3 +211,98 @@ class TestSabnzbdScrape:
             call_args = mock_duration.labels.return_value.set.call_args
             assert call_args is not None
             assert call_args[0][0] >= 0
+
+
+class TestSabnzbdUpdateMetrics:
+
+    def setup_method(self):
+        self.module = Module({
+            'url': 'http://localhost:8080',
+            'api_key': 'key',
+            'alias': 'test',
+        })
+
+    @patch('scraparr.connectors.sabnzbd.sabnzbd_metrics')
+    def test_queue_speed_converted_to_bytes(self, mock_metrics):
+        self.module._update_queue({
+            "kbpersec": "1024.0", "mb": "0", "mbleft": "0",
+            "paused_all": False, "diskspace1": "0",
+            "diskspacetotal1": "0", "noofslots": 0
+        })
+        mock_metrics.QUEUE_SPEED.labels.return_value.set.assert_called_with(1024.0 * 1024)
+
+    @patch('scraparr.connectors.sabnzbd.sabnzbd_metrics')
+    def test_queue_size_converted_to_bytes(self, mock_metrics):
+        self.module._update_queue({
+            "kbpersec": "0", "mb": "500.0", "mbleft": "250.0",
+            "paused_all": False, "diskspace1": "0",
+            "diskspacetotal1": "0", "noofslots": 0
+        })
+        mock_metrics.QUEUE_SIZE.labels.return_value.set.assert_called_with(500.0 * 1024 * 1024)
+        mock_metrics.QUEUE_REMAINING.labels.return_value.set.assert_called_with(250.0 * 1024 * 1024)
+
+    @patch('scraparr.connectors.sabnzbd.sabnzbd_metrics')
+    def test_queue_paused_true_sets_one(self, mock_metrics):
+        self.module._update_queue({
+            "kbpersec": "0", "mb": "0", "mbleft": "0",
+            "paused_all": True, "diskspace1": "0",
+            "diskspacetotal1": "0", "noofslots": 0
+        })
+        mock_metrics.QUEUE_PAUSED.labels.return_value.set.assert_called_with(1)
+
+    @patch('scraparr.connectors.sabnzbd.sabnzbd_metrics')
+    def test_queue_disk_space_converted_to_bytes(self, mock_metrics):
+        self.module._update_queue({
+            "kbpersec": "0", "mb": "0", "mbleft": "0",
+            "paused_all": False, "diskspace1": "100.0",
+            "diskspacetotal1": "500.0", "noofslots": 0
+        })
+        mock_metrics.DISK_SPACE.labels.return_value.set.assert_called_with(
+            100.0 * 1024 * 1024 * 1024
+        )
+        mock_metrics.DISK_SPACE_TOTAL.labels.return_value.set.assert_called_with(
+            500.0 * 1024 * 1024 * 1024
+        )
+
+    @patch('scraparr.connectors.sabnzbd.sabnzbd_metrics')
+    def test_history_size_strings_parsed_to_bytes(self, mock_metrics):
+        self.module._update_history(
+            {
+                "day_size": "1.5 GB", "week_size": "10.0 GB",
+                "month_size": "50.0 GB", "total_size": "2.0 TB",
+            },
+            failed_count=7
+        )
+        mock_metrics.HISTORY_DAY.labels.return_value.set.assert_called_with(1.5 * 1024 ** 3)
+        mock_metrics.HISTORY_TOTAL.labels.return_value.set.assert_called_with(2.0 * 1024 ** 4)
+
+    @patch('scraparr.connectors.sabnzbd.sabnzbd_metrics')
+    def test_history_failed_count_set(self, mock_metrics):
+        self.module._update_history(
+            {"day_size": "0 B", "week_size": "0 B", "month_size": "0 B", "total_size": "0 B"},
+            failed_count=12
+        )
+        mock_metrics.HISTORY_FAILED.labels.return_value.set.assert_called_with(12)
+
+    @patch('scraparr.connectors.sabnzbd.sabnzbd_metrics')
+    def test_server_stats_labeled_by_server_name(self, mock_metrics):
+        self.module._update_server_stats({"servers": {
+            "news.example.com": {
+                "day": 1000000, "week": 7000000,
+                "month": 30000000, "total": 365000000,
+                "articles_tried": 10000, "articles_success": 9800,
+            }
+        }})
+        mock_metrics.SERVER_TOTAL.labels.assert_called_with('test', 'news.example.com')
+        mock_metrics.SERVER_TOTAL.labels.return_value.set.assert_called_with(365000000)
+        mock_metrics.SERVER_TRIED.labels.return_value.set.assert_called_with(10000)
+        mock_metrics.SERVER_SUCCESS.labels.return_value.set.assert_called_with(9800)
+
+    @patch('scraparr.connectors.sabnzbd.sabnzbd_metrics')
+    def test_clear_removes_per_server_labels(self, mock_metrics):
+        self.module.clear()
+        for gauge_name in ('SERVER_TOTAL', 'SERVER_DAY', 'SERVER_WEEK',
+                           'SERVER_MONTH', 'SERVER_TRIED', 'SERVER_SUCCESS'):
+            getattr(mock_metrics, gauge_name).remove_by_labels.assert_called_with(
+                {"alias": "test"}
+            )

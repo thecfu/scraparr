@@ -79,8 +79,75 @@ class Module(ConnectorModule):
             "failed_count": failed_resp.get("history", {}).get("noofslots", 0),
         }
 
+    def _update_queue(self, queue):
+        sabnzbd_metrics.QUEUE_SPEED.labels(self.alias).set(
+            float(queue.get("kbpersec", 0)) * 1024
+        )
+        sabnzbd_metrics.QUEUE_SIZE.labels(self.alias).set(
+            float(queue.get("mb", 0)) * 1024 * 1024
+        )
+        sabnzbd_metrics.QUEUE_REMAINING.labels(self.alias).set(
+            float(queue.get("mbleft", 0)) * 1024 * 1024
+        )
+        sabnzbd_metrics.QUEUE_SLOTS.labels(self.alias).set(
+            queue.get("noofslots", 0)
+        )
+        sabnzbd_metrics.QUEUE_PAUSED.labels(self.alias).set(
+            1 if queue.get("paused_all", False) else 0
+        )
+        sabnzbd_metrics.DISK_SPACE.labels(self.alias).set(
+            float(queue.get("diskspace1", 0)) * 1024 * 1024 * 1024
+        )
+        sabnzbd_metrics.DISK_SPACE_TOTAL.labels(self.alias).set(
+            float(queue.get("diskspacetotal1", 0)) * 1024 * 1024 * 1024
+        )
+
+    def _update_history(self, history, failed_count):
+        sabnzbd_metrics.HISTORY_TOTAL.labels(self.alias).set(
+            _parse_size(history.get("total_size", "0 B"))
+        )
+        sabnzbd_metrics.HISTORY_DAY.labels(self.alias).set(
+            _parse_size(history.get("day_size", "0 B"))
+        )
+        sabnzbd_metrics.HISTORY_WEEK.labels(self.alias).set(
+            _parse_size(history.get("week_size", "0 B"))
+        )
+        sabnzbd_metrics.HISTORY_MONTH.labels(self.alias).set(
+            _parse_size(history.get("month_size", "0 B"))
+        )
+        sabnzbd_metrics.HISTORY_FAILED.labels(self.alias).set(failed_count)
+
+    def _update_server_stats(self, server_stats):
+        for server, stats in server_stats.get("servers", {}).items():
+            sabnzbd_metrics.SERVER_TOTAL.labels(self.alias, server).set(
+                stats.get("total", 0)
+            )
+            sabnzbd_metrics.SERVER_DAY.labels(self.alias, server).set(
+                stats.get("day", 0)
+            )
+            sabnzbd_metrics.SERVER_WEEK.labels(self.alias, server).set(
+                stats.get("week", 0)
+            )
+            sabnzbd_metrics.SERVER_MONTH.labels(self.alias, server).set(
+                stats.get("month", 0)
+            )
+            sabnzbd_metrics.SERVER_TRIED.labels(self.alias, server).set(
+                stats.get("articles_tried", 0)
+            )
+            sabnzbd_metrics.SERVER_SUCCESS.labels(self.alias, server).set(
+                stats.get("articles_success", 0)
+            )
+
     def update_metrics(self, data):
-        pass
+        self._update_queue(data["queue"])
+        self._update_history(data["history"], data["failed_count"])
+        self._update_server_stats(data["server_stats"])
 
     def clear(self):
-        pass
+        """Clear per-server gauges — server names can change between scrapes."""
+        sabnzbd_metrics.SERVER_TOTAL.remove_by_labels({"alias": self.alias})
+        sabnzbd_metrics.SERVER_DAY.remove_by_labels({"alias": self.alias})
+        sabnzbd_metrics.SERVER_WEEK.remove_by_labels({"alias": self.alias})
+        sabnzbd_metrics.SERVER_MONTH.remove_by_labels({"alias": self.alias})
+        sabnzbd_metrics.SERVER_TRIED.remove_by_labels({"alias": self.alias})
+        sabnzbd_metrics.SERVER_SUCCESS.remove_by_labels({"alias": self.alias})
