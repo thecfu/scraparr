@@ -100,3 +100,84 @@ class TestParseSabnzbdSize:
 
     def test_parse_empty_returns_zero(self):
         assert _parse_size("") == 0.0
+
+
+class TestSabnzbdScrape:
+
+    QUEUE_RESP = {"queue": {
+        "status": "Downloading", "kbpersec": "1024.0",
+        "mb": "500.0", "mbleft": "250.0", "paused_all": False,
+        "diskspace1": "100.0", "diskspacetotal1": "500.0", "noofslots": 3
+    }}
+    HISTORY_RESP = {"history": {
+        "day_size": "1.5 GB", "week_size": "10.2 GB",
+        "month_size": "50.0 GB", "total_size": "2.3 TB",
+        "noofslots": 100, "slots": []
+    }}
+    SERVER_STATS_RESP = {"server_stats": {"servers": {
+        "news.example.com": {
+            "day": 1000000, "week": 7000000,
+            "month": 30000000, "total": 365000000,
+            "articles_tried": 10000, "articles_success": 9800
+        }
+    }}}
+    FAILED_RESP = {"history": {"noofslots": 5}}
+
+    def setup_method(self):
+        self.config = {
+            'url': 'http://localhost:8080',
+            'api_key': 'testkey',
+            'alias': 'test_sabnzbd',
+        }
+        self.module = Module(self.config)
+
+    @patch.object(Module, 'get')
+    def test_scrape_returns_combined_dict(self, mock_get):
+        mock_get.side_effect = [
+            self.QUEUE_RESP, self.HISTORY_RESP,
+            self.SERVER_STATS_RESP, self.FAILED_RESP,
+        ]
+        result = self.module.scrape()
+        assert result["queue"] == self.QUEUE_RESP["queue"]
+        assert result["history"] == self.HISTORY_RESP["history"]
+        assert result["server_stats"] == self.SERVER_STATS_RESP["server_stats"]
+        assert result["failed_count"] == 5
+
+    @patch.object(Module, 'get')
+    def test_scrape_fails_on_empty_queue(self, mock_get):
+        mock_get.side_effect = [
+            {}, self.HISTORY_RESP, self.SERVER_STATS_RESP, self.FAILED_RESP,
+        ]
+        assert self.module.scrape() == {}
+
+    @patch.object(Module, 'get')
+    def test_scrape_fails_on_empty_history(self, mock_get):
+        mock_get.side_effect = [
+            self.QUEUE_RESP, {}, self.SERVER_STATS_RESP, self.FAILED_RESP,
+        ]
+        assert self.module.scrape() == {}
+
+    @patch.object(Module, 'get')
+    def test_scrape_fails_on_empty_server_stats(self, mock_get):
+        mock_get.side_effect = [
+            self.QUEUE_RESP, self.HISTORY_RESP, {}, self.FAILED_RESP,
+        ]
+        assert self.module.scrape() == {}
+
+    @patch.object(Module, 'get')
+    def test_scrape_sets_up_gauge_on_success(self, mock_get):
+        mock_get.side_effect = [
+            self.QUEUE_RESP, self.HISTORY_RESP,
+            self.SERVER_STATS_RESP, self.FAILED_RESP,
+        ]
+        with patch('scraparr.connectors.sabnzbd.UP') as mock_up:
+            self.module.scrape()
+            mock_up.labels.assert_called_with('test_sabnzbd', 'sabnzbd')
+            mock_up.labels.return_value.set.assert_called_with(1)
+
+    @patch.object(Module, 'get')
+    def test_scrape_sets_up_gauge_to_zero_on_failure(self, mock_get):
+        mock_get.side_effect = [{}, {}, {}, {}]
+        with patch('scraparr.connectors.sabnzbd.UP') as mock_up:
+            self.module.scrape()
+            mock_up.labels.return_value.set.assert_called_with(0)

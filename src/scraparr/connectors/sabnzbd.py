@@ -1,9 +1,12 @@
 """Module to handle the Metrics of the SABnzbd Service"""
 import threading
+import time
 
 import requests
 
 from scraparr.connectors.module import ConnectorModule
+from scraparr.metrics.general import UP
+import scraparr.metrics.sabnzbd as sabnzbd_metrics
 
 _thread_local = threading.local()
 
@@ -52,7 +55,29 @@ class Module(ConnectorModule):
         return {}
 
     def scrape(self):
-        return {}
+        """Scrape the SABnzbd Service"""
+        initial_time = time.time()
+
+        queue_resp        = self.get("queue")
+        history_resp      = self.get("history")
+        server_stats_resp = self.get("server_stats")
+        failed_resp       = self.get("history", failed_only=1, limit=0)
+
+        end_time = time.time()
+        sabnzbd_metrics.LAST_SCRAPE.labels(self.alias).set(end_time)
+        sabnzbd_metrics.SCRAPE_DURATION.labels(self.alias).set(end_time - initial_time)
+
+        if not queue_resp or not history_resp or not server_stats_resp:
+            UP.labels(self.alias, 'sabnzbd').set(0)
+            return {}
+
+        UP.labels(self.alias, 'sabnzbd').set(1)
+        return {
+            "queue":        queue_resp.get("queue", {}),
+            "history":      history_resp.get("history", {}),
+            "server_stats": server_stats_resp.get("server_stats", {}),
+            "failed_count": failed_resp.get("history", {}).get("noofslots", 0),
+        }
 
     def update_metrics(self, data):
         pass
