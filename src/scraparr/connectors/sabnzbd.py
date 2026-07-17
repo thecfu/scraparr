@@ -18,15 +18,26 @@ def _get_session():
 
 
 def _parse_size(size_str):
-    """Convert SABnzbd human-readable size string (e.g. '1.5 GB') to bytes."""
-    units = {'B': 1, 'KB': 1024, 'MB': 1024 ** 2, 'GB': 1024 ** 3, 'TB': 1024 ** 4}
+    """Convert SABnzbd human-readable size string to bytes.
+
+    Handles both long ('1.5 GB') and short ('1.5 G') unit suffixes,
+    and bare numeric strings ('0').
+    """
+    units = {
+        'B': 1, 'K': 1024, 'KB': 1024,
+        'M': 1024 ** 2, 'MB': 1024 ** 2,
+        'G': 1024 ** 3, 'GB': 1024 ** 3,
+        'T': 1024 ** 4, 'TB': 1024 ** 4,
+    }
     parts = str(size_str).strip().split()
-    if len(parts) != 2:
-        return 0.0
     try:
-        return float(parts[0]) * units.get(parts[1].upper(), 0)
+        if len(parts) == 1:
+            return float(parts[0])
+        if len(parts) == 2:
+            return float(parts[0]) * units.get(parts[1].upper(), 0)
     except ValueError:
-        return 0.0
+        pass
+    return 0.0
 
 
 class Module(ConnectorModule):
@@ -134,11 +145,13 @@ class Module(ConnectorModule):
             sabnzbd_metrics.SERVER_MONTH.labels(self.alias, server).set(
                 stats.get("month", 0)
             )
+            tried = stats.get("articles_tried", 0)
             sabnzbd_metrics.SERVER_TRIED.labels(self.alias, server).set(
-                stats.get("articles_tried", 0)
+                sum(tried.values()) if isinstance(tried, dict) else tried
             )
+            success = stats.get("articles_success", 0)
             sabnzbd_metrics.SERVER_SUCCESS.labels(self.alias, server).set(
-                stats.get("articles_success", 0)
+                sum(success.values()) if isinstance(success, dict) else success
             )
 
     def update_metrics(self, data):

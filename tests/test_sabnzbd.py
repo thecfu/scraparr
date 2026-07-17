@@ -95,6 +95,15 @@ class TestParseSabnzbdSize:
     def test_parse_zero_bytes(self):
         assert _parse_size("0 B") == 0.0
 
+    def test_parse_bare_zero(self):
+        assert _parse_size("0") == 0.0
+
+    def test_parse_short_unit_gigabytes(self):
+        assert _parse_size("11.6 G") == 11.6 * 1024 ** 3
+
+    def test_parse_short_unit_terabytes(self):
+        assert _parse_size("154.4 T") == 154.4 * 1024 ** 4
+
     def test_parse_malformed_returns_zero(self):
         assert _parse_size("invalid") == 0.0
 
@@ -297,6 +306,19 @@ class TestSabnzbdUpdateMetrics:
         mock_metrics.SERVER_TOTAL.labels.return_value.set.assert_called_with(365000000)
         mock_metrics.SERVER_TRIED.labels.return_value.set.assert_called_with(10000)
         mock_metrics.SERVER_SUCCESS.labels.return_value.set.assert_called_with(9800)
+
+    @patch('scraparr.connectors.sabnzbd.sabnzbd_metrics')
+    def test_server_stats_articles_as_daily_dicts(self, mock_metrics):
+        """SABnzbd returns articles_tried/success as date-keyed dicts, not integers."""
+        self.module._update_server_stats({"servers": {
+            "news.example.com": {
+                "day": 0, "week": 0, "month": 0, "total": 0,
+                "articles_tried": {"2026-07-15": 6126, "2026-07-16": 2212, "2026-07-17": 0},
+                "articles_success": {"2026-07-15": 0, "2026-07-16": 0, "2026-07-17": 0},
+            }
+        }})
+        mock_metrics.SERVER_TRIED.labels.return_value.set.assert_called_with(8338)
+        mock_metrics.SERVER_SUCCESS.labels.return_value.set.assert_called_with(0)
 
     @patch('scraparr.connectors.sabnzbd.sabnzbd_metrics')
     def test_clear_removes_per_server_labels(self, mock_metrics):
