@@ -254,7 +254,16 @@ class TestSabnzbdUpdateMetrics:
     def test_queue_paused_true_sets_one(self, mock_metrics):
         self.module._update_queue({
             "kbpersec": "0", "mb": "0", "mbleft": "0",
-            "paused_all": True, "diskspace1": "0",
+            "paused": True, "paused_all": False, "diskspace1": "0",
+            "diskspacetotal1": "0", "noofslots": 0
+        })
+        mock_metrics.QUEUE_PAUSED.labels.return_value.set.assert_called_with(1)
+
+    @patch('scraparr.connectors.sabnzbd.sabnzbd_metrics')
+    def test_queue_paused_all_true_sets_one(self, mock_metrics):
+        self.module._update_queue({
+            "kbpersec": "0", "mb": "0", "mbleft": "0",
+            "paused": False, "paused_all": True, "diskspace1": "0",
             "diskspacetotal1": "0", "noofslots": 0
         })
         mock_metrics.QUEUE_PAUSED.labels.return_value.set.assert_called_with(1)

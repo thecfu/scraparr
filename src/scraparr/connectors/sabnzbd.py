@@ -86,7 +86,7 @@ class Module(ConnectorModule):
         return {
             "queue":        queue_resp.get("queue", {}),
             "history":      history_resp.get("history", {}),
-            "server_stats": server_stats_resp.get("server_stats", {}),
+            "server_stats": server_stats_resp.get("server_stats", server_stats_resp),
             "failed_count": failed_resp.get("history", {}).get("noofslots", 0),
         }
 
@@ -105,7 +105,7 @@ class Module(ConnectorModule):
                 queue.get("noofslots", 0)
             )
             sabnzbd_metrics.QUEUE_PAUSED.labels(self.alias).set(
-                1 if queue.get("paused_all", False) else 0
+                1 if (queue.get("paused", False) or queue.get("paused_all", False)) else 0
             )
             sabnzbd_metrics.DISK_SPACE.labels(self.alias).set(
                 float(queue.get("diskspace1", 0)) * 1024 * 1024 * 1024
