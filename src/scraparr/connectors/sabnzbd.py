@@ -24,8 +24,8 @@ def _parse_size(size_str):
     if len(parts) != 2:
         return 0.0
     try:
-        return float(parts[0]) * units.get(parts[1].upper(), 1)
-    except (ValueError, KeyError):
+        return float(parts[0]) * units.get(parts[1].upper(), 0)
+    except ValueError:
         return 0.0
 
 
@@ -61,7 +61,7 @@ class Module(ConnectorModule):
         queue_resp        = self.get("queue")
         history_resp      = self.get("history")
         server_stats_resp = self.get("server_stats")
-        failed_resp       = self.get("history", failed_only=1, limit=0)
+        failed_resp       = self.get("history", failed_only=1, limit=1)
 
         end_time = time.time()
         sabnzbd_metrics.LAST_SCRAPE.labels(self.alias).set(end_time)
@@ -80,27 +80,30 @@ class Module(ConnectorModule):
         }
 
     def _update_queue(self, queue):
-        sabnzbd_metrics.QUEUE_SPEED.labels(self.alias).set(
-            float(queue.get("kbpersec", 0)) * 1024
-        )
-        sabnzbd_metrics.QUEUE_SIZE.labels(self.alias).set(
-            float(queue.get("mb", 0)) * 1024 * 1024
-        )
-        sabnzbd_metrics.QUEUE_REMAINING.labels(self.alias).set(
-            float(queue.get("mbleft", 0)) * 1024 * 1024
-        )
-        sabnzbd_metrics.QUEUE_SLOTS.labels(self.alias).set(
-            queue.get("noofslots", 0)
-        )
-        sabnzbd_metrics.QUEUE_PAUSED.labels(self.alias).set(
-            1 if queue.get("paused_all", False) else 0
-        )
-        sabnzbd_metrics.DISK_SPACE.labels(self.alias).set(
-            float(queue.get("diskspace1", 0)) * 1024 * 1024 * 1024
-        )
-        sabnzbd_metrics.DISK_SPACE_TOTAL.labels(self.alias).set(
-            float(queue.get("diskspacetotal1", 0)) * 1024 * 1024 * 1024
-        )
+        try:
+            sabnzbd_metrics.QUEUE_SPEED.labels(self.alias).set(
+                float(queue.get("kbpersec", 0)) * 1024
+            )
+            sabnzbd_metrics.QUEUE_SIZE.labels(self.alias).set(
+                float(queue.get("mb", 0)) * 1024 * 1024
+            )
+            sabnzbd_metrics.QUEUE_REMAINING.labels(self.alias).set(
+                float(queue.get("mbleft", 0)) * 1024 * 1024
+            )
+            sabnzbd_metrics.QUEUE_SLOTS.labels(self.alias).set(
+                queue.get("noofslots", 0)
+            )
+            sabnzbd_metrics.QUEUE_PAUSED.labels(self.alias).set(
+                1 if queue.get("paused_all", False) else 0
+            )
+            sabnzbd_metrics.DISK_SPACE.labels(self.alias).set(
+                float(queue.get("diskspace1", 0)) * 1024 * 1024 * 1024
+            )
+            sabnzbd_metrics.DISK_SPACE_TOTAL.labels(self.alias).set(
+                float(queue.get("diskspacetotal1", 0)) * 1024 * 1024 * 1024
+            )
+        except (ValueError, TypeError) as e:
+            self.logger.error("Failed to parse queue metrics: %s", e)
 
     def _update_history(self, history, failed_count):
         sabnzbd_metrics.HISTORY_TOTAL.labels(self.alias).set(
