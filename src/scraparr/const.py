@@ -7,6 +7,7 @@ ACTIVE_CONNECTORS = [
     'bazarr', 'readarr', 'seerr',
     'jellyseerr', 'overseerr', 'whisparr',
     'jellyfin', 'lidarr', 'kavita',
+    'sabnzbd',
 ]
 
 API_VERSIONS = {
@@ -16,6 +17,7 @@ API_VERSIONS = {
     "jellyseerr": "v1", "overseerr": "v1",
     "whisparr": "v3", "jellyfin": "dummy",
     "lidarr": "v1", "kavita": "dummy",
+    "sabnzbd": "dummy",
 }
 
 BEAUTIFUL_CONNECTORS = ", ".join(ACTIVE_CONNECTORS[:-1]) + " or " + ACTIVE_CONNECTORS[-1]
