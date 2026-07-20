@@ -6,9 +6,8 @@ A global metric `scraparr_services_up` (labels: `alias`, `scraparr_services`) is
 
 ---
 
-## Sonarr
-
-TV series management.
+<details>
+<summary><h2>Sonarr</h2> TV series management</summary>
 
 **Default API version:** `v3`
 
@@ -51,11 +50,12 @@ TV series management.
 | `sonarr_series_disk_size` | alias, series | detailed |
 | `sonarr_series_missing_episodes` | alias, series | detailed |
 
+</details>
+
 ---
 
-## Radarr
-
-Movie management.
+<details>
+<summary><h2>Radarr</h2> Movie management</summary>
 
 **Default API version:** `v3`
 
@@ -95,11 +95,12 @@ Movie management.
 | `radarr_movie_monitored` | alias, movie | detailed |
 | `radarr_movie_disk_size` | alias, movie | detailed |
 
+</details>
+
 ---
 
-## Prowlarr
-
-Indexer management.
+<details>
+<summary><h2>Prowlarr</h2> Indexer management</summary>
 
 **Default API version:** `v1`
 
@@ -135,11 +136,12 @@ Indexer management.
 | `prowlarr_indexer_status` | alias, indexer, status | detailed |
 | `prowlarr_indexer_healthy` | alias, indexer | detailed |
 
+</details>
+
 ---
 
-## Lidarr
-
-Music management.
+<details>
+<summary><h2>Lidarr</h2> Music management</summary>
 
 **Default API version:** `v1`
 
@@ -181,11 +183,12 @@ Music management.
 
 **Note:** Makes 2 extra API calls per artist (albums + track files). Missing releases are releases where `percentOfTracks` is not 100% on monitored releases.
 
+</details>
+
 ---
 
-## Readarr
-
-Book management.
+<details>
+<summary><h2>Readarr</h2> Book management</summary>
 
 **Default API version:** `v1`
 
@@ -220,11 +223,12 @@ Book management.
 | `readarr_book_rating` | alias, book | detailed |
 | `readarr_book_percentage` | alias, book | detailed |
 
+</details>
+
 ---
 
-## Bazarr
-
-Subtitle management.
+<details>
+<summary><h2>Bazarr</h2> Subtitle management</summary>
 
 **Default API version:** not used (direct `/api/` paths)
 
@@ -247,11 +251,12 @@ Subtitle management.
 
 **Note:** Only counts series/movies that have a subtitle profile assigned (`profileId` is not null).
 
+</details>
+
 ---
 
-## Jellyfin
-
-Media server.
+<details>
+<summary><h2>Jellyfin</h2> Media server</summary>
 
 **Default API version:** not used (direct API paths)
 
@@ -287,11 +292,12 @@ Media server.
 
 **Note:** Jellyfin uses `Authorization: Mediabrowser Token=` header format instead of `X-Api-Key`.
 
+</details>
+
 ---
 
-## Kavita
-
-Reading server for manga, comics, and books.
+<details>
+<summary><h2>Kavita</h2> Reading server for manga, comics, and books</summary>
 
 **Default API version:** not used (direct `/api/` paths)
 
@@ -345,11 +351,12 @@ The `exclude` option accepts **library names or IDs** (not root folder paths lik
 | `kavita_series_max_hours_to_read` | alias, library, series | detailed |
 | `kavita_series_format` | alias, library, series, format | detailed |
 
+</details>
+
 ---
 
-## SABnzbd
-
-Usenet download client.
+<details>
+<summary><h2>SABnzbd</h2> Usenet download client</summary>
 
 **Default API version:** not used (single `/api` endpoint)
 
@@ -382,11 +389,12 @@ Usenet download client.
 
 **Note:** SABnzbd does not have a `detailed` mode - all metrics are always exposed. All size values are in bytes.
 
+</details>
+
 ---
 
-## Seerr
-
-Media request management. Works with Jellyseerr, Overseerr, and standalone Seerr.
+<details>
+<summary><h2>Seerr</h2> Media request management (Jellyseerr, Overseerr)</summary>
 
 **Default API version:** `v1`
 
@@ -418,13 +426,16 @@ Media request management. Works with Jellyseerr, Overseerr, and standalone Seerr
 
 **Note:** When `detailed` is enabled, title resolution makes parallel API calls to TMDB/TVDB endpoints for display names.
 
+</details>
+
 ---
 
-## Whisparr
-
-Adult content management. Shares the same codebase as Sonarr.
+<details>
+<summary><h2>Whisparr</h2> Adult content management</summary>
 
 **Default API version:** `v3`
+
+Shares the same codebase as Sonarr.
 
 ### Additional Options
 
@@ -433,3 +444,5 @@ Same as [Sonarr](#sonarr), including `episode_quality_stats` and `exclude`.
 ### Metrics
 
 Same structure as Sonarr but with `whisparr_` prefix and uses "sites"/"scenes" terminology instead of "series"/"episodes".
+
+</details>
