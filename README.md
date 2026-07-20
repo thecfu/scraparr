@@ -98,6 +98,11 @@ For environment variables, please refer to the [sample.env](sample.env) file. Yo
 
 Make sure the configuration specifies the URLs and API keys for the *arr services you want to monitor.
 
+> [!TIP]
+> For full documentation, see:
+> - **[Configuration Guide](docs/configuration.md)** - all general, auth, and service options
+> - **[Connectors Reference](docs/connectors.md)** - every connector's options, metrics, and behaviors
+
 ### Config.yaml
 
 Template for Service inside the config.yaml:
