@@ -26,6 +26,15 @@ class Module(ConnectorModule):
 
     def clear(self):
         """Clear the Metrics for the Service"""
+        jellyfin_metrics.SESSIONS.remove_by_labels({"alias": self.alias})
+        if self.session_details:
+            jellyfin_metrics.SESSION_POSITION.remove_by_labels({"alias": self.alias})
+            jellyfin_metrics.SESSION_DURATION.remove_by_labels({"alias": self.alias})
+            jellyfin_metrics.SESSION_TRANSCODING.remove_by_labels({"alias": self.alias})
+            jellyfin_metrics.SESSION_PAUSED.remove_by_labels({"alias": self.alias})
+            jellyfin_metrics.SESSION_BITRATE.remove_by_labels({"alias": self.alias})
+        if self.client_info:
+            jellyfin_metrics.SESSION_CLIENT_INFO.remove_by_labels({"alias": self.alias})
 
 
     def get_header(self):
@@ -140,6 +149,42 @@ class Module(ConnectorModule):
                 user_name = session['UserName']
                 jellyfin_metrics.SESSIONS.labels(self.alias, user_id, user_name).set(1)
 
+    def update_session_details(self, sessions):
+        """Update per-session stream metrics and client info."""
+        if not self.session_details:
+            return
+
+        for session in sessions:
+            now_playing = session.get('NowPlayingItem')
+            if not now_playing:
+                continue
+
+            play_state = session.get('PlayState', {})
+            username = session.get('UserName', 'unknown')
+            device = session.get('DeviceName', 'unknown')
+            client = session.get('Client', 'unknown')
+            media_type = now_playing.get('Type', 'Unknown')
+            method = play_state.get('PlayMethod', 'DirectPlay')
+
+            position = play_state.get('PositionTicks', 0) / 10_000_000
+            duration = now_playing.get('RunTimeTicks', 0) / 10_000_000
+            is_transcoding = 1 if method == 'Transcode' else 0
+            is_paused = 1 if play_state.get('IsPaused', False) else 0
+            bitrate = session.get('TranscodingInfo', {}).get('Bitrate', 0) if is_transcoding else 0
+
+            label_values = (self.alias, username, device, client, media_type, method)
+            jellyfin_metrics.SESSION_POSITION.labels(*label_values).set(position)
+            jellyfin_metrics.SESSION_DURATION.labels(*label_values).set(duration)
+            jellyfin_metrics.SESSION_TRANSCODING.labels(*label_values).set(is_transcoding)
+            jellyfin_metrics.SESSION_PAUSED.labels(*label_values).set(is_paused)
+            jellyfin_metrics.SESSION_BITRATE.labels(*label_values).set(bitrate)
+
+            if self.client_info:
+                client_version = session.get('ApplicationVersion', 'unknown')
+                jellyfin_metrics.SESSION_CLIENT_INFO.labels(
+                    self.alias, username, device, client, client_version
+                ).set(1)
+
     def scrape(self):
         """Scrape the Jellyfin Service"""
         initial_time = time.time()
@@ -193,3 +238,4 @@ class Module(ConnectorModule):
             ],
             self.alias)
         self.update_sessions(data["sessions"])
+        self.update_session_details(data["sessions"])
