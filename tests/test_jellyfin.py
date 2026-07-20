@@ -8,6 +8,36 @@ from scraparr.connectors import jellyfin
 from scraparr.connectors.jellyfin import Module
 
 
+@patch('scraparr.connectors.jellyfin.jellyfin_metrics')
+@patch('scraparr.connectors.jellyfin.util')
+class TestUpdateMetrics:
+    """Tests for update_metrics correctness."""
+
+    def setup_method(self):
+        config = {
+            'url': 'http://jellyfin',
+            'api_key': 'test-token',
+            'alias': 'test_jellyfin',
+            'detailed': False,
+            'within': 300,
+        }
+        self.module = Module(config)
+
+    def test_number_of_users_uses_n_user(self, mock_util, mock_metrics):
+        """NUMBER_OF_USERS must be set from n_user, not n_devices."""
+        data = {
+            "n_devices": 10,
+            "n_user": 3,
+            "n_movies": 100,
+            "n_series": 50,
+            "genres": {"Action": {"total": 1}},
+            "sessions": [],
+            "infos": {"Version": "10.9.0", "HasUpdateAvailable": False},
+        }
+        self.module.update_metrics(data)
+        mock_metrics.NUMBER_OF_USERS.labels('test_jellyfin').set.assert_called_with(3)
+
+
 class TestJellyfinUsesSharedSession:
     """Tests that Jellyfin API calls use module's shared session."""
 
@@ -69,3 +99,24 @@ class TestJellyfinUsesSharedSession:
 
         mock_get_session.assert_called_once()
         assert 'Action' in result
+
+    def test_session_details_defaults_false(self):
+        """session_details defaults to False when not in config."""
+        assert self.module.session_details is False
+
+    def test_client_info_defaults_false(self):
+        """client_info defaults to False when not in config."""
+        assert self.module.client_info is False
+
+    def test_session_details_reads_config(self):
+        """session_details reads from config when set."""
+        config = {
+            'url': 'http://jellyfin',
+            'api_key': 'test-token',
+            'alias': 'test_jellyfin',
+            'detailed': False,
+            'within': 300,
+            'session_details': True,
+        }
+        module = Module(config)
+        assert module.session_details is True

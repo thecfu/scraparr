@@ -20,6 +20,8 @@ class Module(ConnectorModule):
         """Initialize the Module"""
         ConnectorModule.__init__(self, config, "jellyfin")
         self.within = config.get('within', 300)
+        self.session_details = config.get('session_details', False)
+        self.client_info = config.get('client_info', False)
         self.header = None
 
     def clear(self):
@@ -176,7 +178,7 @@ class Module(ConnectorModule):
     def update_metrics(self, data):
         """Update the Metrics for the Jellyfin Service"""
         jellyfin_metrics.NUMBER_OF_DEVICES.labels(self.alias).set(data["n_devices"])
-        jellyfin_metrics.NUMBER_OF_USERS.labels(self.alias).set(data["n_devices"])
+        jellyfin_metrics.NUMBER_OF_USERS.labels(self.alias).set(data["n_user"])
         jellyfin_metrics.NUMBER_OF_MOVIES.labels(self.alias).set(data["n_movies"])
         jellyfin_metrics.NUMBER_OF_SERIES.labels(self.alias).set(data["n_series"])
         jellyfin_metrics.VERSION.labels(self.alias, data["infos"]["Version"]).set(1)
