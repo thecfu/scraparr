@@ -24,11 +24,11 @@ BEAUTIFUL_CONNECTORS = ", ".join(ACTIVE_CONNECTORS[:-1]) + " or " + ACTIVE_CONNE
 
 # Field names by type (for type coercion after env var parsing)
 INT_FIELDS = {'interval', 'within', 'port', 'workers'}
-BOOL_FIELDS = {'detailed', 'episode_quality_stats'}
+BOOL_FIELDS = {'detailed', 'episode_quality_stats', 'session_details', 'client_info'}
 
 # Service-specific fields (for env var parsing - distinguishes SONARR_URL from SONARR_PROD_URL)
 SERVICE_FIELDS = {
     'url', 'api_key', 'alias', 'api_version',
     'interval', 'detailed', 'within', 'episode_quality_stats',
-    'legacy_auth', 'exclude',
+    'legacy_auth', 'exclude', 'session_details', 'client_info',
 }
