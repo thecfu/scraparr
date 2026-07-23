@@ -13,7 +13,7 @@ def test_komga_api_version_is_v1():
     assert API_VERSIONS.get('komga') == 'v1'
 
 
-def _make_module(detailed=False):
+def _make_module(detailed=False, exclude=None):
     config = {
         'url': 'http://komga:25600',
         'api_key': 'test-key',
@@ -21,7 +21,7 @@ def _make_module(detailed=False):
         'api_version': 'v1',
         'detailed': detailed,
         'interval': 30,
-        'exclude': [],
+        'exclude': exclude if exclude is not None else [],
     }
     from scraparr.connectors.komga import Module
     return Module(config)
@@ -112,3 +112,48 @@ class TestScrape:
 
         data = mod.scrape()
         assert data is None
+
+
+class TestSeriesMetricsExclude:
+    def test_exclude_filters_series_by_library_name(self):
+        import scraparr.metrics.komga as komga_metrics
+
+        mod = _make_module(detailed=True, exclude=['Manga'])
+
+        libraries_resp = _page_response([
+            {"id": "lib1", "name": "Comics"},
+            {"id": "lib2", "name": "Manga"},
+        ])
+        series_resp = _page_response([
+            {"id": "s1", "name": "Batman", "libraryId": "lib1",
+             "metadata": {"status": "ONGOING", "genres": []},
+             "booksCount": 10, "booksUnreadCount": 2,
+             "booksReadCount": 5, "booksInProgressCount": 3},
+            {"id": "s2", "name": "Naruto", "libraryId": "lib2",
+             "metadata": {"status": "ENDED", "genres": []},
+             "booksCount": 20, "booksUnreadCount": 0,
+             "booksReadCount": 20, "booksInProgressCount": 0},
+        ])
+
+        mod._update_series_metrics(series_resp, libraries_resp)
+
+        assert komga_metrics.SERIES_COUNT.labels('test')._value.get() == 1
+        assert komga_metrics.SERIES_STATUS_COUNT.labels('test', 'ONGOING')._value.get() == 1
+        assert komga_metrics.SERIES_STATUS_COUNT.labels('test', 'ENDED')._value.get() == 0
+        assert komga_metrics.SERIES_BOOKS_COUNT.labels(
+            'test', 'Comics', 'batman')._value.get() == 10
+
+        # Excluded library's series must not be emitted.
+        excluded_samples = [
+            sample for sample in komga_metrics.SERIES_BOOKS_COUNT.collect()[0].samples
+            if sample.labels.get('library') == 'Manga'
+        ]
+        assert not excluded_samples
+
+        # Cleanup for test isolation.
+        komga_metrics.SERIES_COUNT.remove_by_labels({"alias": "test"})
+        komga_metrics.SERIES_STATUS_COUNT.remove_by_labels({"alias": "test"})
+        komga_metrics.SERIES_BOOKS_COUNT.remove_by_labels({"alias": "test"})
+        komga_metrics.SERIES_BOOKS_UNREAD.remove_by_labels({"alias": "test"})
+        komga_metrics.SERIES_BOOKS_READ.remove_by_labels({"alias": "test"})
+        komga_metrics.SERIES_BOOKS_IN_PROGRESS.remove_by_labels({"alias": "test"})

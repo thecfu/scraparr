@@ -56,9 +56,8 @@ class Module(ConnectorModule):
 
         UP.labels(self.alias, 'komga').set(1)
 
-        needs_all = self.detailed
         libraries = self._get_paged("/libraries")
-        series = self._get_paged("/series", fetch_all=needs_all)
+        series = self._get_paged("/series", fetch_all=True)
         books = self._get_paged("/books", fetch_all=False)
         collections = self._get_paged("/collections")
         readlists = self._get_paged("/readlists")
@@ -86,7 +85,7 @@ class Module(ConnectorModule):
     def update_metrics(self, data):
         self._update_server_metrics(data["server_info"])
         self._update_library_metrics(data["libraries"], data["series"])
-        self._update_series_metrics(data["series"])
+        self._update_series_metrics(data["series"], data["libraries"])
         self._update_book_metrics(data["books"])
         self._update_collection_metrics(data["collections"])
         self._update_readlist_metrics(data["readlists"])
@@ -125,10 +124,18 @@ class Module(ConnectorModule):
         for genre, cnt in genre_counts.items():
             komga_metrics.LIBRARY_GENRE_COUNT.labels(self.alias, lib_name, genre).set(cnt)
 
-    def _update_series_metrics(self, series):
+    def _update_series_metrics(self, series, libraries):
+        lib_id_to_name = {
+            lib["id"]: lib.get("name", "unknown") for lib in libraries.get("content", [])
+        }
+
         series_list = series.get("content", [])
-        total_series = series.get("totalElements", len(series_list))
-        komga_metrics.SERIES_COUNT.labels(self.alias).set(total_series)
+        series_list = [
+            s for s in series_list
+            if lib_id_to_name.get(s.get("libraryId"), "unknown") not in self.exclude
+            and s.get("libraryId") not in self.exclude
+        ]
+        komga_metrics.SERIES_COUNT.labels(self.alias).set(len(series_list))
 
         status_counts = {s: 0 for s in SERIES_STATUSES}
         for s in series_list:
@@ -144,14 +151,15 @@ class Module(ConnectorModule):
                 series_label = ''.join(
                     e for e in series_name.lower().replace(" ", "-") if e.isalnum() or e == "-"
                 )
-                lib_id = s.get("libraryId", "unknown")
-                komga_metrics.SERIES_BOOKS_COUNT.labels(self.alias, lib_id, series_label).set(
+                lib_name = lib_id_to_name.get(s.get("libraryId"), "unknown")
+                komga_metrics.SERIES_BOOKS_COUNT.labels(self.alias, lib_name, series_label).set(
                     s.get("booksCount", 0))
-                komga_metrics.SERIES_BOOKS_UNREAD.labels(self.alias, lib_id, series_label).set(
+                komga_metrics.SERIES_BOOKS_UNREAD.labels(self.alias, lib_name, series_label).set(
                     s.get("booksUnreadCount", 0))
-                komga_metrics.SERIES_BOOKS_READ.labels(self.alias, lib_id, series_label).set(
+                komga_metrics.SERIES_BOOKS_READ.labels(self.alias, lib_name, series_label).set(
                     s.get("booksReadCount", 0))
-                komga_metrics.SERIES_BOOKS_IN_PROGRESS.labels(self.alias, lib_id, series_label).set(
+                komga_metrics.SERIES_BOOKS_IN_PROGRESS.labels(
+                    self.alias, lib_name, series_label).set(
                     s.get("booksInProgressCount", 0))
 
     def _update_book_metrics(self, books):
