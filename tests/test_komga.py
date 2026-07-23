@@ -157,3 +157,105 @@ class TestSeriesMetricsExclude:
         komga_metrics.SERIES_BOOKS_UNREAD.remove_by_labels({"alias": "test"})
         komga_metrics.SERIES_BOOKS_READ.remove_by_labels({"alias": "test"})
         komga_metrics.SERIES_BOOKS_IN_PROGRESS.remove_by_labels({"alias": "test"})
+
+
+class TestUpdateMetrics:
+    def test_update_server_metrics(self):
+        mod = _make_module()
+        server_info = {"build": {"version": "1.14.0"}}
+        mod._update_server_metrics(server_info)
+        import scraparr.metrics.komga as komga_metrics
+        komga_metrics.VERSION.labels("test", "1.14.0")._mock_name = "VERSION"
+
+    def test_update_library_metrics(self):
+        mod = _make_module()
+        libraries = _page_response([
+            {"id": "lib1", "name": "Comics"},
+            {"id": "lib2", "name": "Manga"},
+        ])
+        series = _page_response([
+            {"id": "s1", "libraryId": "lib1", "name": "Batman",
+             "booksCount": 5, "metadata": {"status": "ONGOING", "genres": ["Action"]}},
+            {"id": "s2", "libraryId": "lib1", "name": "Superman",
+             "booksCount": 3, "metadata": {"status": "ENDED", "genres": ["Action", "Sci-Fi"]}},
+            {"id": "s3", "libraryId": "lib2", "name": "Naruto",
+             "booksCount": 72, "metadata": {"status": "ENDED", "genres": ["Shonen"]}},
+        ])
+
+        mod._update_library_metrics(libraries, series)
+
+    def test_update_series_status_counts(self):
+        mod = _make_module()
+        libraries = _page_response([
+            {"id": "lib1", "name": "Comics"},
+        ])
+        series = _page_response([
+            {"id": "s1", "name": "A", "libraryId": "lib1", "metadata": {"status": "ONGOING"}},
+            {"id": "s2", "name": "B", "libraryId": "lib1", "metadata": {"status": "ONGOING"}},
+            {"id": "s3", "name": "C", "libraryId": "lib1", "metadata": {"status": "ENDED"}},
+        ], total_elements=3)
+        mod._update_series_metrics(series, libraries)
+
+    def test_update_book_media_counts(self):
+        mod = _make_module()
+        books = _page_response([
+            {"id": "b1", "media": {"status": "READY"}},
+            {"id": "b2", "media": {"status": "READY"}},
+            {"id": "b3", "media": {"status": "ERROR"}},
+        ], total_elements=3)
+        mod._update_book_metrics(books)
+
+    def test_update_metrics_full(self):
+        mod = _make_module()
+        data = {
+            "server_info": {"build": {"version": "1.14.0"}},
+            "libraries": _page_response([{"id": "lib1", "name": "Comics"}]),
+            "series": _page_response([
+                {"id": "s1", "libraryId": "lib1", "name": "Batman",
+                 "booksCount": 5, "metadata": {"status": "ONGOING", "genres": []}},
+            ]),
+            "books": _page_response([{"id": "b1", "media": {"status": "READY"}}]),
+            "collections": _page_response([{"id": "c1"}]),
+            "readlists": _page_response([{"id": "r1"}]),
+            "users": _page_response([{"id": "u1"}, {"id": "u2"}]),
+        }
+        mod.update_metrics(data)
+
+    def test_exclude_library(self):
+        config = {
+            'url': 'http://komga:25600', 'api_key': 'test-key',
+            'alias': 'test', 'api_version': 'v1',
+            'detailed': False, 'interval': 30,
+            'exclude': ['Manga'],
+        }
+        from scraparr.connectors.komga import Module
+        mod = Module(config)
+
+        libraries = _page_response([
+            {"id": "lib1", "name": "Comics"},
+            {"id": "lib2", "name": "Manga"},
+        ])
+        series = _page_response([
+            {"id": "s1", "libraryId": "lib1", "name": "X", "booksCount": 1,
+             "metadata": {"status": "ONGOING", "genres": []}},
+        ])
+        mod._update_library_metrics(libraries, series)
+
+
+class TestClear:
+    def test_clear_does_not_raise(self):
+        mod = _make_module()
+        data = {
+            "server_info": {"build": {"version": "1.0.0"}},
+            "libraries": _page_response([{"id": "lib1", "name": "Comics"}]),
+            "series": _page_response([
+                {"id": "s1", "libraryId": "lib1", "name": "Batman",
+                 "booksCount": 5, "metadata": {"status": "ONGOING", "genres": []}},
+            ]),
+            "books": _page_response([{"id": "b1", "media": {"status": "READY"}}]),
+            "collections": _page_response([{"id": "c1"}]),
+            "readlists": _page_response([{"id": "r1"}]),
+            "users": _page_response([{"id": "u1"}]),
+        }
+        mod.update_metrics(data)
+        mod.clear()
