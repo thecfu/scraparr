@@ -259,3 +259,40 @@ class TestClear:
         }
         mod.update_metrics(data)
         mod.clear()
+
+
+class TestDetailedMode:
+    def test_detailed_series_metrics(self):
+        mod = _make_module(detailed=True)
+        libraries = _page_response([{"id": "lib1", "name": "Comics"}])
+        series = _page_response([
+            {"id": "s1", "libraryId": "lib1", "name": "Batman Returns",
+             "booksCount": 10, "booksUnreadCount": 2,
+             "booksReadCount": 5, "booksInProgressCount": 3,
+             "metadata": {"status": "ONGOING", "genres": ["Action"]}},
+        ], total_elements=1)
+        mod._update_series_metrics(series, libraries)
+
+    def test_detailed_library_genres(self):
+        mod = _make_module(detailed=True)
+        libraries = _page_response([{"id": "lib1", "name": "Comics"}])
+        series = _page_response([
+            {"id": "s1", "libraryId": "lib1", "name": "Batman",
+             "booksCount": 5,
+             "metadata": {"status": "ONGOING", "genres": ["Action", "Drama"]}},
+            {"id": "s2", "libraryId": "lib1", "name": "Superman",
+             "booksCount": 3,
+             "metadata": {"status": "ENDED", "genres": ["Action", "Sci-Fi"]}},
+        ])
+        mod._update_library_metrics(libraries, series)
+
+    def test_non_detailed_skips_per_series(self):
+        mod = _make_module(detailed=False)
+        libraries = _page_response([{"id": "lib1", "name": "Comics"}])
+        series = _page_response([
+            {"id": "s1", "libraryId": "lib1", "name": "Batman",
+             "booksCount": 10, "booksUnreadCount": 2,
+             "booksReadCount": 5, "booksInProgressCount": 3,
+             "metadata": {"status": "ONGOING", "genres": ["Action"]}},
+        ])
+        mod._update_series_metrics(series, libraries)
