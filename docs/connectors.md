@@ -356,6 +356,40 @@ The `exclude` option accepts **library names or IDs** (not root folder paths lik
 ---
 
 <details>
+<summary><h2>Komga</h2> Media server for comics and manga</summary>
+
+**Default API version:** `v1`
+
+The `exclude` option accepts **library names or IDs** (not root folder paths like other connectors).
+
+### Metrics
+
+| Metric | Labels | Mode |
+|--------|--------|------|
+| `komga_last_scrape` | alias | all |
+| `komga_scrape_duration` | alias | all |
+| `komga_version` | alias, version | all |
+| `komga_library_count` | alias | all |
+| `komga_library_series_count` | alias, library | all |
+| `komga_library_books_count` | alias, library | all |
+| `komga_series_count` | alias | all |
+| `komga_series_status_count` | alias, status | all |
+| `komga_book_count` | alias | all |
+| `komga_book_media_status_count` | alias, status | all |
+| `komga_collection_count` | alias | all |
+| `komga_readlist_count` | alias | all |
+| `komga_user_count` | alias | all |
+| `komga_library_genre_count` | alias, library, genre | detailed |
+| `komga_series_books_count` | alias, library, series | detailed |
+| `komga_series_books_unread` | alias, library, series | detailed |
+| `komga_series_books_read` | alias, library, series | detailed |
+| `komga_series_books_in_progress` | alias, library, series | detailed |
+
+</details>
+
+---
+
+<details>
 <summary><h2>SABnzbd</h2> Usenet download client</summary>
 
 **Default API version:** not used (single `/api` endpoint)
