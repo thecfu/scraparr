@@ -16,7 +16,7 @@ API_VERSIONS = {
     "readarr": "v1", "seerr": "v1",
     "jellyseerr": "v1", "overseerr": "v1",
     "whisparr": "v3", "jellyfin": "dummy",
-    "lidarr": "v1", "kavita": "dummy", "komga": "v1",
+    "lidarr": "v1", "kavita": "dummy", "komga": "dummy",
     "sabnzbd": "dummy",
 }
 

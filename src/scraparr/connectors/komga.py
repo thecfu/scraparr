@@ -15,13 +15,22 @@ class Module(ConnectorModule):
 
     def __init__(self, config):
         ConnectorModule.__init__(self, config, "komga")
-        self.base_url = self.url
-        self.url = f"{self.url}/api/{self.api_version}"
+
+    @staticmethod
+    def _wrap_list(data):
+        """Wrap a plain list response into paginated format for consistency."""
+        if isinstance(data, list):
+            return {"content": data, "totalElements": len(data), "totalPages": 1}
+        return data
 
     def _get_paged(self, endpoint, fetch_all=False):
         separator = "&" if "?" in endpoint else "?"
         first_page = self.get(f"{endpoint}{separator}page=0&size={PAGE_SIZE}")
-        if not first_page or "content" not in first_page:
+        if not first_page:
+            return first_page
+
+        first_page = self._wrap_list(first_page)
+        if "content" not in first_page:
             return first_page
 
         if not fetch_all or first_page.get("totalPages", 1) <= 1:
@@ -36,19 +45,11 @@ class Module(ConnectorModule):
         first_page["content"] = all_content
         return first_page
 
-    def _get_base(self, endpoint):
-        """GET from the base URL (outside /api/v1/)."""
-        original_url = self.url
-        self.url = self.base_url
-        result = self.get(endpoint)
-        self.url = original_url
-        return result
-
     def scrape(self):
         initial_time = time.time()
         self.logger.debug("Scraping Komga service")
 
-        server_info = self._get_base("/actuator/info")
+        server_info = self.get("/actuator/info")
         if not server_info:
             self.logger.error("Failed to retrieve server info")
             UP.labels(self.alias, 'komga').set(0)
@@ -56,12 +57,12 @@ class Module(ConnectorModule):
 
         UP.labels(self.alias, 'komga').set(1)
 
-        libraries = self._get_paged("/libraries")
-        series = self._get_paged("/series", fetch_all=True)
-        books = self._get_paged("/books", fetch_all=False)
-        collections = self._get_paged("/collections")
-        readlists = self._get_paged("/readlists")
-        users = self._get_paged("/users")
+        libraries = self._get_paged("/api/v1/libraries")
+        series = self._get_paged("/api/v1/series", fetch_all=True)
+        books = self._get_paged("/api/v1/books", fetch_all=False)
+        collections = self._get_paged("/api/v1/collections")
+        readlists = self._get_paged("/api/v1/readlists")
+        users = self._get_paged("/api/v2/users")
 
         if not all(r and "content" in r for r in (libraries, series, books)):
             self.logger.error("Failed to retrieve core data")

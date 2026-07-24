@@ -9,8 +9,8 @@ def test_komga_registered_in_active_connectors():
     assert 'komga' in ACTIVE_CONNECTORS
 
 
-def test_komga_api_version_is_v1():
-    assert API_VERSIONS.get('komga') == 'v1'
+def test_komga_api_version_set():
+    assert API_VERSIONS.get('komga') == 'dummy'
 
 
 def _make_module(detailed=False, exclude=None):
@@ -18,7 +18,7 @@ def _make_module(detailed=False, exclude=None):
         'url': 'http://komga:25600',
         'api_key': 'test-key',
         'alias': 'test',
-        'api_version': 'v1',
+        'api_version': 'dummy',
         'detailed': detailed,
         'interval': 30,
         'exclude': exclude if exclude is not None else [],
@@ -36,6 +36,25 @@ def _page_response(content, total_elements=None, total_pages=1, page_number=0):
         "totalPages": total_pages,
         "number": page_number,
     }
+
+
+class TestWrapList:
+    def test_wrap_plain_list(self):
+        mod = _make_module()
+        data = [{"id": "1"}, {"id": "2"}]
+        result = mod._wrap_list(data)
+        assert result == {"content": data, "totalElements": 2, "totalPages": 1}
+
+    def test_wrap_already_paginated(self):
+        mod = _make_module()
+        data = _page_response([{"id": "1"}])
+        result = mod._wrap_list(data)
+        assert result == data
+
+    def test_wrap_empty_list(self):
+        mod = _make_module()
+        result = mod._wrap_list([])
+        assert result == {"content": [], "totalElements": 0, "totalPages": 1}
 
 
 class TestGetPaged:
@@ -62,6 +81,17 @@ class TestGetPaged:
         assert result["content"] == [{"id": "1"}, {"id": "2"}]
 
     @patch('scraparr.connectors.komga.Module.get')
+    def test_plain_list_response(self, mock_get):
+        """Endpoints like /api/v1/libraries return plain arrays, not paginated objects."""
+        mod = _make_module()
+        mock_get.return_value = [{"id": "lib1", "name": "Comics"}, {"id": "lib2", "name": "Manga"}]
+
+        result = mod._get_paged("/api/v1/libraries")
+        assert result["content"] == [{"id": "lib1", "name": "Comics"}, {"id": "lib2", "name": "Manga"}]
+        assert result["totalElements"] == 2
+        assert result["totalPages"] == 1
+
+    @patch('scraparr.connectors.komga.Module.get')
     def test_empty_response(self, mock_get):
         mod = _make_module()
         mock_get.return_value = {}
@@ -72,11 +102,11 @@ class TestGetPaged:
 
 class TestScrape:
     @patch('scraparr.connectors.komga.Module._get_paged')
-    @patch('scraparr.connectors.komga.Module._get_base')
-    def test_scrape_success(self, mock_get_base, mock_paged):
+    @patch('scraparr.connectors.komga.Module.get')
+    def test_scrape_success(self, mock_get, mock_paged):
         mod = _make_module()
 
-        mock_get_base.return_value = {"build": {"version": "1.0.0"}}
+        mock_get.return_value = {"build": {"version": "1.0.0"}}
 
         libraries_resp = _page_response([{"id": "lib1", "name": "Comics"}])
         series_resp = _page_response([{"id": "s1", "name": "Batman", "libraryId": "lib1",
@@ -104,10 +134,10 @@ class TestScrape:
         assert data["users"]["totalElements"] == 1
 
     @patch('scraparr.connectors.komga.Module._get_paged')
-    @patch('scraparr.connectors.komga.Module._get_base')
-    def test_scrape_failure_marks_down(self, mock_get_base, mock_paged):
+    @patch('scraparr.connectors.komga.Module.get')
+    def test_scrape_failure_marks_down(self, mock_get, mock_paged):
         mod = _make_module()
-        mock_get_base.return_value = {}
+        mock_get.return_value = {}
         mock_paged.return_value = {}
 
         data = mod.scrape()
@@ -224,7 +254,7 @@ class TestUpdateMetrics:
     def test_exclude_library(self):
         config = {
             'url': 'http://komga:25600', 'api_key': 'test-key',
-            'alias': 'test', 'api_version': 'v1',
+            'alias': 'test', 'api_version': 'dummy',
             'detailed': False, 'interval': 30,
             'exclude': ['Manga'],
         }

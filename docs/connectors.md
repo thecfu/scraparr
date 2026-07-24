@@ -358,7 +358,7 @@ The `exclude` option accepts **library names or IDs** (not root folder paths lik
 <details>
 <summary><h2>Komga</h2> Media server for comics and manga</summary>
 
-**Default API version:** `v1`
+**Default API version:** not used (direct `/api/` paths, mixes v1 and v2)
 
 The `exclude` option accepts **library names or IDs** (not root folder paths like other connectors).
 
