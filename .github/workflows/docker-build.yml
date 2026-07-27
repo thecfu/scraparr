@@ -37,6 +37,11 @@ on:
         required: false
         type: string
         default: ''
+      ref:
+        description: 'Git ref to checkout (tag, branch, SHA). Defaults to triggering ref.'
+        required: false
+        type: string
+        default: ''
     secrets:
       DOCKERHUB_TOKEN:
         required: false
@@ -59,6 +64,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3

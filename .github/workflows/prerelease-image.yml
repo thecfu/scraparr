@@ -1,12 +1,12 @@
-name: Create and publish a Release Image
+name: Create and publish a Pre-Release Image
 
 on:
   release:
-    types: [released]
+    types: [prereleased]
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Existing release tag to build (e.g. v3.0.3)'
+        description: 'Existing pre-release tag to build (e.g. v3.1.0-beta)'
         required: true
         type: string
 
@@ -32,8 +32,5 @@ jobs:
       ref: ${{ inputs.tag || github.ref }}
       tags: |
         type=semver,pattern={{version}},value=${{ inputs.tag || '' }}
-        type=semver,pattern={{major}}.{{minor}},value=${{ inputs.tag || '' }}
-        type=semver,pattern={{major}},value=${{ inputs.tag || '' }}
-      check_latest_tag: true
-      generate_attestation: true
+        type=raw,value=beta
     secrets: inherit
