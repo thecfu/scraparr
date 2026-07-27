@@ -6,7 +6,7 @@ ACTIVE_CONNECTORS = [
     'sonarr', 'radarr', 'prowlarr',
     'bazarr', 'readarr', 'seerr',
     'jellyseerr', 'overseerr', 'whisparr',
-    'jellyfin', 'lidarr', 'kavita',
+    'jellyfin', 'lidarr', 'kavita', 'komga',
     'sabnzbd',
 ]
 
@@ -16,7 +16,7 @@ API_VERSIONS = {
     "readarr": "v1", "seerr": "v1",
     "jellyseerr": "v1", "overseerr": "v1",
     "whisparr": "v3", "jellyfin": "dummy",
-    "lidarr": "v1", "kavita": "dummy",
+    "lidarr": "v1", "kavita": "dummy", "komga": "dummy",
     "sabnzbd": "dummy",
 }
 
