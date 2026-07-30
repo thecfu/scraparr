@@ -12,15 +12,13 @@ on:
 permissions:
   contents: read
   packages: write
-  attestations: write
-  id-token: write
   pull-requests: write
 
 jobs:
   build-and-push-image:
-    uses: ./.github/workflows/docker-build.yml
+    uses: ./.forgejo/workflows/docker-build.yml
     with:
-      registry_image: ghcr.io/thecfu/scraparr-dev
+      codeberg_image: codeberg.org/thecfu/scraparr-dev
       tags: type=raw,value=pr${{ github.event.pull_request.number }}
       environment: ${{ github.event.pull_request.head.repo.fork == true && 'pr-image' || '' }}
     secrets: inherit
@@ -36,5 +34,5 @@ jobs:
           message: |
             Docker image for this PR is available:
             ```
-            docker pull ghcr.io/thecfu/scraparr-dev:pr${{ github.event.pull_request.number }}
+            docker pull codeberg.org/thecfu/scraparr-dev:pr${{ github.event.pull_request.number }}
             ```

@@ -1,0 +1,60 @@
+name: Cleanup Stale PR Images
+
+on:
+  schedule:
+    - cron: '0 3 1 * *'  # 1st of each month at 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  packages: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete closed-PR images older than 30 days
+        run: |
+          OWNER="TheCfU"
+          PACKAGE="scraparr-dev"
+          REPO="${{ github.repository }}"
+          API="${{ github.server_url }}/api/v1"
+          CUTOFF=$(date -d '30 days ago' --iso-8601=seconds)
+
+          PAGE=1
+          while true; do
+            VERSIONS=$(curl -s -H "Authorization: token ${TOKEN}" \
+              "${API}/packages/${OWNER}/container/${PACKAGE}/versions?page=${PAGE}&limit=50")
+
+            COUNT=$(echo "$VERSIONS" | jq 'length')
+            if [[ "$COUNT" == "0" || "$COUNT" == "null" ]]; then
+              break
+            fi
+
+            echo "$VERSIONS" | jq -c '.[] | select(.metadata.container.tags | map(test("^pr[0-9]+$")) | any)' \
+            | while IFS= read -r entry; do
+                VERSION_ID=$(echo "$entry" | jq -r '.id')
+                CREATED_AT=$(echo "$entry" | jq -r '.created_at')
+                TAG=$(echo "$entry" | jq -r '.metadata.container.tags[] | select(test("^pr[0-9]+$"))')
+                PR_NUMBER=$(echo "$TAG" | grep -oP '\d+')
+
+                if [[ "$CREATED_AT" > "$CUTOFF" ]]; then
+                  echo "Skipping $TAG (newer than 30 days, created $CREATED_AT)"
+                  continue
+                fi
+
+                PR_STATE=$(curl -s -H "Authorization: token ${TOKEN}" \
+                  "${API}/repos/${REPO}/pulls/${PR_NUMBER}" | jq -r '.state // "not_found"' 2>/dev/null)
+
+                if [[ "$PR_STATE" == "closed" || "$PR_STATE" == "not_found" ]]; then
+                  echo "Deleting $TAG (PR #${PR_NUMBER} state: ${PR_STATE}, created: ${CREATED_AT})"
+                  curl -s -X DELETE -H "Authorization: token ${TOKEN}" \
+                    "${API}/packages/${OWNER}/container/${PACKAGE}/versions/${VERSION_ID}"
+                else
+                  echo "Keeping $TAG (PR #${PR_NUMBER} is ${PR_STATE})"
+                fi
+              done
+
+            PAGE=$((PAGE + 1))
+          done
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}

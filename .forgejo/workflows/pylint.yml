@@ -14,4 +14,4 @@ permissions:
 
 jobs:
   lint:
-    uses: ./.github/workflows/lint.yml
+    uses: ./.forgejo/workflows/lint.yml
