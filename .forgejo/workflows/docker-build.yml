@@ -32,11 +32,6 @@ on:
         required: false
         type: boolean
         default: false
-      environment:
-        description: 'Environment to run the build job under (for protection rules)'
-        required: false
-        type: string
-        default: ''
       ref:
         description: 'Git ref to checkout (tag, branch, SHA). Defaults to triggering ref.'
         required: false
@@ -50,7 +45,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
     permissions:
       contents: read
       packages: write

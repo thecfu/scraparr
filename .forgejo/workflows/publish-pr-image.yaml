@@ -2,6 +2,7 @@ name: Create and publish a Image for the PR
 
 on:
   pull_request:
+    types: [opened, synchronize, labeled]
     paths:
       - 'src/**'
       - 'Dockerfile'
@@ -15,12 +16,28 @@ permissions:
   pull-requests: write
 
 jobs:
+  remove-label-on-update:
+    if: >-
+      github.event.action == 'synchronize' &&
+      github.event.pull_request.head.repo.fork == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove safe-to-build label for re-approval
+        run: |
+          curl -s -X DELETE \
+            -H "Authorization: token ${TOKEN}" \
+            "${{ github.server_url }}/api/v1/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels/${{ vars.SAFE_TO_BUILD_LABEL_ID }}"
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   build-and-push-image:
+    if: >-
+      github.event.pull_request.head.repo.fork != true ||
+      (github.event.action == 'labeled' && github.event.label.name == 'safe-to-build')
     uses: ./.forgejo/workflows/docker-build.yml
     with:
       codeberg_image: codeberg.org/thecfu/scraparr-dev
       tags: type=raw,value=pr${{ github.event.pull_request.number }}
-      environment: ${{ github.event.pull_request.head.repo.fork == true && 'pr-image' || '' }}
     secrets: inherit
 
   comment:
