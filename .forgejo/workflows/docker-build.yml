@@ -3,10 +3,15 @@ name: Docker Build and Push (Shared)
 on:
   workflow_call:
     inputs:
-      registry_image:
-        description: 'Full GHCR image path (e.g. ghcr.io/owner/repo)'
+      codeberg_image:
+        description: 'Codeberg container registry image path (e.g. codeberg.org/owner/repo)'
         required: true
         type: string
+      ghcr_image:
+        description: 'GHCR image path (e.g. ghcr.io/owner/repo); leave empty to skip'
+        required: false
+        type: string
+        default: ''
       dockerhub_image:
         description: 'Docker Hub image name; leave empty to skip Docker Hub'
         required: false
@@ -23,28 +28,15 @@ on:
         type: string
         default: ''
       check_latest_tag:
-        description: 'Query GitHub Releases API to set latest=true/false flavor'
+        description: 'Query Codeberg Releases API to set latest=true/false flavor'
         required: false
         type: boolean
         default: false
-      generate_attestation:
-        description: 'Generate artifact attestation after push'
-        required: false
-        type: boolean
-        default: false
-      environment:
-        description: 'GitHub environment to run the build job under (for protection rules)'
-        required: false
-        type: string
-        default: ''
       ref:
         description: 'Git ref to checkout (tag, branch, SHA). Defaults to triggering ref.'
         required: false
         type: string
         default: ''
-    secrets:
-      DOCKERHUB_TOKEN:
-        required: false
     outputs:
       digest:
         description: 'Image digest'
@@ -53,12 +45,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
-    permissions:
-      contents: read
-      packages: write
-      attestations: write
-      id-token: write
     outputs:
       digest: ${{ steps.push.outputs.digest }}
     steps:
@@ -67,12 +53,20 @@ jobs:
         with:
           ref: ${{ inputs.ref || github.ref }}
 
-      - name: Log in to the Container registry
+      - name: Log in to Codeberg Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: codeberg.org
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log in to GHCR
+        if: inputs.ghcr_image != ''
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ vars.GHCR_USERNAME }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Login to Docker Hub
         if: inputs.dockerhub_image != ''
@@ -91,7 +85,7 @@ jobs:
         if: inputs.check_latest_tag
         id: latest_tag
         run: |
-          LATEST_TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+          LATEST_TAG=$(curl -s "${{ github.server_url }}/api/v1/repos/${{ github.repository }}/releases?limit=1&draft=false&pre-release=false" | jq -r '.[0].tag_name')
           if [[ "$LATEST_TAG" == "${{ github.ref_name }}" ]]; then
             echo "flavor=latest=true" >> $GITHUB_OUTPUT
           else
@@ -103,7 +97,8 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ inputs.registry_image }}
+            ${{ inputs.codeberg_image }}
+            ${{ inputs.ghcr_image }}
             ${{ inputs.dockerhub_image }}
           flavor: ${{ inputs.check_latest_tag && steps.latest_tag.outputs.flavor || inputs.flavor }}
           tags: ${{ inputs.tags }}
@@ -117,11 +112,3 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
-      - name: Generate artifact attestation
-        if: inputs.generate_attestation
-        uses: actions/attest-build-provenance@v2
-        with:
-          subject-name: ${{ inputs.registry_image }}
-          subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true

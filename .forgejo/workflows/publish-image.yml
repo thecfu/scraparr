@@ -10,24 +10,19 @@ on:
         required: true
         type: string
 
-permissions:
-  contents: read
-  packages: write
-  attestations: write
-  id-token: write
-
 jobs:
   lint:
-    uses: ./.github/workflows/lint.yml
+    uses: ./.forgejo/workflows/lint.yml
 
   test:
-    uses: ./.github/workflows/test.yml
+    uses: ./.forgejo/workflows/test.yml
 
   build-and-push-image:
     needs: [lint, test]
-    uses: ./.github/workflows/docker-build.yml
+    uses: ./.forgejo/workflows/docker-build.yml
     with:
-      registry_image: ghcr.io/${{ github.repository }}
+      codeberg_image: codeberg.org/thecfu/scraparr
+      ghcr_image: ghcr.io/thecfu/scraparr
       dockerhub_image: thegameprofi/scraparr
       ref: ${{ inputs.tag || github.ref }}
       tags: |
@@ -35,5 +30,4 @@ jobs:
         type=semver,pattern={{major}}.{{minor}},value=${{ inputs.tag || '' }}
         type=semver,pattern={{major}},value=${{ inputs.tag || '' }}
       check_latest_tag: true
-      generate_attestation: true
     secrets: inherit

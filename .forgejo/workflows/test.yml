@@ -11,9 +11,6 @@ on:
   workflow_dispatch:
   workflow_call:
 
-permissions:
-  contents: read
-
 jobs:
   test:
     name: Test (Python ${{ matrix.python-version }})

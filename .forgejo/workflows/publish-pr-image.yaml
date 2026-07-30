@@ -1,0 +1,57 @@
+name: Create and publish a Image for the PR
+
+on:
+  pull_request:
+    types: [opened, synchronize, labeled]
+    paths:
+      - 'src/**'
+      - 'Dockerfile'
+      - 'uv.lock'
+      - 'pyproject.toml'
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to build an image for'
+        required: true
+        type: string
+
+jobs:
+  remove-label-on-update:
+    if: >-
+      github.event.action == 'synchronize' &&
+      github.event.pull_request.head.repo.fork == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove safe-to-build label for re-approval
+        run: |
+          curl -s -X DELETE \
+            -H "Authorization: token ${TOKEN}" \
+            "${{ github.server_url }}/api/v1/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels/${{ vars.SAFE_TO_BUILD_LABEL_ID }}"
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-and-push-image:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.repo.fork != true ||
+      (github.event.action == 'labeled' && github.event.label.name == 'safe-to-build')
+    uses: ./.forgejo/workflows/docker-build.yml
+    with:
+      codeberg_image: codeberg.org/thecfu/scraparr-dev
+      tags: type=raw,value=pr${{ github.event.pull_request.number || inputs.pr_number }}
+    secrets: inherit
+
+  comment:
+    needs: build-and-push-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment PR image availability
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          GITHUB_TOKEN: ${{ secrets.ORVEX_PR_TOKEN }}
+          number: ${{ github.event.pull_request.number || inputs.pr_number }}
+          message: |
+            Docker image for this PR is available:
+            ```
+            docker pull codeberg.org/thecfu/scraparr-dev:pr${{ github.event.pull_request.number || inputs.pr_number }}
+            ```
