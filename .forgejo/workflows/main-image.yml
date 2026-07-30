@@ -11,10 +11,6 @@ on:
       - 'pyproject.toml'
   workflow_dispatch:
 
-permissions:
-  contents: read
-  packages: write
-
 jobs:
   lint:
     uses: ./.forgejo/workflows/lint.yml

@@ -5,9 +5,6 @@ on:
     - cron: '0 3 1 * *'  # 1st of each month at 03:00 UTC
   workflow_dispatch:
 
-permissions:
-  packages: write
-
 jobs:
   cleanup:
     runs-on: ubuntu-latest

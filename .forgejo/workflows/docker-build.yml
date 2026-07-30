@@ -45,9 +45,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     outputs:
       digest: ${{ steps.push.outputs.digest }}
     steps:
