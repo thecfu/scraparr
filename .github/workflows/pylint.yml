@@ -9,6 +9,9 @@ on:
       - '**/requirements.txt'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   lint:
     uses: ./.github/workflows/lint.yml
