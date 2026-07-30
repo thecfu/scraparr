@@ -1,7 +1,7 @@
 # <img src=".forgejo/assets/logos/scraparr_logo.svg" alt="scraparr-logo" width="20%"> <img src=".forgejo/assets/logos/scraparr_only-text.png" alt="Scraparr" width="30%"> 
 ### A Exporter for the *arr Suite
 
-[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)]() [![Pylint](https://codeberg.org/TheCfU/scraparr/badges/workflows/pylint.yml/badge.svg)](https://codeberg.org/TheCfU/scraparr/action?workflow=pylint.yml)<br>
+[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)]() [![Pylint](https://codeberg.org/TheCfU/scraparr/badges/workflows/pylint.yml/badge.svg)](https://codeberg.org/TheCfU/scraparr/actions?workflow=pylint.yml)<br>
 
 ---
 
