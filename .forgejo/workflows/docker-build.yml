@@ -42,11 +42,6 @@ on:
         required: false
         type: string
         default: ''
-    secrets:
-      DOCKERHUB_TOKEN:
-        required: false
-      GHCR_TOKEN:
-        required: false
     outputs:
       digest:
         description: 'Image digest'
