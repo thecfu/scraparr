@@ -58,7 +58,7 @@ jobs:
         with:
           registry: codeberg.org
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.ORVEX_PR_TOKEN }}
 
       - name: Log in to GHCR
         if: inputs.ghcr_image != ''
