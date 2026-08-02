@@ -2,7 +2,7 @@ name: Create and publish a Release Image
 
 on:
   release:
-    types: [released]
+    types: [published]
   workflow_dispatch:
     inputs:
       tag:
@@ -12,9 +12,11 @@ on:
 
 jobs:
   lint:
+    if: github.event_name == 'workflow_dispatch' || github.event.release.prerelease == false
     uses: ./.forgejo/workflows/lint.yml
 
   test:
+    if: github.event_name == 'workflow_dispatch' || github.event.release.prerelease == false
     uses: ./.forgejo/workflows/test.yml
 
   build-and-push-image:
