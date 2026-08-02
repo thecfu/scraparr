@@ -1,11 +1,16 @@
 # <img src=".forgejo/assets/logos/scraparr_logo.svg" alt="scraparr-logo" width="20%"> <img src=".forgejo/assets/logos/scraparr_only-text.png" alt="Scraparr" width="30%"> 
 ### A Exporter for the *arr Suite
 
-[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)]() [![Pylint](https://codeberg.org/TheCfU/scraparr/badges/workflows/pylint.yml/badge.svg)](https://codeberg.org/TheCfU/scraparr/actions?workflow=pylint.yml)<br>
+[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)]() [![Pylint](https://codeberg.org/thecfu/scraparr/badges/workflows/pylint.yml/badge.svg)](https://codeberg.org/thecfu/scraparr/actions?workflow=pylint.yml)<br>
 
 ---
 
 Scraparr is a Prometheus exporter for the *arr suite (Sonarr, Radarr, Lidarr, etc.). It provides metrics that can be scraped by Prometheus to monitor and visualize the health and performance of your *arr applications.
+
+
+> [!IMPORTANT]
+> The main development of this project has moved to [Codeberg](https://codeberg.org/thecfu/scraparr).
+> If possible, please report issues or contribute directly on Codeberg.
 
 ## Features
 
@@ -49,7 +54,7 @@ Docker Hub:
 `docker run -v ./config.yaml:/scraparr/config/config.yaml -p 7100:7100 thegameprofi/scraparr`
 
 > [!NOTE]
-> If your using any v1 Version check the Readme of the [v1 Branch](https://codeberg.org/TheCfU/scraparr/src/branch/v1#readme)
+> If your using any v1 Version check the Readme of the [v1 Branch](https://codeberg.org/thecfu/scraparr/src/branch/v1#readme)
 
 > [!NOTE]
 > If you want to access new features before they are released, use the `main` tag.
@@ -84,7 +89,7 @@ A Unraid Template is available in the Repo of jordan-dalby: https://github.com/j
 ## Configuration
 
 > [!NOTE]
-> If your using any v1 Version check the Readme of the [v1 Branch](https://codeberg.org/TheCfU/scraparr/src/branch/v1#readme)
+> If your using any v1 Version check the Readme of the [v1 Branch](https://codeberg.org/thecfu/scraparr/src/branch/v1#readme)
 
 > [!WARNING]
 > If using the Docker Variant you need to use the IP or configure & use the extra_host `host.docker.internal:host-gateway`
