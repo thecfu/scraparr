@@ -3,7 +3,7 @@ Constants for Scraparr.
 """
 
 ACTIVE_CONNECTORS = [
-    'sonarr', 'radarr', 'prowlarr',
+    'sonarr', 'sportarr', 'radarr', 'prowlarr',
     'bazarr', 'readarr', 'seerr',
     'jellyseerr', 'overseerr', 'whisparr',
     'jellyfin', 'lidarr', 'kavita', 'komga',
@@ -11,7 +11,7 @@ ACTIVE_CONNECTORS = [
 ]
 
 API_VERSIONS = {
-    "sonarr": "v3", "radarr": "v3",
+    "sonarr": "v3", "sportarr": "v3", "radarr": "v3",
     "prowlarr": "v1", "bazarr": "dummy",
     "readarr": "v1", "seerr": "v1",
     "jellyseerr": "v1", "overseerr": "v1",
