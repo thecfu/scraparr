@@ -480,3 +480,24 @@ Same as [Sonarr](#sonarr), including `episode_quality_stats` and `exclude`.
 Same structure as Sonarr but with `whisparr_` prefix and uses "sites"/"scenes" terminology instead of "series"/"episodes".
 
 </details>
+
+---
+
+<details>
+<summary><h2>Sportarr</h2> Sports event management</summary>
+
+**Default API version:** `v3`
+
+Sportarr exposes a Sonarr-v3-compatible API, so this connector shares the
+Sonarr codebase.
+
+### Additional Options
+
+Same as [Sonarr](#sonarr), including `episode_quality_stats` and `exclude`.
+
+### Metrics
+
+Same structure as Sonarr but with `sportarr_` prefix - leagues surface as
+"series" and events as "episodes".
+
+</details>

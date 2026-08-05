@@ -57,6 +57,11 @@ sonarr:
   # exclude: # Optional list of rootFolderPaths to exclude from metrics
   #   - /data/test
 
+# sportarr:
+#   url: http://sportarr:1867
+#   api_key: key  # Or use: ${SPORTARR_API_KEY}
+#   # Same options as sonarr - Sportarr speaks the Sonarr v3 API
+
 radarr:
   url: http://radarr:7878
   api_key: key  # Or use: ${RADARR_API_KEY}
