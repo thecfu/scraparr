@@ -174,6 +174,7 @@ def make_lidarr_artist(name, root_folder, monitored=True, status="continuing"):
     """Helper to build a fake artist dict matching the Lidarr API shape."""
     return {
         "cleanName": name,
+        "artistName": name,
         "rootFolderPath": root_folder,
         "monitored": monitored,
         "status": status,
