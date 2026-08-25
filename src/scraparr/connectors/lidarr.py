@@ -100,7 +100,7 @@ class Module(ConnectorModule):
                 continue
             artist_count += 1
 
-            name = artist["cleanName"]
+            name = artist["artistName"]
             stats = artist.get("statistics", None)
 
             if stats is None:
