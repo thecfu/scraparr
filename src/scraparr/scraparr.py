@@ -13,7 +13,7 @@ import os
 import sys
 import threading
 import logging
-from wsgiref.simple_server import make_server, WSGIRequestHandler
+from wsgiref.simple_server import WSGIRequestHandler
 
 import yaml
 from dotenv import load_dotenv
@@ -21,6 +21,7 @@ from prometheus_client import make_wsgi_app
 
 from scraparr.connectors import util
 from scraparr.middleware import Middleware
+from scraparr.server import make_wsgi_server
 import scraparr.connectors
 from scraparr.parser import parse_env_config
 from scraparr.config_loader import (
@@ -130,7 +131,7 @@ def main():
                 config = config_file[service]
             connectors.add_connector(service, config)
 
-    httpd = make_server(ADDRESS, PORT, app, handler_class=QuietWSGIRequestHandler)
+    httpd = make_wsgi_server(ADDRESS, PORT, app, QuietWSGIRequestHandler)
 
     def run_server():
         """Starts the WSGI server"""
